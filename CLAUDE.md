@@ -124,6 +124,9 @@ die Regelzonenbilanz.
   Standardbibliothek wo moeglich; jede zusaetzliche Abhaengigkeit begruenden.
 - Cache-Buster an CSS und JS (`?v=JJJJMMTT-stichwort`), bei jeder Lieferung
   erhoeht.
+- `.nojekyll` im Wurzelverzeichnis. Ohne die Datei laeuft die Auslieferung
+  durch Jekyll; das ist fuer eine reine Vanilla-Seite unnoetig und kann Dateien
+  unterschlagen. Nicht loeschen.
 
 ## Gestaltung
 
@@ -170,7 +173,7 @@ mit Zuruecksetzen, Grundkarte aus Natural Earth (gemeinfrei, ohne fremde
 Kartenkacheln), CSV-Export je gewaehltem Tag.
 
 Noch offen: Redispatch; Intraday-Verlauf; Browsertest; Workflows; Methodik-PDF;
-Regelzonen als Flaeche auf der Karte; GitHub Pages ist nicht eingerichtet.
+Regelzonen als Flaeche auf der Karte.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
