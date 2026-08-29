@@ -32,12 +32,15 @@ EU-Verordnung 543/2013 Art. 12.1(g) verlangt physikalische Fluesse nur zwischen
 Gebotszonen). Ein Pfeil "50Hertz nach TransnetBW: X GW" waere eine
 Modellrechnung und ist damit ausgeschlossen. Beleg: `docs/beleg-smard.md`.
 
-## Offener Punkt
+## Freie Variable — entschieden am 30.08.2026
 
-- **Freie Variable — noch nicht entschieden.** Zur Wahl stehen das Referenzjahr
-  und der dargestellte Kalendertag. Es darf genau eine davon werden; die andere
-  wird dann fest. Solange das offen ist, gibt es auf der Seite **keinen Regler**,
-  sondern an dieser Stelle einen sichtbaren Platzhalter.
+**Der Kalendertag.** Genau ein Regler auf der Seite, sonst keiner. Waehlbar ist
+jeder Tag ab 01.01.2015; `scripts/validate.py` prueft, dass es kein zweites
+Bedienelement gibt.
+
+Der **Bezugswert ist damit fest**: der reale Messwert desselben Kalendertags im
+Vorjahr. Kein Monatsmittel, keine geglaettete Kurve. Fehlt der Vorjahrestag
+(29. Februar), wird das angezeigt und nicht ersetzt.
 
 ## Umfang
 
@@ -156,8 +159,26 @@ Erledigt: Leitfrage entschieden; SMARD-Reihen fuer Last, Erzeugung, Regelzonen
 und Aussenhandel belegt; Kraftwerksstammdaten belegt; Abrufskripte, Rumpf der
 Seite und Validierungsskript mit Negativtests liegen im Repository.
 
-Noch offen: freie Variable; Grundkarte; Leitungen und Umspannwerke; Redispatch;
-Browsertest; Workflows; Methodik-PDF.
+Ausserdem erledigt: Tagesreihen 2015-2026 in SMARD-Aufloesung "day", Tagesregler
+mit Zuruecksetzen, Grundkarte aus Natural Earth (gemeinfrei, ohne fremde
+Kartenkacheln), CSV-Export je gewaehltem Tag.
+
+Noch offen: Leitungen und Umspannwerke; Redispatch; Intraday-Verlauf;
+Browsertest; Workflows; Methodik-PDF; Regelzonen als Flaeche auf der Karte.
+
+## Bekannte Maengel der Daten — nicht wegglaetten
+
+Belegt in `docs/beleg-tagesreihen.md`. Diese drei Punkte duerfen weder
+stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
+
+1. **Der Bilanzrest geht nicht auf null auf.** Ueber 4.258 Tage gemessen liegt
+   er zwischen -18,8 % und +12,0 %, im Median bei -2,6 %. Eine fruehere Angabe
+   von 0,5 % war auf einen einzelnen Tag geeicht und ist zurueckgenommen.
+2. **Vor 2019 ist die Regelzonenaufteilung unvollstaendig** - 2015 fehlen bis zu
+   3,4 % der Last je Tag. Ursache nicht geklaert. Die Seite warnt sichtbar.
+3. **Ein Wert der Quelle ist falsch:** Schweiz-Import am 09.02.2015 mit
+   25.009.206 MWh. Er wird als fehlend gefuehrt, nicht korrigiert; der
+   Originalwert bleibt in der Liste `auffaellig` sichtbar.
 
 ## Ablauf
 

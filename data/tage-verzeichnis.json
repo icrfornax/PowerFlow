@@ -1,0 +1,104 @@
+{
+ "abgerufen": "2026-08-30T00:41:55+02:00",
+ "hinweis": "Verzeichnis der Jahresdateien. Die Seite laedt das Jahr des gewaehlten Tages und das Vorjahr fuer den Vergleichswert.",
+ "jahre": [
+  {
+   "jahr": 2015,
+   "datei": "data/tage/2015.json",
+   "erster_tag": "2015-01-01",
+   "letzter_tag": "2015-12-31",
+   "letzter_belegter_tag": "2015-12-31",
+   "auffaellige_tage": [
+    "2015-02-09"
+   ]
+  },
+  {
+   "jahr": 2016,
+   "datei": "data/tage/2016.json",
+   "erster_tag": "2016-01-01",
+   "letzter_tag": "2016-12-31",
+   "letzter_belegter_tag": "2016-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2017,
+   "datei": "data/tage/2017.json",
+   "erster_tag": "2017-01-01",
+   "letzter_tag": "2017-12-31",
+   "letzter_belegter_tag": "2017-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2018,
+   "datei": "data/tage/2018.json",
+   "erster_tag": "2018-01-01",
+   "letzter_tag": "2018-12-31",
+   "letzter_belegter_tag": "2018-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2019,
+   "datei": "data/tage/2019.json",
+   "erster_tag": "2019-01-01",
+   "letzter_tag": "2019-12-31",
+   "letzter_belegter_tag": "2019-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2020,
+   "datei": "data/tage/2020.json",
+   "erster_tag": "2020-01-01",
+   "letzter_tag": "2020-12-31",
+   "letzter_belegter_tag": "2020-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2021,
+   "datei": "data/tage/2021.json",
+   "erster_tag": "2021-01-01",
+   "letzter_tag": "2021-12-31",
+   "letzter_belegter_tag": "2021-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2022,
+   "datei": "data/tage/2022.json",
+   "erster_tag": "2022-01-01",
+   "letzter_tag": "2022-12-31",
+   "letzter_belegter_tag": "2022-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2023,
+   "datei": "data/tage/2023.json",
+   "erster_tag": "2023-01-01",
+   "letzter_tag": "2023-12-31",
+   "letzter_belegter_tag": "2023-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2024,
+   "datei": "data/tage/2024.json",
+   "erster_tag": "2024-01-01",
+   "letzter_tag": "2024-12-31",
+   "letzter_belegter_tag": "2024-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2025,
+   "datei": "data/tage/2025.json",
+   "erster_tag": "2025-01-01",
+   "letzter_tag": "2025-12-31",
+   "letzter_belegter_tag": "2025-12-31",
+   "auffaellige_tage": []
+  },
+  {
+   "jahr": 2026,
+   "datei": "data/tage/2026.json",
+   "erster_tag": "2026-01-01",
+   "letzter_tag": "2026-12-31",
+   "letzter_belegter_tag": "2026-08-28",
+   "auffaellige_tage": []
+  }
+ ]
+}

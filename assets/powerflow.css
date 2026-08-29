@@ -26,6 +26,10 @@
   --violett: #8d7bb8;
   --violett-schwach: rgba(141, 123, 184, 0.15);
 
+  --karte-grund: #0b1015;
+  --karte-nachbar: #141b21;
+  --karte-land: #1a242c;
+  --karte-grenze: #2f3f4a;
   --fokus: #6cc7ff;
   --radius: 10px;
   --schrift-familie: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -50,11 +54,19 @@
     --violett: #6a55a0;
     --violett-schwach: rgba(106, 85, 160, 0.12);
 
+    --karte-grund: #eef2f5;
+    --karte-nachbar: #e2e8ed;
+    --karte-land: #ffffff;
+    --karte-grenze: #c3ced7;
     --fokus: #0b6bb5;
   }
 }
 
 :root[data-thema="hell"] {
+  --karte-grund: #eef2f5;
+  --karte-nachbar: #e2e8ed;
+  --karte-land: #ffffff;
+  --karte-grenze: #c3ced7;
   --grund: #f6f8fa;
   --flaeche: #ffffff;
   --flaeche-hoch: #eef2f5;
@@ -73,6 +85,10 @@
 }
 
 :root[data-thema="dunkel"] {
+  --karte-grund: #0b1015;
+  --karte-nachbar: #141b21;
+  --karte-land: #1a242c;
+  --karte-grenze: #2f3f4a;
   --grund: #0e1418;
   --flaeche: #151d23;
   --flaeche-hoch: #1c262e;
@@ -240,15 +256,30 @@ body {
 }
 .pf-balken .pf-fuellung { height: 100%; border-radius: 2px; }
 
-/* ---------- Karte ---------- */
+/* ---------- Karte ----------
+   Zurueckhaltende Vektorkarte: dunkler Grund, kaum sichtbare Nachbarn,
+   Bundeslaender als ruhige Flaeche, die Daten als leuchtende Punkte darueber.
+   Keine fremden Kartenkacheln -- die Geometrie wird selbst gezeichnet. */
 
 .pf-karte-huelle {
-  background: var(--flaeche); border: 1px solid var(--linie);
+  background: var(--karte-grund); border: 1px solid var(--linie);
   border-radius: var(--radius); padding: 14px 15px; position: relative;
 }
 .pf-karte-rollbereich { overflow-x: auto; }
-.pf-karte { display: block; width: 100%; height: auto; max-width: 620px; margin: 0 auto; }
-.pf-karte circle { transition: r 120ms ease, opacity 120ms ease; }
+.pf-karte { display: block; width: 100%; height: auto; max-width: 640px; margin: 0 auto; }
+
+.pf-geo-nachbar path {
+  fill: var(--karte-nachbar); stroke: none;
+}
+.pf-geo-land path {
+  fill: var(--karte-land); stroke: var(--karte-grenze); stroke-width: 0.6;
+  stroke-linejoin: round; vector-effect: non-scaling-stroke;
+}
+.pf-geo-anlage circle {
+  fill-opacity: 0.55; stroke-width: 0.8; stroke-opacity: 0.9;
+  transition: fill-opacity 120ms ease;
+}
+.pf-geo-anlage circle:hover { fill-opacity: 0.95; }
 .pf-karte circle:focus-visible { outline: 2px solid var(--fokus); }
 
 .pf-legende {
@@ -296,14 +327,46 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
   background: var(--flaeche-hoch); padding: 1px 5px; border-radius: 4px;
 }
 
-/* ---------- Regler-Platzhalter ---------- */
+/* ---------- Der einzige Regler: der Kalendertag ---------- */
 
-.pf-regler-platz {
-  background: var(--flaeche); border: 1px dashed var(--linie);
-  border-radius: var(--radius); padding: 14px 16px;
-  color: var(--schrift-leise); font-size: 0.88rem;
+.pf-regler {
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-left: 3px solid var(--fokus); border-radius: var(--radius);
+  padding: 14px 16px;
 }
-.pf-regler-platz strong { color: var(--schrift); }
+.pf-regler-titel {
+  display: block; font-size: 0.78rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still); margin-bottom: 10px;
+}
+.pf-regler-reihe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.pf-schritt {
+  background: var(--flaeche-hoch); color: var(--schrift); border: 1px solid var(--linie);
+  border-radius: var(--radius); width: 36px; height: 36px; font-size: 1.1rem;
+  line-height: 1; cursor: pointer; font-family: inherit;
+}
+.pf-schritt:hover:not(:disabled) { border-color: var(--schrift-still); }
+.pf-schritt:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.pf-tagfeld {
+  background: var(--flaeche-hoch); color: var(--schrift); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 8px 11px; font-size: 0.95rem;
+  font-family: var(--schrift-zahl); height: 36px; color-scheme: inherit;
+}
+
+.pf-zuruecksetzen {
+  background: transparent; color: var(--schrift-leise); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 0 13px; height: 36px; font-size: 0.85rem;
+  cursor: pointer; font-family: inherit; margin-left: auto;
+}
+.pf-zuruecksetzen:hover:not(:disabled) { color: var(--schrift); border-color: var(--schrift-still); }
+.pf-zuruecksetzen:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.pf-regler-fuss { font-size: 0.8rem; color: var(--schrift-still); margin: 11px 0 0; }
+
+.pf-schritt:focus-visible, .pf-tagfeld:focus-visible, .pf-zuruecksetzen:focus-visible {
+  outline: 2px solid var(--fokus); outline-offset: 2px;
+}
 
 /* ---------- Downloads ---------- */
 

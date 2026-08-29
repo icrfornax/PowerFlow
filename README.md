@@ -2,7 +2,7 @@ PowerFlow
 
 Statisches Daten-Dashboard zu Stromflüssen und -mengen im deutschen Stromnetz.
 
-Status: Rumpf. Die Leitfrage steht, die freie Variable ist noch offen, siehe CLAUDE.md. GitHub Pages ist noch nicht eingerichtet; die Seite läuft lokal mit `python -m http.server`.
+Status: Rumpf. Leitfrage und freie Variable stehen (freie Variable: der Kalendertag), siehe CLAUDE.md. GitHub Pages ist noch nicht eingerichtet; die Seite läuft lokal mit `python -m http.server`.
 
 Leitfrage
 
@@ -27,11 +27,14 @@ Belege
     docs/beleg-smard.md             Last, Erzeugung, Regelzonen, Einheitennachweis, Gegenprobe
     docs/beleg-aussenhandel.md      Herleitung der undokumentierten Außenhandels-Filter-IDs
     docs/beleg-kraftwerksdaten.md   Kraftwerksstandorte und Erzeugung je Block
+    docs/beleg-tagesreihen.md       Tagesauflösung, Datenqualität, bekannte Mängel
+    docs/beleg-grundkarte.md        Herkunft und Lizenz der Kartengeometrie
 
 Prüfen
 
-    python scripts/fetch-tagesdaten.py 2026-08-19
+    python scripts/fetch-tagesreihen.py
     python scripts/fetch-kraftwerke.py
+    python scripts/fetch-grundkarte.py
     python scripts/validate.py
     python scripts/validate.py --negativtests
     python -m http.server 8765
