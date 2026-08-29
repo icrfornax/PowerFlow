@@ -54,8 +54,15 @@ LAST_RESIDUAL = 4359  # Residuallast = Netzlast minus Wind on/off minus PV
 LAST_PUMPSPEICHER = 4387  # Verbrauch der Pumpspeicher (Einspeicherleistung)
 
 # Realisierte Erzeugung nach Energietraeger.
+#
+# Kernenergie (1224) gehoert dazu. Sie fehlte hier zuerst, weil die Reihe fuer
+# aktuelle Zeitraeume HTTP 404 liefert -- das war ein Fehler: bis zum
+# 15.04.2023 hat Kernenergie erheblich beigetragen (2015 noch 84,4 TWh), und
+# ohne sie geht die Tagesbilanz aller Jahre bis 2022 um bis zu 27 Prozent nicht
+# auf. Der Aufrufer muss den 404 abfangen, statt den Traeger wegzulassen.
 ERZEUGUNG = {
     1223: "Braunkohle",
+    1224: "Kernenergie",
     1225: "Wind Offshore",
     1226: "Wasserkraft",
     1227: "Sonstige Konventionelle",
@@ -68,9 +75,8 @@ ERZEUGUNG = {
     4071: "Erdgas",
 }
 
-# Kernenergie. Die ID ist gueltig, die Reihe endet am 15.04.2023 23:45.
+# Kernenergie: die ID ist gueltig, die Reihe endet am 15.04.2023 23:45.
 # Fuer spaetere Zeitraeume liefert SMARD HTTP 404 -- KEIN leeres Array.
-# Absichtlich nicht in ERZEUGUNG, damit die Tagesbilanz nicht auf 404 laeuft.
 ERZEUGUNG_KERNENERGIE = 1224
 KERNENERGIE_ENDE = "2023-04-15"
 

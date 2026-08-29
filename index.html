@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Deutschland · Stromfluss-Labor</title>
-<meta name="description" content="Tagesbilanz des deutschen Stromsystems aus gemessenen Daten der Bundesnetzagentur: Erzeugung nach Energieträger, Netzlast, Regelzonen und physikalischer Stromfluss je Kuppelstelle.">
-<link rel="stylesheet" href="assets/powerflow.css?v=20260830-rumpf">
+<meta name="description" content="Tagesbilanz des deutschen Stromsystems aus gemessenen Daten der Bundesnetzagentur: Erzeugung nach Energieträger, Netzlast, Regelzonen, Kraftwerksstandorte und physikalischer Stromfluss je Kuppelstelle. Frei wählbarer Kalendertag ab 2015.">
+<link rel="stylesheet" href="assets/powerflow.css?v=20260830-tageswahl">
 </head>
 <body>
 
@@ -19,18 +19,19 @@
     <h1>Deutschland · Stromfluss-Labor</h1>
     <p>Diese Seite baut ihre Darstellung im Browser aus den Dateien unter
     <code>data/</code> auf und braucht dafür JavaScript. Die Daten selbst sind
-    ohne JavaScript prüfbar — sie liegen als CSV und JSON im Repository:</p>
+    ohne JavaScript prüfbar — sie liegen als JSON im Repository:</p>
     <ul>
-      <li><a href="data/erzeugung-2026-08-19.csv">Erzeugung nach Energieträger (CSV)</a></li>
-      <li><a href="data/regelzonen-2026-08-19.csv">Regelzonen (CSV)</a></li>
-      <li><a href="data/aussenhandel-2026-08-19.csv">Außenhandel je Nachbarland (CSV)</a></li>
-      <li><a href="data/tagesbilanz.json">Tagesbilanz (JSON)</a></li>
-      <li><a href="data/kraftwerke.json">Kraftwerksstandorte (JSON)</a></li>
+      <li><a href="data/tage-verzeichnis.json">Verzeichnis der Jahresdateien</a></li>
+      <li><a href="data/tage/2026.json">Tagesreihen 2026</a> — Netzlast, Erzeugung
+      je Energieträger, Regelzonen und Außenhandel je Nachbarland, ein Wert je Tag</li>
+      <li><a href="data/kraftwerke.json">Kraftwerksstandorte mit Koordinaten</a></li>
+      <li><a href="data/grundkarte.json">Grundkarte</a></li>
     </ul>
-    <p>Datenquelle: Bundesnetzagentur | SMARD.de, Lizenz CC BY 4.0.</p>
+    <p>Datenquelle: Bundesnetzagentur | SMARD.de, Lizenz CC BY 4.0.
+    Grundkarte: Natural Earth, gemeinfrei.</p>
   </div>
 </noscript>
 
-<script src="assets/powerflow.js?v=20260830-rumpf"></script>
+<script src="assets/powerflow.js?v=20260830-tageswahl"></script>
 </body>
 </html>
