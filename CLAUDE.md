@@ -172,8 +172,12 @@ Ausserdem erledigt: Tagesreihen 2015-2026 in SMARD-Aufloesung "day", Tagesregler
 mit Zuruecksetzen, Grundkarte aus Natural Earth (gemeinfrei, ohne fremde
 Kartenkacheln), CSV-Export je gewaehltem Tag.
 
-Noch offen: Redispatch; Intraday-Verlauf; Browsertest; Workflows; Methodik-PDF;
-Regelzonen als Flaeche auf der Karte.
+Ausserdem erledigt: Tagesverlauf als gestapeltes Flaechendiagramm mit geprueften
+Farben, zoom- und verschiebbare Karte mit Klickauswahl statt Mouseover,
+gemessene Flussrichtung an den Kuppelstellen.
+
+Noch offen: Redispatch; Browsertest; Workflows; Methodik-PDF; Regelzonen als
+Flaeche auf der Karte; Import und Export im Tagesverlauf.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
@@ -185,7 +189,11 @@ stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
    von 0,5 % war auf einen einzelnen Tag geeicht und ist zurueckgenommen.
 2. **Vor 2019 ist die Regelzonenaufteilung unvollstaendig** - 2015 fehlen bis zu
    3,4 % der Last je Tag. Ursache nicht geklaert. Die Seite warnt sichtbar.
-3. **Ein Wert der Quelle ist falsch:** Schweiz-Import am 09.02.2015 mit
+3. **Der Tagesverlauf wird ueber den ZEITSTEMPEL geschluesselt, nie ueber die
+   lokale Stundenmarke.** Am Tag der Rueckstellung gibt es 02:00 zweimal; eine
+   Marke als Schluessel verliert dort eine Stunde. Genau das ist einmal
+   passiert, an elf Oktobertagen. Siehe `docs/beleg-verlauf.md`.
+4. **Ein Wert der Quelle ist falsch:** Schweiz-Import am 09.02.2015 mit
    25.009.206 MWh. Er wird als fehlend gefuehrt, nicht korrigiert; der
    Originalwert bleibt in der Liste `auffaellig` sichtbar.
 

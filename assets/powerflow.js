@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260830-netz";
+  var VERSION = "20260830-verlauf";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -96,7 +96,11 @@
     // zugehoerige Ebene eingeschaltet wird -- die 110-kV-Ebene allein ist
     // 5,9 MB gross.
     netz: {},
+    verlauf: {},
+    // Zoomzustand und Auswahl der Karte. Beides ueberlebt einen Tageswechsel.
+    karte: { sicht: null, auswahl: null },
     ebenen: {
+      kuppelstellen: true,
       kraftwerke: true,
       umspannwerke: true,
       hoechstspannung: true,
@@ -396,11 +400,35 @@
     return null;
   }
 
-  function karte(grundkarte, anlagen) {
+  /* Schematische Ankerpunkte fuer die Kuppelstellen-Pfeile.
+     Schweden und Norwegen haben keine Landgrenze zu Deutschland; ihre Kabel
+     landen an der Ostsee- bzw. Nordseekueste. Fuer beide gibt es in
+     data/grundkarte.json auch kein Polygon. Deshalb hier feste Richtungen.
+     WICHTIG: Diese Punkte sind SCHEMATISCH. Gemessen sind Richtung und Menge,
+     nicht der Ort des Uebergangs. Das steht auch auf der Seite. */
+  var KUPPEL_RICHTUNG = {
+    "Schweden": [0.55, -1.0],
+    "Norwegen": [-0.35, -1.0]
+  };
+
+  var svgNS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs) {
+    var n = document.createElementNS(svgNS, tag);
+    Object.keys(attrs || {}).forEach(function (k) { n.setAttribute(k, attrs[k]); });
+    return n;
+  }
+
+  function schwerpunkt(ringe) {
+    var x = 0, y = 0, n = 0;
+    ringe.forEach(function (r) {
+      r.forEach(function (p) { x += p[0]; y += p[1]; n++; });
+    });
+    return n ? [x / n, y / n] : null;
+  }
+
+  function karte(grundkarte, anlagen, iso) {
     var B = 640, H = 800, rand = 16;
 
-    // Rahmen aus der Geometrie der Bundeslaender, nicht aus den Anlagen:
-    // die Karte soll Deutschland zeigen, nicht die Huelle der Kraftwerke.
     var lonMin = 1e9, lonMax = -1e9, latMin = 1e9, latMax = -1e9;
     grundkarte.bundeslaender.forEach(function (b) {
       b.ringe.forEach(function (r) {
@@ -434,15 +462,20 @@
       return d + "Z";
     }
 
+    if (!Z.karte.sicht) { Z.karte.sicht = { x: 0, y: 0, w: B, h: H }; }
+    var sicht = Z.karte.sicht;
+
     var svg = s("svg", {
-      "class": "pf-karte", viewBox: "0 0 " + B + " " + H, role: "img",
-      "aria-label": "Karte Deutschlands mit Hoechstspannungsnetz, Umspannwerken und den "
-        + "Standorten von " + anlagen.length + " Kraftwerken"
+      "class": "pf-karte", viewBox: [sicht.x, sicht.y, sicht.w, sicht.h].join(" "),
+      role: "img", tabindex: "0",
+      "aria-label": "Karte Deutschlands mit Hoechstspannungsnetz, Umspannwerken, "
+        + "Kraftwerksstandorten und der gemessenen Richtung des Stromflusses an den "
+        + "Kuppelstellen zu den Nachbarlaendern"
     });
 
     var gNachbarn = s("g", { "class": "pf-geo-nachbar" });
-    grundkarte.nachbarn.forEach(function (n) {
-      n.ringe.forEach(function (r) { gNachbarn.appendChild(s("path", { d: ringPfad(r) })); });
+    grundkarte.nachbarn.forEach(function (nb) {
+      nb.ringe.forEach(function (r) { gNachbarn.appendChild(s("path", { d: ringPfad(r) })); });
     });
     svg.appendChild(gNachbarn);
 
@@ -457,9 +490,7 @@
     svg.appendChild(gLaender);
 
     /* Leitungen. Bei knapp 40.000 Wegen waeren 40.000 SVG-Elemente zu langsam.
-       Deshalb EIN Pfadelement je Spannungsebene mit vielen Teilzuegen. Preis
-       dafuer: kein eigener Tooltip je Leitung. Das ist es wert -- die Leitung
-       traegt ohnehin keine Zahl, die man ablesen koennte. */
+       Deshalb EIN Pfadelement je Spannungsebene mit vielen Teilzuegen. */
     function leitungsgruppe(objekte, klasse) {
       var g = s("g", { "class": klasse });
       EBENEN.forEach(function (e) {
@@ -488,6 +519,28 @@
       svg.appendChild(leitungsgruppe(Z.netz.hoechstspannung.objekte, "pf-netz-hoechst"));
     }
 
+    /* Auswaehlbare Punkte. Statt eines schwebenden Tooltips setzt ein Klick die
+       Auswahl; die Einzelheiten stehen danach in einem festen Kasten unter der
+       Karte und bleiben dort stehen. */
+    function waehlbar(kreis, angabe) {
+      kreis.setAttribute("tabindex", "0");
+      kreis.setAttribute("role", "button");
+      kreis.setAttribute("aria-label", angabe.titel);
+      function waehlen(e) {
+        e.stopPropagation();
+        Z.karte.auswahl = angabe;
+        auswahlZeigen();
+        svg.querySelectorAll("[data-gewaehlt]").forEach(function (x) {
+          x.removeAttribute("data-gewaehlt");
+        });
+        kreis.setAttribute("data-gewaehlt", "1");
+      }
+      kreis.addEventListener("click", waehlen);
+      kreis.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); waehlen(e); }
+      });
+    }
+
     if (Z.ebenen.umspannwerke && Z.netz.umspannwerke) {
       var gW = s("g", { "class": "pf-netz-werk" });
       Z.netz.umspannwerke.objekte.forEach(function (w) {
@@ -498,8 +551,14 @@
           r: (w.v >= 380000 ? 2.1 : w.v >= 220000 ? 1.6 : 1.0).toFixed(1),
           fill: e.farbe
         });
-        c.appendChild(s("title")).textContent =
-          (w.n || "Umspannwerk") + " · " + e.name + (w.b ? " · " + w.b : "");
+        waehlbar(c, {
+          art: "Umspannwerk", titel: w.n || "Umspannwerk",
+          zeilen: [["Spannungsebene", e.name],
+                   ["Betreiber", w.b || "in OpenStreetMap nicht angegeben"],
+                   ["Lage", nf1.format(w.lat) + " N, " + nf1.format(w.lon) + " O"]],
+          fuss: "Stammdatum aus OpenStreetMap. Wie viel Strom hier durchgeht, "
+            + "ist nicht veröffentlicht."
+        });
         gW.appendChild(c);
       });
       svg.appendChild(gW);
@@ -517,14 +576,198 @@
           r: Math.max(1.6, Math.sqrt(mw) * 0.30).toFixed(1),
           fill: farbe, stroke: farbe
         });
-        c.appendChild(s("title")).textContent =
-          (a.ort || "") + " · " + (a.energietraeger || "") + " · " + nf0.format(mw) + " MW · "
-          + a.regelzone + (a.staat && a.staat !== "Deutschland" ? " · " + a.staat : "");
+        var bloecke = (a.bloecke || []).filter(function (b) { return b.production_id; });
+        waehlbar(c, {
+          art: "Kraftwerk", titel: (a.ort || "Kraftwerk") + (a.betreiber ? " · " + a.betreiber : ""),
+          zeilen: [["Energieträger", a.energietraeger || "—"],
+                   ["Nettoleistung", nf0.format(mw) + " MW"],
+                   ["Regelzone", a.regelzone],
+                   ["Land", (a.land || "") + (a.staat && a.staat !== "Deutschland"
+                     ? " (" + a.staat + ")" : "")],
+                   ["Blöcke", (a.bloecke || []).length + ", davon " + bloecke.length
+                     + " mit abrufbarer Erzeugungsreihe"]],
+          fuss: "Stammdatum aus SMARD. Die Nettoleistung sagt, was die Anlage kann — "
+            + "nicht, was sie an diesem Tag erzeugt hat."
+        });
         gPunkte.appendChild(c);
       });
       svg.appendChild(gPunkte);
     }
-    return svg;
+
+    /* Kuppelstellen: gemessene Richtung und Menge des physikalischen
+       Stromflusses am gewaehlten Tag. Das ist die EINZIGE Stelle der Karte, an
+       der eine Richtung gezeigt wird -- weil sie hier gemessen ist. */
+    if (Z.ebenen.kuppelstellen) {
+      var mitte = [(lonMin + lonMax) / 2, (latMin + latMax) / 2];
+      var werte = laender(iso);
+      var groesstes = 0;
+      werte.forEach(function (w) {
+        if (Math.abs(w.saldo) > groesstes) { groesstes = Math.abs(w.saldo); }
+      });
+      var gK = s("g", { "class": "pf-kuppel" });
+      werte.forEach(function (w) {
+        var ziel = null;
+        var nb = grundkarte.nachbarn.filter(function (x) {
+          return x.name === NACHBARNAME[w.land];
+        })[0];
+        if (nb) {
+          var sp = schwerpunkt(nb.ringe);
+          ziel = [sp[0] - mitte[0], sp[1] - mitte[1]];
+        } else if (KUPPEL_RICHTUNG[w.land]) {
+          ziel = KUPPEL_RICHTUNG[w.land];
+        }
+        if (!ziel) { return; }
+        var laenge = Math.sqrt(ziel[0] * ziel[0] + ziel[1] * ziel[1]) || 1;
+        var ex = ziel[0] / laenge, ey = ziel[1] / laenge;
+        // Anker knapp ausserhalb der Landesmitte in Richtung des Nachbarn.
+        var ax = X(mitte[0] + ex * (lonMax - lonMin) * 0.42);
+        var ay = Y(mitte[1] + ey * (latMax - latMin) * 0.42);
+        var px = ex * kx * skala, py = -ey * skala;
+        var pl = Math.sqrt(px * px + py * py) || 1;
+        px /= pl; py /= pl;
+        // Import zeigt nach innen, Export nach aussen.
+        var einwaerts = w.saldo >= 0;
+        var vorz = einwaerts ? -1 : 1;
+        var staerke = groesstes ? Math.abs(w.saldo) / groesstes : 0;
+        var lang = 14 + staerke * 26;
+        var x1 = ax - px * lang / 2 * vorz, y1 = ay - py * lang / 2 * vorz;
+        var x2 = ax + px * lang / 2 * vorz, y2 = ay + py * lang / 2 * vorz;
+        var farbe = einwaerts ? "var(--teal)" : "var(--orange)";
+        var pfeil = s("g", { "class": "pf-pfeil" });
+        pfeil.appendChild(s("line", {
+          x1: x1.toFixed(1), y1: y1.toFixed(1), x2: x2.toFixed(1), y2: y2.toFixed(1),
+          stroke: farbe, "stroke-width": (1.6 + staerke * 3).toFixed(1),
+          "stroke-linecap": "round", "vector-effect": "non-scaling-stroke"
+        }));
+        var sp2 = 4 + staerke * 4;
+        pfeil.appendChild(s("polygon", {
+          points: [x2 + px * sp2, y2 + py * sp2, x2 - py * sp2 * 0.6 - px * sp2 * 0.2,
+                   y2 + px * sp2 * 0.6 - py * sp2 * 0.2,
+                   x2 + py * sp2 * 0.6 - px * sp2 * 0.2,
+                   y2 - px * sp2 * 0.6 - py * sp2 * 0.2].map(function (z) {
+            return z.toFixed(1); }).join(" "),
+          fill: farbe
+        }));
+        var kreis = s("circle", { cx: ax.toFixed(1), cy: ay.toFixed(1), r: "9",
+          fill: "transparent", "class": "pf-pfeil-ziel" });
+        waehlbar(kreis, {
+          art: "Kuppelstelle", titel: w.land,
+          zeilen: [["Richtung", einwaerts ? "Zufluss nach Deutschland"
+                                          : "Abfluss aus Deutschland"],
+                   ["Saldo am " + iso, vz(w.saldo, 2) + " GWh"],
+                   ["Import", gwh(w.imp, 2) + " GWh"],
+                   ["Export", gwh(w.exp, 2) + " GWh"]],
+          fuss: "Gemessen. Richtung und Menge stammen aus den SMARD-Reihen für den "
+            + "physikalischen Stromfluss. Die Lage des Pfeils ist schematisch und "
+            + "bezeichnet keinen konkreten Grenzübergang."
+        });
+        pfeil.appendChild(kreis);
+        gK.appendChild(pfeil);
+      });
+      svg.appendChild(gK);
+    }
+
+    /* Zoom und Verschieben ueber die viewBox. Der Zustand liegt in Z.karte und
+       ueberlebt einen Tageswechsel -- wer hineingezoomt hat, bleibt drin. */
+    function sichtSetzen(neu) {
+      var minB = B / 40, maxB = B * 1.4;
+      neu.w = Math.max(minB, Math.min(maxB, neu.w));
+      neu.h = neu.w * H / B;
+      neu.x = Math.max(-B * 0.3, Math.min(B * 1.3 - neu.w, neu.x));
+      neu.y = Math.max(-H * 0.3, Math.min(H * 1.3 - neu.h, neu.y));
+      Z.karte.sicht = neu;
+      svg.setAttribute("viewBox", [neu.x, neu.y, neu.w, neu.h].join(" "));
+    }
+
+    function zoomAn(faktor, zx, zy) {
+      var a = Z.karte.sicht;
+      var w = a.w * faktor;
+      sichtSetzen({ x: zx - (zx - a.x) * (w / a.w), y: zy - (zy - a.y) * (w / a.w),
+                    w: w, h: a.h * faktor });
+    }
+
+    svg.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      var kasten = svg.getBoundingClientRect();
+      var a = Z.karte.sicht;
+      var zx = a.x + (e.clientX - kasten.left) / kasten.width * a.w;
+      var zy = a.y + (e.clientY - kasten.top) / kasten.height * a.h;
+      zoomAn(e.deltaY > 0 ? 1.15 : 1 / 1.15, zx, zy);
+    }, { passive: false });
+
+    var zieht = null;
+    svg.addEventListener("pointerdown", function (e) {
+      if (e.target !== svg && e.target.getAttribute("tabindex") !== null) { return; }
+      zieht = { x: e.clientX, y: e.clientY, sicht: Object.assign({}, Z.karte.sicht) };
+      svg.setPointerCapture(e.pointerId);
+      svg.setAttribute("data-zieht", "1");
+    });
+    svg.addEventListener("pointermove", function (e) {
+      if (!zieht) { return; }
+      var kasten = svg.getBoundingClientRect();
+      var dx = (e.clientX - zieht.x) / kasten.width * zieht.sicht.w;
+      var dy = (e.clientY - zieht.y) / kasten.height * zieht.sicht.h;
+      sichtSetzen({ x: zieht.sicht.x - dx, y: zieht.sicht.y - dy,
+                    w: zieht.sicht.w, h: zieht.sicht.h });
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function (n) {
+      svg.addEventListener(n, function (e) {
+        if (!zieht) { return; }
+        zieht = null;
+        svg.removeAttribute("data-zieht");
+        try { svg.releasePointerCapture(e.pointerId); } catch (ignoriert) { /* egal */ }
+      });
+    });
+    svg.addEventListener("keydown", function (e) {
+      var a = Z.karte.sicht, schritt = a.w * 0.12;
+      if (e.key === "+" || e.key === "=") { zoomAn(1 / 1.3, a.x + a.w / 2, a.y + a.h / 2); }
+      else if (e.key === "-") { zoomAn(1.3, a.x + a.w / 2, a.y + a.h / 2); }
+      else if (e.key === "ArrowLeft") { sichtSetzen({ x: a.x - schritt, y: a.y, w: a.w, h: a.h }); }
+      else if (e.key === "ArrowRight") { sichtSetzen({ x: a.x + schritt, y: a.y, w: a.w, h: a.h }); }
+      else if (e.key === "ArrowUp") { sichtSetzen({ x: a.x, y: a.y - schritt, w: a.w, h: a.h }); }
+      else if (e.key === "ArrowDown") { sichtSetzen({ x: a.x, y: a.y + schritt, w: a.w, h: a.h }); }
+      else { return; }
+      e.preventDefault();
+    });
+    svg.addEventListener("click", function (e) {
+      if (e.target === svg) { Z.karte.auswahl = null; auswahlZeigen();
+        svg.querySelectorAll("[data-gewaehlt]").forEach(function (x) {
+          x.removeAttribute("data-gewaehlt"); }); }
+    });
+
+    return { svg: svg, zoomAn: zoomAn, sichtSetzen: sichtSetzen, breite: B, hoehe: H };
+  }
+
+  /* Zuordnung deutscher Landesname -> Name in der Grundkarte (englisch). */
+  var NACHBARNAME = {
+    "Daenemark": "Denmark", "Dänemark": "Denmark", "Frankreich": "France",
+    "Luxemburg": "Luxembourg", "Niederlande": "Netherlands",
+    "Oesterreich": "Austria", "Österreich": "Austria", "Polen": "Poland",
+    "Schweiz": "Switzerland", "Tschechien": "Czechia", "Belgien": "Belgium"
+  };
+
+  /* Der Auswahlkasten unter der Karte. Er wird einzeln aktualisiert, damit ein
+     Klick nicht die ganze Seite neu baut und den Zoom verliert. */
+  function auswahlZeigen() {
+    var kasten = document.getElementById("pf-auswahl");
+    if (!kasten) { return; }
+    kasten.textContent = "";
+    var a = Z.karte.auswahl;
+    if (!a) {
+      kasten.appendChild(el("p", { "class": "pf-auswahl-leer",
+        text: "Nichts ausgewählt. Ein Klick auf ein Kraftwerk, ein Umspannwerk oder "
+          + "einen Grenzpfeil zeigt die Einzelheiten hier." }));
+      return;
+    }
+    kasten.appendChild(el("p", { "class": "pf-auswahl-art", text: a.art }));
+    kasten.appendChild(el("h3", { text: a.titel }));
+    var liste = el("dl", { "class": "pf-auswahl-liste" });
+    a.zeilen.forEach(function (z) {
+      liste.appendChild(el("dt", { text: z[0] }));
+      liste.appendChild(el("dd", { text: z[1] }));
+    });
+    kasten.appendChild(liste);
+    kasten.appendChild(el("p", { "class": "pf-auswahl-fuss", text: a.fuss }));
   }
 
   /* Ebenen-Schalter. Das ist KEIN Regler im Sinne der Datendisziplin: er
@@ -533,7 +776,8 @@
   function ebenenSchalter() {
     var kasten = el("div", { "class": "pf-ebenen" });
     [
-      { schluessel: "kraftwerke", text: "Kraftwerke", geladen: true },
+      { schluessel: "kuppelstellen", text: "Flussrichtung an den Kuppelstellen" },
+      { schluessel: "kraftwerke", text: "Kraftwerke" },
       { schluessel: "umspannwerke", text: "Umspannwerke ab 110 kV", datei: "umspannwerke" },
       { schluessel: "hoechstspannung", text: "Leitungen 220/380 kV", datei: "hoechstspannung" },
       { schluessel: "hochspannung", text: "Leitungen 110 kV (5,9 MB)", datei: "hochspannung" }
@@ -560,6 +804,262 @@
       kasten.appendChild(wrap);
     });
     return kasten;
+  }
+
+  // ---- Tagesverlauf -------------------------------------------------------
+  /* Gestapelte Flaechen: Erzeugung nach Energietraeger ueber den Tag, darueber
+     die Netzlast als Linie. Beide in GW -- EINE Achse, nie zwei.
+
+     Zwoelf Traeger waeren als Stapel nicht lesbar. Gruppiert wird auf sieben
+     farbige Baender plus ein graues "Sonstige". Die Farben sind mit dem
+     Validierer geprueft (Helligkeitsband, Chroma, Farbsehschwaeche, Kontrast),
+     hell und dunkel getrennt. Das graue "Sonstige" ist bewusst KEIN achter
+     Farbton, sondern die Sammelposition. */
+  var TRAEGERGRUPPEN = [
+    { name: "Kernenergie", token: "--tr-kern", quellen: ["Kernenergie"] },
+    { name: "Braunkohle", token: "--tr-braun", quellen: ["Braunkohle"] },
+    { name: "Steinkohle", token: "--tr-stein", quellen: ["Steinkohle"] },
+    { name: "Erdgas", token: "--tr-gas", quellen: ["Erdgas"] },
+    { name: "Sonstige", token: "--tr-sonst",
+      quellen: ["Sonstige Konventionelle", "Sonstige Erneuerbare", "Pumpspeicher"] },
+    { name: "Wasser & Biomasse", token: "--tr-bio", quellen: ["Wasserkraft", "Biomasse"] },
+    { name: "Wind", token: "--tr-wind", quellen: ["Wind Onshore", "Wind Offshore"] },
+    { name: "Photovoltaik", token: "--tr-pv", quellen: ["Photovoltaik"] }
+  ];
+
+  function monatVon(iso) { return iso.slice(0, 7); }
+
+  function verlaufLaden(iso) {
+    var m = monatVon(iso);
+    if (Object.prototype.hasOwnProperty.call(Z.verlauf, m)) {
+      return Promise.resolve(Z.verlauf[m]);
+    }
+    return fetch("data/verlauf/" + m + ".json?v=" + VERSION).then(function (r) {
+      if (!r.ok) { throw new Error("kein Verlauf"); }
+      return r.json();
+    }).then(function (d) { Z.verlauf[m] = d; return d; })
+      .catch(function () { Z.verlauf[m] = null; return null; });
+  }
+
+  /* Stundenwerte eines Tages, gruppiert. Rueckgabe null, wenn der Monat fehlt. */
+  function verlaufTag(iso) {
+    var d = Z.verlauf[monatVon(iso)];
+    if (!d) { return null; }
+    var idx = [];
+    for (var i = 0; i < d.stunden.length; i++) {
+      if (d.stunden[i].slice(0, 10) === iso) { idx.push(i); }
+    }
+    if (!idx.length) { return null; }
+    var reihen = TRAEGERGRUPPEN.map(function (g) {
+      var werte = idx.map(function (k) {
+        var summe = 0;
+        g.quellen.forEach(function (q) {
+          var r = d.erzeugung[q];
+          if (r && r[k] !== null && r[k] !== undefined) { summe += r[k]; }
+        });
+        return summe;
+      });
+      return { name: g.name, token: g.token, werte: werte,
+               summe: werte.reduce(function (a, b) { return a + b; }, 0) };
+    });
+    return {
+      stunden: idx.map(function (k) { return Number(d.stunden[k].slice(11, 13)); }),
+      netzlast: idx.map(function (k) { return d.netzlast[k]; }),
+      reihen: reihen
+    };
+  }
+
+  function verlaufDiagramm(iso) {
+    var v = verlaufTag(iso);
+    var huelle = el("div", { "class": "pf-verlauf" });
+    if (!v) {
+      huelle.appendChild(el("p", { "class": "pf-laden",
+        text: "Für diesen Tag liegt noch kein Stundenverlauf im Repository." }));
+      return huelle;
+    }
+
+    var B = 900, H = 320, links = 46, rechts = 12, oben = 16, unten = 26;
+    var n = v.stunden.length;
+    var innenB = B - links - rechts, innenH = H - oben - unten;
+
+    var stapel = [], laufend = [], maxWert = 0, i;
+    for (i = 0; i < n; i++) { laufend.push(0); }
+    v.reihen.forEach(function (r) {
+      var unterkante = laufend.slice();
+      laufend = laufend.map(function (x, k) { return x + r.werte[k]; });
+      stapel.push({ reihe: r, unten: unterkante, oben: laufend.slice() });
+    });
+    laufend.forEach(function (x) { if (x > maxWert) { maxWert = x; } });
+    v.netzlast.forEach(function (x) { if (x !== null && x > maxWert) { maxWert = x; } });
+    var achse = Math.max(10, Math.ceil(maxWert / 1000 / 10) * 10);
+
+    function X(k) { return links + (n === 1 ? innenB / 2 : k / (n - 1) * innenB); }
+    function Y(mwh) { return oben + innenH - (mwh / 1000) / achse * innenH; }
+
+    var svg = s("svg", {
+      "class": "pf-diagramm", viewBox: "0 0 " + B + " " + H, role: "img",
+      tabindex: "0",
+      "aria-label": "Erzeugung nach Energieträger im Tagesverlauf am " + datumLang(iso)
+        + ", gestapelt in GW, dazu die Netzlast als Linie"
+    });
+
+    var gitter = s("g", { "class": "pf-gitter" });
+    for (var g = 0; g <= achse; g += achse / 4) {
+      var y = Y(g * 1000);
+      gitter.appendChild(s("line", { x1: links, x2: B - rechts, y1: y, y2: y }));
+      var tx = s("text", { x: links - 6, y: y + 3.5, "text-anchor": "end" });
+      tx.textContent = nf0.format(g);
+      gitter.appendChild(tx);
+    }
+    for (var h = 0; h < n; h += 3) {
+      var t2 = s("text", { x: X(h), y: H - 8, "text-anchor": "middle" });
+      t2.textContent = (v.stunden[h] < 10 ? "0" : "") + v.stunden[h];
+      gitter.appendChild(t2);
+    }
+    var einheit = s("text", { x: links - 6, y: oben - 4, "text-anchor": "end",
+      "class": "pf-achsentitel" });
+    einheit.textContent = "GW";
+    gitter.appendChild(einheit);
+    svg.appendChild(gitter);
+
+    /* Gestapelte Flaechen mit 2 px Fuge in der Flaechenfarbe des Untergrunds,
+       damit die Grenze zwischen zwei Baendern sichtbar bleibt. */
+    var gFl = s("g", { "class": "pf-flaechen" });
+    stapel.forEach(function (b) {
+      if (b.reihe.summe <= 0) { return; }
+      var d = "M" + X(0).toFixed(1) + " " + Y(b.unten[0]).toFixed(1);
+      var k;
+      for (k = 0; k < n; k++) { d += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1); }
+      for (k = n - 1; k >= 0; k--) { d += "L" + X(k).toFixed(1) + " " + Y(b.unten[k]).toFixed(1); }
+      gFl.appendChild(s("path", {
+        d: d + "Z", fill: "var(" + b.reihe.token + ")",
+        stroke: "var(--flaeche)", "stroke-width": "2", "stroke-linejoin": "round"
+      }));
+    });
+    svg.appendChild(gFl);
+
+    /* Netzlast als 2-px-Linie in Textfarbe. Sie ist kein Energietraeger und
+       bekommt deshalb keinen Traegerfarbton. */
+    var dl = "";
+    v.netzlast.forEach(function (x, k) {
+      if (x === null) { return; }
+      dl += (dl ? "L" : "M") + X(k).toFixed(1) + " " + Y(x).toFixed(1);
+    });
+    if (dl) { svg.appendChild(s("path", { d: dl, "class": "pf-lastlinie", fill: "none" })); }
+
+    var kreuz = s("line", { "class": "pf-kreuz", y1: oben, y2: H - unten, x1: "-99", x2: "-99" });
+    svg.appendChild(kreuz);
+    huelle.appendChild(svg);
+
+    /* Die Ablesung steht in einem festen Kasten unter dem Bild, nicht in einem
+       schwebenden Tooltip: der ist auf dem Handy nicht zu treffen und
+       verschwindet, sobald man ihn lesen will. */
+    var ablesung = el("div", { "class": "pf-ablesung", role: "status" });
+    huelle.appendChild(ablesung);
+
+    var stunde = Math.min(12, n - 1);
+
+    function zeige(k) {
+      stunde = k;
+      kreuz.setAttribute("x1", X(k));
+      kreuz.setAttribute("x2", X(k));
+      ablesung.textContent = "";
+      ablesung.appendChild(el("strong", {
+        text: (v.stunden[k] < 10 ? "0" : "") + v.stunden[k] + ":00 Uhr" }));
+      var liste = el("div", { "class": "pf-ablesung-liste" });
+      if (v.netzlast[k] !== null) {
+        var zl = el("span", { "class": "pf-ablesung-zeile" });
+        zl.appendChild(el("i", { "class": "pf-strich pf-last" }));
+        zl.appendChild(document.createTextNode(
+          " Netzlast " + nf1.format(v.netzlast[k] / 1000) + " GW"));
+        liste.appendChild(zl);
+      }
+      v.reihen.slice().reverse().forEach(function (r) {
+        if (!r.werte[k]) { return; }
+        var z = el("span", { "class": "pf-ablesung-zeile" });
+        z.appendChild(el("i", { style: "background:var(" + r.token + ");" }));
+        z.appendChild(document.createTextNode(
+          " " + r.name + " " + nf1.format(r.werte[k] / 1000) + " GW"));
+        liste.appendChild(z);
+      });
+      ablesung.appendChild(liste);
+    }
+
+    function ausPosition(punkt) {
+      var kasten = svg.getBoundingClientRect();
+      var px = (punkt.clientX - kasten.left) / kasten.width * B;
+      var k = Math.round((px - links) / innenB * (n - 1));
+      zeige(Math.max(0, Math.min(n - 1, k)));
+    }
+    svg.addEventListener("mousemove", ausPosition);
+    svg.addEventListener("touchmove", function (e) {
+      if (e.touches.length) { ausPosition(e.touches[0]); }
+    }, { passive: true });
+    svg.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight") { zeige(Math.min(n - 1, stunde + 1)); }
+      else if (e.key === "ArrowLeft") { zeige(Math.max(0, stunde - 1)); }
+      else { return; }
+      e.preventDefault();
+    });
+    zeige(stunde);
+
+    /* Legende. Bei acht Baendern Pflicht; der Anteil steht dabei, damit die
+       Identitaet nicht allein an der Farbe haengt. */
+    var tagessumme = v.reihen.reduce(function (a, r) { return a + r.summe; }, 0) || 1;
+    var legende = el("div", { "class": "pf-legende pf-legende-traeger" });
+    v.reihen.slice().reverse().forEach(function (r) {
+      if (!r.summe) { return; }
+      var sp = el("span");
+      sp.appendChild(el("i", { style: "background:var(" + r.token + ");" }));
+      sp.appendChild(document.createTextNode(
+        r.name + " " + nf1.format(r.summe / tagessumme * 100) + " %"));
+      legende.appendChild(sp);
+    });
+    var spl = el("span");
+    spl.appendChild(el("i", { "class": "pf-strich pf-last" }));
+    spl.appendChild(document.createTextNode("Netzlast"));
+    legende.appendChild(spl);
+    huelle.appendChild(legende);
+
+    /* Tabellenansicht. Pflicht, damit die Zahlen auch ohne Farbe lesbar sind --
+       und weil der Goldton der Photovoltaik den Kontrastwert 3:1 gegen die
+       helle Flaeche nicht erreicht. */
+    var schalter = el("button", { "class": "pf-tabellenschalter", type: "button",
+      "aria-expanded": "false", text: "Als Tabelle anzeigen" });
+    var tabHuelle = el("div", { "class": "pf-tabellen-rollbereich" });
+    tabHuelle.hidden = true;
+    schalter.addEventListener("click", function () {
+      var auf = tabHuelle.hidden;
+      tabHuelle.hidden = !auf;
+      schalter.setAttribute("aria-expanded", auf ? "true" : "false");
+      schalter.textContent = auf ? "Tabelle ausblenden" : "Als Tabelle anzeigen";
+      if (auf && !tabHuelle.childNodes.length) {
+        var tab = el("table", { "class": "pf-tabelle" });
+        var kopfz = el("tr");
+        kopfz.appendChild(el("th", { text: "Stunde", scope: "col" }));
+        v.reihen.forEach(function (r) {
+          if (r.summe) { kopfz.appendChild(el("th", { text: r.name + " GW", scope: "col" })); }
+        });
+        kopfz.appendChild(el("th", { text: "Netzlast GW", scope: "col" }));
+        var kopf = el("thead"); kopf.appendChild(kopfz); tab.appendChild(kopf);
+        var koerper = el("tbody");
+        v.stunden.forEach(function (st, k) {
+          var tr = el("tr");
+          tr.appendChild(el("td", { text: (st < 10 ? "0" : "") + st + ":00" }));
+          v.reihen.forEach(function (r) {
+            if (r.summe) { tr.appendChild(el("td", { text: nf1.format(r.werte[k] / 1000) })); }
+          });
+          tr.appendChild(el("td", { text: v.netzlast[k] === null ? "—"
+            : nf1.format(v.netzlast[k] / 1000) }));
+          koerper.appendChild(tr);
+        });
+        tab.appendChild(koerper);
+        tabHuelle.appendChild(tab);
+      }
+    });
+    huelle.appendChild(schalter);
+    huelle.appendChild(tabHuelle);
+    return huelle;
   }
 
   // ---- CSV-Export ---------------------------------------------------------
@@ -890,11 +1390,42 @@
       balkenliste(ab, "var(--orange)", maxAb)));
     neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh am Tag)", fluss));
 
+    // --- Tagesverlauf ---
+    neu.appendChild(abschnitt(
+      "Tagesverlauf · Erzeugung nach Energieträger (GW)", verlaufDiagramm(iso)));
+
     // --- Karte ---
     var karteHuelle = el("div", { "class": "pf-karte-huelle" });
     var roll = el("div", { "class": "pf-karte-rollbereich" });
-    roll.appendChild(karte(Z.grundkarte, Z.kraftwerke.anlagen));
+    var K = karte(Z.grundkarte, Z.kraftwerke.anlagen, iso);
+    roll.appendChild(K.svg);
     karteHuelle.appendChild(roll);
+
+    // Bedienung der Karte. Zoom auch ohne Rad und ohne Zeigegeraet.
+    var kbed = el("div", { "class": "pf-kartenbedienung" });
+    [["+", "Hineinzoomen", 1 / 1.4], ["−", "Herauszoomen", 1.4]].forEach(function (b) {
+      var kn = el("button", { "class": "pf-schritt", type: "button",
+        "aria-label": b[1], text: b[0] });
+      kn.addEventListener("click", function () {
+        var a = Z.karte.sicht;
+        K.zoomAn(b[2], a.x + a.w / 2, a.y + a.h / 2);
+      });
+      kbed.appendChild(kn);
+    });
+    var kzur = el("button", { "class": "pf-zuruecksetzen", type: "button",
+      text: "Ansicht zurücksetzen" });
+    kzur.addEventListener("click", function () {
+      K.sichtSetzen({ x: 0, y: 0, w: K.breite, h: K.hoehe });
+    });
+    kbed.appendChild(kzur);
+    kbed.appendChild(el("span", { "class": "pf-kartenhinweis",
+      text: "Mausrad oder +/− zoomt, Ziehen verschiebt, Klick wählt aus. "
+        + "Mit der Tastatur: anfahren, dann Pfeiltasten und +/−." }));
+    karteHuelle.appendChild(kbed);
+
+    var auswahlkasten = el("div", { "class": "pf-auswahl", id: "pf-auswahl",
+      "aria-live": "polite" });
+    karteHuelle.appendChild(auswahlkasten);
     karteHuelle.appendChild(ebenenSchalter());
 
     var legende = el("div", { "class": "pf-legende" });
@@ -910,6 +1441,14 @@
       sp.appendChild(document.createTextNode(z));
       legende.appendChild(sp);
     });
+    var spI = el("span");
+    spI.appendChild(el("i", { style: "background:var(--teal);" }));
+    spI.appendChild(document.createTextNode("Pfeil nach innen: Zufluss"));
+    legende.appendChild(spI);
+    var spE = el("span");
+    spE.appendChild(el("i", { style: "background:var(--orange);" }));
+    spE.appendChild(document.createTextNode("Pfeil nach außen: Abfluss"));
+    legende.appendChild(spE);
     legende.appendChild(el("span", { text: "Punktfläche ∝ Nettoleistung" }));
     karteHuelle.appendChild(legende);
 
@@ -919,7 +1458,8 @@
       "class": "pf-karte-warnung",
       text: "Die Leitungen zeigen Verlauf und Spannungsebene — keinen Lastfluss und keine "
         + "Auslastung. Wie viel Strom über eine einzelne Leitung fließt, wird nach "
-        + "§ 23c Abs. 2 EnWG nicht veröffentlicht."
+        + "§ 23c Abs. 2 EnWG nicht veröffentlicht. Eine Richtung zeigen nur die Pfeile an "
+        + "den Kuppelstellen: dort ist sie gemessen. Ihre Lage ist schematisch."
     }));
 
     var anzahlen = [];
@@ -1011,8 +1551,12 @@
     var ul2 = el("ul");
     [
       "Regelzonen als Fläche auf der Karte — dafür fehlt eine belegbare Geometrie.",
+      "Richtung des Stromflusses innerhalb Deutschlands. Gezeigt wird sie nur an den "
+        + "Kuppelstellen, weil sie nur dort gemessen ist.",
       "Mittelspannung — in OpenStreetMap kaum erfasst.",
-      "Intraday-Verlauf: die Seite zeigt bisher nur Tagessummen, keine Viertelstundenkurve.",
+      "Der Tagesverlauf zeigt Stundenwerte. Viertelstundenwerte lägen bei SMARD vor, "
+        + "wären als Datei aber viermal so groß.",
+      "Import und Export im Tagesverlauf — bisher nur als Tagessumme.",
       "Methodik-PDF und der Gesamtlauf über alle Referenzjahre fehlen noch.",
       "Der Kraftwerks-Endpunkt von SMARD ist undokumentiert und kann sich ohne Ankündigung "
         + "ändern."
@@ -1065,6 +1609,7 @@
 
     Z.wurzel.parentNode.replaceChild(neu, Z.wurzel);
     Z.wurzel = neu;
+    auswahlZeigen();
   }
 
   function tagSetzen(iso) {
@@ -1072,7 +1617,7 @@
     if (iso > Z.maxTag) { iso = Z.maxTag; }
     popoverSchliessen();
     var jahr = Number(iso.slice(0, 4));
-    Promise.all([jahrLaden(jahr), jahrLaden(jahr - 1)]).then(function () {
+    Promise.all([jahrLaden(jahr), jahrLaden(jahr - 1), verlaufLaden(iso)]).then(function () {
       if (kennzahlen(iso) === null) { return; }
       Z.tag = iso;
       zeichnen();
@@ -1114,7 +1659,7 @@
       Z.maxTag = letzte.letzter_belegter_tag || letzte.letzter_tag;
       Z.starttag = Z.maxTag;
       var jahr = Number(Z.maxTag.slice(0, 4));
-      return Promise.all([jahrLaden(jahr), jahrLaden(jahr - 1)]);
+      return Promise.all([jahrLaden(jahr), jahrLaden(jahr - 1), verlaufLaden(Z.starttag)]);
     }).then(function () {
       Z.tag = Z.starttag;
       zeichnen();

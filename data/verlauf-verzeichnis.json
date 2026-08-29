@@ -1,0 +1,706 @@
+{
+ "abgerufen": "2026-08-30T01:53:49+02:00",
+ "hinweis": "Verzeichnis der Monatsdateien mit Stundenwerten. Die Seite laedt den Monat des gewaehlten Tages.",
+ "monate": [
+  {
+   "monat": "2015-01",
+   "datei": "data/verlauf/2015-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2015-02",
+   "datei": "data/verlauf/2015-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2015-03",
+   "datei": "data/verlauf/2015-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2015-04",
+   "datei": "data/verlauf/2015-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2015-05",
+   "datei": "data/verlauf/2015-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2015-06",
+   "datei": "data/verlauf/2015-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2015-07",
+   "datei": "data/verlauf/2015-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2015-08",
+   "datei": "data/verlauf/2015-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2015-09",
+   "datei": "data/verlauf/2015-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2015-10",
+   "datei": "data/verlauf/2015-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2015-11",
+   "datei": "data/verlauf/2015-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2015-12",
+   "datei": "data/verlauf/2015-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2016-01",
+   "datei": "data/verlauf/2016-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2016-02",
+   "datei": "data/verlauf/2016-02.json",
+   "stunden": 696
+  },
+  {
+   "monat": "2016-03",
+   "datei": "data/verlauf/2016-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2016-04",
+   "datei": "data/verlauf/2016-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2016-05",
+   "datei": "data/verlauf/2016-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2016-06",
+   "datei": "data/verlauf/2016-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2016-07",
+   "datei": "data/verlauf/2016-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2016-08",
+   "datei": "data/verlauf/2016-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2016-09",
+   "datei": "data/verlauf/2016-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2016-10",
+   "datei": "data/verlauf/2016-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2016-11",
+   "datei": "data/verlauf/2016-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2016-12",
+   "datei": "data/verlauf/2016-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2017-01",
+   "datei": "data/verlauf/2017-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2017-02",
+   "datei": "data/verlauf/2017-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2017-03",
+   "datei": "data/verlauf/2017-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2017-04",
+   "datei": "data/verlauf/2017-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2017-05",
+   "datei": "data/verlauf/2017-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2017-06",
+   "datei": "data/verlauf/2017-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2017-07",
+   "datei": "data/verlauf/2017-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2017-08",
+   "datei": "data/verlauf/2017-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2017-09",
+   "datei": "data/verlauf/2017-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2017-10",
+   "datei": "data/verlauf/2017-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2017-11",
+   "datei": "data/verlauf/2017-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2017-12",
+   "datei": "data/verlauf/2017-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2018-01",
+   "datei": "data/verlauf/2018-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2018-02",
+   "datei": "data/verlauf/2018-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2018-03",
+   "datei": "data/verlauf/2018-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2018-04",
+   "datei": "data/verlauf/2018-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2018-05",
+   "datei": "data/verlauf/2018-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2018-06",
+   "datei": "data/verlauf/2018-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2018-07",
+   "datei": "data/verlauf/2018-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2018-08",
+   "datei": "data/verlauf/2018-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2018-09",
+   "datei": "data/verlauf/2018-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2018-10",
+   "datei": "data/verlauf/2018-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2018-11",
+   "datei": "data/verlauf/2018-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2018-12",
+   "datei": "data/verlauf/2018-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2019-01",
+   "datei": "data/verlauf/2019-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2019-02",
+   "datei": "data/verlauf/2019-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2019-03",
+   "datei": "data/verlauf/2019-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2019-04",
+   "datei": "data/verlauf/2019-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2019-05",
+   "datei": "data/verlauf/2019-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2019-06",
+   "datei": "data/verlauf/2019-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2019-07",
+   "datei": "data/verlauf/2019-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2019-08",
+   "datei": "data/verlauf/2019-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2019-09",
+   "datei": "data/verlauf/2019-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2019-10",
+   "datei": "data/verlauf/2019-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2019-11",
+   "datei": "data/verlauf/2019-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2019-12",
+   "datei": "data/verlauf/2019-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2020-01",
+   "datei": "data/verlauf/2020-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2020-02",
+   "datei": "data/verlauf/2020-02.json",
+   "stunden": 696
+  },
+  {
+   "monat": "2020-03",
+   "datei": "data/verlauf/2020-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2020-04",
+   "datei": "data/verlauf/2020-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2020-05",
+   "datei": "data/verlauf/2020-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2020-06",
+   "datei": "data/verlauf/2020-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2020-07",
+   "datei": "data/verlauf/2020-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2020-08",
+   "datei": "data/verlauf/2020-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2020-09",
+   "datei": "data/verlauf/2020-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2020-10",
+   "datei": "data/verlauf/2020-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2020-11",
+   "datei": "data/verlauf/2020-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2020-12",
+   "datei": "data/verlauf/2020-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2021-01",
+   "datei": "data/verlauf/2021-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2021-02",
+   "datei": "data/verlauf/2021-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2021-03",
+   "datei": "data/verlauf/2021-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2021-04",
+   "datei": "data/verlauf/2021-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2021-05",
+   "datei": "data/verlauf/2021-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2021-06",
+   "datei": "data/verlauf/2021-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2021-07",
+   "datei": "data/verlauf/2021-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2021-08",
+   "datei": "data/verlauf/2021-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2021-09",
+   "datei": "data/verlauf/2021-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2021-10",
+   "datei": "data/verlauf/2021-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2021-11",
+   "datei": "data/verlauf/2021-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2021-12",
+   "datei": "data/verlauf/2021-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2022-01",
+   "datei": "data/verlauf/2022-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2022-02",
+   "datei": "data/verlauf/2022-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2022-03",
+   "datei": "data/verlauf/2022-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2022-04",
+   "datei": "data/verlauf/2022-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2022-05",
+   "datei": "data/verlauf/2022-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2022-06",
+   "datei": "data/verlauf/2022-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2022-07",
+   "datei": "data/verlauf/2022-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2022-08",
+   "datei": "data/verlauf/2022-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2022-09",
+   "datei": "data/verlauf/2022-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2022-10",
+   "datei": "data/verlauf/2022-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2022-11",
+   "datei": "data/verlauf/2022-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2022-12",
+   "datei": "data/verlauf/2022-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2023-01",
+   "datei": "data/verlauf/2023-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2023-02",
+   "datei": "data/verlauf/2023-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2023-03",
+   "datei": "data/verlauf/2023-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2023-04",
+   "datei": "data/verlauf/2023-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2023-05",
+   "datei": "data/verlauf/2023-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2023-06",
+   "datei": "data/verlauf/2023-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2023-07",
+   "datei": "data/verlauf/2023-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2023-08",
+   "datei": "data/verlauf/2023-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2023-09",
+   "datei": "data/verlauf/2023-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2023-10",
+   "datei": "data/verlauf/2023-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2023-11",
+   "datei": "data/verlauf/2023-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2023-12",
+   "datei": "data/verlauf/2023-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2024-01",
+   "datei": "data/verlauf/2024-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2024-02",
+   "datei": "data/verlauf/2024-02.json",
+   "stunden": 696
+  },
+  {
+   "monat": "2024-03",
+   "datei": "data/verlauf/2024-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2024-04",
+   "datei": "data/verlauf/2024-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2024-05",
+   "datei": "data/verlauf/2024-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2024-06",
+   "datei": "data/verlauf/2024-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2024-07",
+   "datei": "data/verlauf/2024-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2024-08",
+   "datei": "data/verlauf/2024-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2024-09",
+   "datei": "data/verlauf/2024-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2024-10",
+   "datei": "data/verlauf/2024-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2024-11",
+   "datei": "data/verlauf/2024-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2024-12",
+   "datei": "data/verlauf/2024-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2025-01",
+   "datei": "data/verlauf/2025-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2025-02",
+   "datei": "data/verlauf/2025-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2025-03",
+   "datei": "data/verlauf/2025-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2025-04",
+   "datei": "data/verlauf/2025-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2025-05",
+   "datei": "data/verlauf/2025-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2025-06",
+   "datei": "data/verlauf/2025-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2025-07",
+   "datei": "data/verlauf/2025-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2025-08",
+   "datei": "data/verlauf/2025-08.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2025-09",
+   "datei": "data/verlauf/2025-09.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2025-10",
+   "datei": "data/verlauf/2025-10.json",
+   "stunden": 745
+  },
+  {
+   "monat": "2025-11",
+   "datei": "data/verlauf/2025-11.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2025-12",
+   "datei": "data/verlauf/2025-12.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2026-01",
+   "datei": "data/verlauf/2026-01.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2026-02",
+   "datei": "data/verlauf/2026-02.json",
+   "stunden": 672
+  },
+  {
+   "monat": "2026-03",
+   "datei": "data/verlauf/2026-03.json",
+   "stunden": 743
+  },
+  {
+   "monat": "2026-04",
+   "datei": "data/verlauf/2026-04.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2026-05",
+   "datei": "data/verlauf/2026-05.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2026-06",
+   "datei": "data/verlauf/2026-06.json",
+   "stunden": 720
+  },
+  {
+   "monat": "2026-07",
+   "datei": "data/verlauf/2026-07.json",
+   "stunden": 744
+  },
+  {
+   "monat": "2026-08",
+   "datei": "data/verlauf/2026-08.json",
+   "stunden": 690
+  }
+ ]
+}

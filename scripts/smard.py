@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import time as _time
 import urllib.error
 import urllib.request
 from zoneinfo import ZoneInfo
@@ -121,17 +122,34 @@ class Nichtvorhanden(LookupError):
     """
 
 
+# Ein Abruf ueber tausende Dateien laeuft irgendwann in einen Aussetzer der
+# Gegenstelle. Das ist kein Grund, den ganzen Lauf wegzuwerfen -- aber auch kein
+# Grund, still weiterzumachen: nach drei vergeblichen Versuchen fliegt der
+# Fehler weiter nach oben.
+VERSUCHE = 3
+WARTEN_S = 4.0
+
+
 def _hole(pfad: str) -> dict:
     anfrage = urllib.request.Request(
         BASIS + pfad, headers={"User-Agent": USER_AGENT, "Accept": "application/json"}
     )
-    try:
-        with urllib.request.urlopen(anfrage, timeout=60) as antwort:
-            return json.loads(antwort.read().decode("utf-8"))
-    except urllib.error.HTTPError as fehler:
-        if fehler.code == 404:
-            raise Nichtvorhanden(pfad) from fehler
-        raise
+    letzter: Exception | None = None
+    for versuch in range(VERSUCHE):
+        try:
+            with urllib.request.urlopen(anfrage, timeout=60) as antwort:
+                return json.loads(antwort.read().decode("utf-8"))
+        except urllib.error.HTTPError as fehler:
+            # 404 heisst "gibt es nicht" und wird NICHT wiederholt -- das ist
+            # eine Antwort, kein Aussetzer.
+            if fehler.code == 404:
+                raise Nichtvorhanden(pfad) from fehler
+            letzter = fehler
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as fehler:
+            letzter = fehler
+        if versuch < VERSUCHE - 1:
+            _time.sleep(WARTEN_S * (versuch + 1))
+    raise RuntimeError(f"{pfad}: nach {VERSUCHE} Versuchen aufgegeben") from letzter
 
 
 def wochenbloecke(filter_id: int, region: str, aufloesung: str) -> list[int]:
