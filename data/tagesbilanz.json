@@ -1,0 +1,184 @@
+{
+  "tag": "2026-08-19",
+  "abgerufen": "2026-08-30T00:11:34+02:00",
+  "netzlast_mwh": 1209350.65,
+  "erzeugung_mwh": 1174649.04,
+  "residuallast_mwh": 626085.86,
+  "pumpspeicherverbrauch_mwh": 26434.44,
+  "import_mwh": 167159.71,
+  "export_mwh": 131599.15,
+  "aussensaldo_mwh": 35560.56,
+  "bilanzrest_mwh": 858.95,
+  "bilanzrest_prozent": 0.071,
+  "mittlere_leistung_mw": 50389.61,
+  "erzeugung": [
+    {
+      "filter_id": 4067,
+      "traeger": "Wind Onshore",
+      "mwh": 270954.73
+    },
+    {
+      "filter_id": 4068,
+      "traeger": "Photovoltaik",
+      "mwh": 244707.88
+    },
+    {
+      "filter_id": 1223,
+      "traeger": "Braunkohle",
+      "mwh": 153251.98
+    },
+    {
+      "filter_id": 4071,
+      "traeger": "Erdgas",
+      "mwh": 147769.2
+    },
+    {
+      "filter_id": 4069,
+      "traeger": "Steinkohle",
+      "mwh": 91325.14
+    },
+    {
+      "filter_id": 4066,
+      "traeger": "Biomasse",
+      "mwh": 90264.01
+    },
+    {
+      "filter_id": 1225,
+      "traeger": "Wind Offshore",
+      "mwh": 67602.12
+    },
+    {
+      "filter_id": 1227,
+      "traeger": "Sonstige Konventionelle",
+      "mwh": 41382.75
+    },
+    {
+      "filter_id": 1226,
+      "traeger": "Wasserkraft",
+      "mwh": 39058.39
+    },
+    {
+      "filter_id": 4070,
+      "traeger": "Pumpspeicher",
+      "mwh": 26178.72
+    },
+    {
+      "filter_id": 1228,
+      "traeger": "Sonstige Erneuerbare",
+      "mwh": 2154.12
+    }
+  ],
+  "regelzonen": [
+    {
+      "zone": "50Hertz",
+      "netzlast_mwh": 271571.9,
+      "erzeugung_mwh": 339776.62,
+      "saldo_mwh": 68204.72,
+      "nicht_vorhanden": []
+    },
+    {
+      "zone": "TenneT",
+      "netzlast_mwh": 403053.6,
+      "erzeugung_mwh": 407238.89,
+      "saldo_mwh": 4185.29,
+      "nicht_vorhanden": []
+    },
+    {
+      "zone": "Amprion",
+      "netzlast_mwh": 377940.9,
+      "erzeugung_mwh": 292381.16,
+      "saldo_mwh": -85559.74,
+      "nicht_vorhanden": [
+        "Wind",
+        "Offshore"
+      ]
+    },
+    {
+      "zone": "TransnetBW",
+      "netzlast_mwh": 156784.5,
+      "erzeugung_mwh": 135253.8,
+      "saldo_mwh": -21530.7,
+      "nicht_vorhanden": [
+        "Braunkohle",
+        "Wind",
+        "Offshore"
+      ]
+    }
+  ],
+  "aussenhandel": [
+    {
+      "land": "Frankreich",
+      "import_mwh": 50623.57,
+      "export_mwh": 0.0,
+      "saldo_mwh": 50623.57
+    },
+    {
+      "land": "Niederlande",
+      "import_mwh": 41463.66,
+      "export_mwh": 17296.25,
+      "saldo_mwh": 24167.41
+    },
+    {
+      "land": "Norwegen",
+      "import_mwh": 17954.48,
+      "export_mwh": 2683.94,
+      "saldo_mwh": 15270.54
+    },
+    {
+      "land": "Schweiz",
+      "import_mwh": 18733.94,
+      "export_mwh": 6872.06,
+      "saldo_mwh": 11861.88
+    },
+    {
+      "land": "Belgien",
+      "import_mwh": 4675.35,
+      "export_mwh": 4100.57,
+      "saldo_mwh": 574.78
+    },
+    {
+      "land": "Schweden",
+      "import_mwh": 0.0,
+      "export_mwh": 0.0,
+      "saldo_mwh": 0.0
+    },
+    {
+      "land": "Daenemark",
+      "import_mwh": 15560.2,
+      "export_mwh": 19374.87,
+      "saldo_mwh": -3814.67
+    },
+    {
+      "land": "Luxemburg",
+      "import_mwh": 0.0,
+      "export_mwh": 7613.23,
+      "saldo_mwh": -7613.23
+    },
+    {
+      "land": "Tschechien",
+      "import_mwh": 4643.99,
+      "export_mwh": 16229.96,
+      "saldo_mwh": -11585.97
+    },
+    {
+      "land": "Oesterreich",
+      "import_mwh": 10163.36,
+      "export_mwh": 31206.46,
+      "saldo_mwh": -21043.1
+    },
+    {
+      "land": "Polen",
+      "import_mwh": 3341.16,
+      "export_mwh": 26221.81,
+      "saldo_mwh": -22880.65
+    }
+  ],
+  "kontrolle": {
+    "regelzonen_last_summe_mwh": 1209350.9,
+    "regelzonen_erzeugung_summe_mwh": 1174650.47,
+    "abweichung_last_mwh": 0.25,
+    "abweichung_erzeugung_mwh": 1.43,
+    "residuallast_nachgerechnet_mwh": 626085.92,
+    "residuallast_abweichung_mwh": 0.06
+  }
+}

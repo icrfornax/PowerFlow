@@ -19,31 +19,57 @@ kein Terminal, kein lokaler Klon, Dateilieferung per Upload, Dateinamen ohne
 Bindestriche, Arbeit ueber die Browser-Erweiterung. Dateinamen duerfen normal
 mit Bindestrichen benannt werden.
 
-## Offene Punkte — vor dem ersten Frontend-Code klaeren
+## Leitfrage — entschieden am 30.08.2026
 
-- **Leitfrage (Vorschlag, von Immo noch zu bestaetigen):** Wie deckt Deutschland
-  seinen Strombedarf an einem Tag, und welcher Anteil kommt von aussen?
-- **Freie Variable (Vorschlag, noch zu bestaetigen):** das Referenzjahr, gegen
-  das der Tageswert verglichen wird.
+**Wo wird in Deutschland an einem Tag Strom erzeugt, wo verbraucht, und wie
+gross ist das Ungleichgewicht je Regelzone?** Dazu, welcher Anteil von aussen
+kommt — je Kuppelstelle.
 
-Solange beide Punkte offen sind: Datenquellen belegen und Abrufskripte bauen ist
-erlaubt, Frontend-Code nicht.
+Nord-Sued und Ost-West erscheinen als **Folgerung aus gemessenen Groessen**,
+nicht als eigene Zahl. Grund: Fluesse zwischen den vier Regelzonen werden nicht
+veroeffentlicht (Deutschland und Luxemburg sind eine einzige Gebotszone, die
+EU-Verordnung 543/2013 Art. 12.1(g) verlangt physikalische Fluesse nur zwischen
+Gebotszonen). Ein Pfeil "50Hertz nach TransnetBW: X GW" waere eine
+Modellrechnung und ist damit ausgeschlossen. Beleg: `docs/beleg-smard.md`.
+
+## Offener Punkt
+
+- **Freie Variable — noch nicht entschieden.** Zur Wahl stehen das Referenzjahr
+  und der dargestellte Kalendertag. Es darf genau eine davon werden; die andere
+  wird dann fest. Solange das offen ist, gibt es auf der Seite **keinen Regler**,
+  sondern an dieser Stelle einen sichtbaren Platzhalter.
 
 ## Umfang
 
-Gemessen darstellbar und damit im Umfang:
+Gemessen oder als Stammdatum bereitgestellt und damit im Umfang:
 
-- Erzeugung nach Quelle, Last, Import/Export als Tagesbilanz
-- Redispatch als eigene Kachel (netztransparenz.de)
-- Grenzueberschreitende Fluesse **je Kuppelstelle**
+- Erzeugung nach Quelle, Last, Import/Export als Tagesbilanz — **belegt**
+- Erzeugung und Last **je Regelzone**; die vier Zonen summieren sich exakt auf
+  Deutschland — **belegt**
+- Grenzueberschreitende Fluesse **je Kuppelstelle**, Import und Export getrennt
+  je Nachbarland — **belegt**, `docs/beleg-aussenhandel.md`
+- **596 Kraftwerksstandorte mit Koordinaten**, davon 211 Bloecke mit
+  viertelstuendlicher Erzeugung — **belegt**, `docs/beleg-kraftwerksdaten.md`
+- Redispatch als eigene Kachel (netztransparenz.de) — noch nicht erschlossen,
+  braucht ein Zugangstoken
+- Geografie von Leitungen und Umspannwerken (Hoechst-, Hoch-, ggf.
+  Mittelspannung) — **Quelle noch zu belegen**, offener Punkt
 
-Nicht im Umfang: Fluesse auf einzelnen Hoch- und Hoechstspannungsleitungen. Nach
-§ 23c Abs. 2 EnWG werden grenzueberschreitende Lastfluesse nur zusammengefasst je
-Kuppelstelle veroeffentlicht; Standort- und Anlagendaten der Uebertragungsnetz-
-betreiber sind vertraulich, auch in aggregierter oder ableitbarer Form.
-Oeffentliche Leitungsauslastungen sind Modellrechnungen, keine Messung. Der
-Wunsch gehoert in den Abschnitt "Was ich nicht belegen konnte", nicht in eine
-Grafik.
+Nicht im Umfang, weil nicht messbar: **Fluesse auf einzelnen Leitungen** und
+**Fluesse zwischen den vier Regelzonen**. Nach § 23c Abs. 2 EnWG werden
+grenzueberschreitende Lastfluesse nur zusammengefasst je Kuppelstelle
+veroeffentlicht; Standort- und Anlagendaten der Uebertragungsnetzbetreiber sind
+vertraulich, auch in aggregierter oder ableitbarer Form. Oeffentliche
+Leitungsauslastungen sind Modellrechnungen, keine Messung.
+
+Die Geografie einer Leitung darf gezeigt werden, sobald sie belegt ist. Ihre
+Auslastung nicht. Der Unterschied wird auf der Seite ausdruecklich benannt und
+gehoert in den Abschnitt "Was ich nicht belegen konnte", nicht in eine Grafik.
+
+Merkposten: Die deutschen Regelzonen enden nicht an der Staatsgrenze. 15
+Anlagen mit 4.469 MW in Luxemburg, Oesterreich und der Schweiz gehoeren zu
+Amprion, TenneT und TransnetBW. Wer sie geografisch herausfiltert, verfaelscht
+die Regelzonenbilanz.
 
 ## Arbeitsweise
 
@@ -123,6 +149,15 @@ Grafik.
   weggelassen.
 - Bevor du Text in einer Datei aenderst, die du nicht selbst geschrieben hast:
   pruefen, ob ein Skript oder ein Workflow auf genau diesen Text prueft.
+
+## Stand
+
+Erledigt: Leitfrage entschieden; SMARD-Reihen fuer Last, Erzeugung, Regelzonen
+und Aussenhandel belegt; Kraftwerksstammdaten belegt; Abrufskripte, Rumpf der
+Seite und Validierungsskript mit Negativtests liegen im Repository.
+
+Noch offen: freie Variable; Grundkarte; Leitungen und Umspannwerke; Redispatch;
+Browsertest; Workflows; Methodik-PDF.
 
 ## Ablauf
 

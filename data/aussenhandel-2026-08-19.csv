@@ -1,0 +1,36 @@
+# Physikalischer Stromfluss je Nachbarland
+# Tag (Ortszeit Europe/Berlin): 2026-08-19
+# Abgerufen: 2026-08-30T00:11:34+02:00
+# Quelle: SMARD, Bundesnetzagentur -- https://www.smard.de/
+# Lizenz: CC BY 4.0
+# Namensnennung: Bundesnetzagentur | SMARD.de
+#
+# Einheit: MWh je Intervall. Die SMARD-Reihen liefern eine Energiemenge
+# je Intervall, keine mittlere Leistung. Nachgewiesen aus den Daten:
+# der Stundenwert ist die Summe der vier Viertelstundenwerte.
+# Leistung in MW = Wert / Intervalllaenge in h.
+#
+# Zahlformat: Diese Datei ist maschinenlesbar und benutzt den PUNKT als
+# Dezimaltrennzeichen. Die Anzeige auf der Webseite ist deutsch
+# formatiert (Tausenderpunkt, Dezimalkomma). Das ist kein Fehler,
+# sondern derselbe Wert in zwei Schreibweisen.
+#
+# Rechenweg: saldo_mwh = import_mwh - export_mwh. Positiv = Netto-Zufluss nach
+# Rechenweg: Deutschland. Import- und Exportreihen sind vorzeichenlos positiv.
+# Rechenweg: Aufloesung: 1 h (SMARD liefert den Aussenhandel nur stuendlich).
+# Rechenweg: Die Filter-IDs sind in keiner Dokumentation veroeffentlicht; sie
+# Rechenweg: wurden empirisch bestimmt und an zwei unabhaengigen Wochen gegen
+# Rechenweg: Energy-Charts cbpf verifiziert. Beleg: docs/beleg-aussenhandel.md.
+#
+land,filter_import,filter_export,import_mwh,export_mwh,saldo_mwh
+Frankreich,4783,4737,50623.57,0.0,50623.57
+Niederlande,4787,4739,41463.66,17296.25,24167.41
+Norwegen,4989,4988,17954.48,2683.94,15270.54
+Schweiz,4791,4743,18733.94,6872.06,11861.88
+Belgien,4993,4992,4675.35,4100.57,574.78
+Schweden,4790,4742,0.0,0.0,0.0
+Daenemark,4782,4736,15560.2,19374.87,-3814.67
+Luxemburg,4786,4738,0.0,7613.23,-7613.23
+Tschechien,4792,4744,4643.99,16229.96,-11585.97
+Oesterreich,4788,4740,10163.36,31206.46,-21043.1
+Polen,4789,4741,3341.16,26221.81,-22880.65
