@@ -34,6 +34,7 @@ Belege
     docs/beleg-tagesreihen.md       Tagesauflösung, Datenqualität, bekannte Mängel
     docs/beleg-grundkarte.md        Herkunft und Lizenz der Kartengeometrie
     docs/beleg-netzgeometrie.md     Leitungen und Umspannwerke aus OpenStreetMap
+    docs/beleg-verlauf.md           Stundenwerte, Gegenprobe und Diagrammfarben
     LIZENZ-DATEN.md                 die drei Datenlizenzen und ihre Folgen
 
 Prüfen
@@ -42,6 +43,7 @@ Prüfen
     python scripts/fetch-kraftwerke.py
     python scripts/fetch-grundkarte.py
     python scripts/fetch-netz.py
+    python scripts/fetch-verlauf.py
     python scripts/validate.py
     python scripts/validate.py --negativtests
     python -m http.server 8765

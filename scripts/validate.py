@@ -29,6 +29,7 @@ PFLICHTDATEIEN = [
     "assets/powerflow.css",
     "assets/powerflow.js",
     "data/tage-verzeichnis.json",
+    "data/verlauf-verzeichnis.json",
     "data/kraftwerke.json",
     "data/grundkarte.json",
     "data/netz-hoechstspannung.json",
@@ -61,7 +62,22 @@ PFLICHT_IN_JS = [
     "OpenStreetMap contributors",     # geforderte Namensnennung ODbL
     "ODbL",                           # Lizenz der Netzgeometrie
     "keinen Lastfluss",               # die Karte darf nicht als Fluss gelesen werden
+    "schematisch",                    # Lage der Kuppelstellen-Pfeile
+    "Als Tabelle anzeigen",           # Tabellenansicht des Diagramms
 ]
+
+# Farbtokens des Tagesverlaufs. Sie sind mit dem Validierer der dataviz-Regeln
+# geprueft (Helligkeitsband, Chroma, Farbsehschwaeche, Kontrast) und muessen in
+# ALLEN vier Themenbloecken der CSS-Datei stehen -- hell und dunkel werden
+# getrennt gepflegt, nicht umgerechnet.
+TRAEGERTOKENS = ["--tr-kern", "--tr-braun", "--tr-stein", "--tr-gas",
+                 "--tr-sonst", "--tr-bio", "--tr-wind", "--tr-pv"]
+THEMENBLOECKE = 4
+
+# Die Stundenwerte muessen die Tageswerte reproduzieren. Beide Reihen wurden
+# unabhaengig voneinander abgerufen (Aufloesung "hour" gegen "day"), der
+# Vergleich ist deshalb eine echte Gegenprobe der Abrufkette.
+GRENZE_STUNDEN_GEGEN_TAG_MWH = 5.0
 
 # Netzdateien aus OpenStreetMap. Die Spannungsebenen, die jede enthalten muss.
 NETZDATEIEN = {
@@ -230,7 +246,8 @@ def tagesbefunde(jahr: int, d: dict) -> list[str]:
 
 
 def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
-                 kraftwerke: dict, grundkarte: dict, netz: dict) -> Befund:
+                 kraftwerke: dict, grundkarte: dict, netz: dict,
+                 css: str, verlauf: dict) -> Befund:
     b = Befund()
 
     for name in PFLICHTDATEIEN:
@@ -390,12 +407,59 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  f"{name}: alle Koordinaten in [Laenge, Breite] und im Rahmen "
                  f"({len(falsch)} daneben)")
 
+    # --- Tagesverlauf ---
+    for token in TRAEGERTOKENS:
+        b.pruefe(css.count(token + ":") == THEMENBLOECKE,
+                 f"Farbton {token} in allen {THEMENBLOECKE} Themenbloecken definiert "
+                 f"({css.count(token + ':')} gefunden)")
+
+    b.pruefe(len(verlauf) >= 100, f"Verlauf: {len(verlauf)} Monatsdateien")
+
+    # Gegenprobe: Summe der Stundenwerte gegen den Tageswert. Zwei getrennt
+    # abgerufene Reihen der Quelle muessen dasselbe ergeben.
+    abweichungen: list[str] = []
+    verglichen = 0
+    for monat, d in sorted(verlauf.items()):
+        jahr = int(monat[:4])
+        tagesdatei = jahre.get(jahr)
+        if not tagesdatei:
+            continue
+        proTag: dict[str, float] = {}
+        for i, marke in enumerate(d["stunden"]):
+            v = d["netzlast"][i]
+            if v is not None:
+                proTag[marke[:10]] = proTag.get(marke[:10], 0.0) + v
+        for tag, summe in proTag.items():
+            if tag not in tagesdatei["tage"]:
+                continue
+            tagwert = tagesdatei["netzlast"][tagesdatei["tage"].index(tag)]
+            if tagwert is None:
+                continue
+            verglichen += 1
+            if abs(summe - tagwert) > GRENZE_STUNDEN_GEGEN_TAG_MWH:
+                abweichungen.append(f"{tag}: Stunden {summe:,.2f} gegen Tag {tagwert:,.2f}")
+    b.pruefe(not abweichungen,
+             f"Stundenwerte reproduzieren den Tageswert an allen {verglichen} Tagen"
+             + ("" if not abweichungen
+                else f" -- {len(abweichungen)} Abweichungen, erste: {abweichungen[0]}"))
+
     lizenztext = lade("LIZENZ-DATEN.md")
     for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",
                     "© OpenStreetMap contributors", "23c"):
         b.pruefe(pflicht in lizenztext, f"LIZENZ-DATEN.md nennt: {pflicht!r}")
 
     return b
+
+
+# Reihenfolge der Eingaben von eingaben(). Die Negativtests arbeiten ueber
+# diese Namen statt ueber Stellungsargumente.
+FELDER = ("jahre", "index_html", "js", "kraftwerke", "grundkarte", "netz",
+          "css", "verlauf")
+
+
+def verlaufdateien() -> dict[str, dict]:
+    verz = json.loads(lade("data/verlauf-verzeichnis.json"))
+    return {m["monat"]: json.loads(lade(m["datei"])) for m in verz["monate"]}
 
 
 def netzdateien() -> dict[str, dict]:
@@ -406,45 +470,49 @@ def eingaben() -> tuple:
     return (jahresdateien(), lade("index.html"), lade("assets/powerflow.js"),
             json.loads(lade("data/kraftwerke.json")),
             json.loads(lade("data/grundkarte.json")),
-            netzdateien())
+            netzdateien(), lade("assets/powerflow.css"), verlaufdateien())
 
 
 def negativtests() -> int:
-    """Verfaelscht jede Pruefgroesse und weist nach, dass die Pruefung anschlaegt."""
+    """Verfaelscht jede Pruefgroesse und weist nach, dass die Pruefung anschlaegt.
+
+    Die Faelle beschreiben nur, WAS sie aendern; alles Uebrige kommt unveraendert
+    aus dem Ausgangszustand. Eine fruehere Fassung reichte die Eingaben als
+    Stellungsargumente durch -- als spaeter zwei Argumente dazukamen, liefen die
+    alten Faelle mit leeren Voreinstellungen und "schlugen an", ohne etwas zu
+    pruefen. Mit benannten Feldern kann das nicht mehr passieren.
+    """
     import copy
 
-    jahre, index_html, js, kraftwerke, grundkarte, netz = eingaben()
-    grund = pruefe_alles(jahre, index_html, js, kraftwerke, grundkarte, netz)
+    basis = dict(zip(FELDER, eingaben()))
+    grund = pruefe_alles(**basis)
     if grund.fehler:
         print("Die Negativtests brauchen einen sauberen Ausgangszustand, aber es gibt Fehler:")
         for f in grund.fehler:
             print("  FEHLT:", f)
         return 1
 
-    jahr = max(jahre)
+    jahr = max(basis["jahre"])
 
-    def mit_jahr(aenderung) -> dict:
-        k = copy.deepcopy(jahre)
+    def mit_jahr(aenderung):
+        k = copy.deepcopy(basis["jahre"])
         aenderung(k[jahr])
-        return k
+        return {"jahre": k}
 
     def ersten_belegten(d) -> int:
         return next(i for i, v in enumerate(d["netzlast"]) if v is not None)
 
-    def netzlast_verdreifachen(d):
-        d["netzlast"][ersten_belegten(d)] *= 3
+    def ersetze(feld: str, alt: str, neu: str):
+        return {feld: basis[feld].replace(alt, neu)}
 
-    def faktor_tausend(d):
-        d["netzlast"][ersten_belegten(d)] /= 1000
-
-    def zone_kappen(d):
-        d["regelzonen"]["50Hertz"]["netzlast"][ersten_belegten(d)] = 0.0
-
-    def residual_verfaelschen(d):
-        d["residuallast"][ersten_belegten(d)] += 5000.0
-
-    def zone_entfernen(d):
-        del d["regelzonen"]["TenneT"]
+    def verlauf_verfaelscht():
+        k = copy.deepcopy(basis["verlauf"])
+        ein = sorted(k)[0]
+        for i, v in enumerate(k[ein]["netzlast"]):
+            if v is not None:
+                k[ein]["netzlast"][i] = v + 500.0
+                break
+        return {"verlauf": k}
 
     faelle = [
         # Die Version wird aus der Datei gelesen, nicht fest eingetragen: ein
@@ -452,66 +520,80 @@ def negativtests() -> int:
         # und der Negativtest wird stillschweigend wirkungslos. Genau das ist
         # hier schon einmal passiert.
         ("Cache-Buster entfernt",
-         lambda: (jahre, re.sub(r"\?v=\d{8}-[a-z0-9-]+", "", index_html), js,
-                  kraftwerke, grundkarte, netz)),
+         lambda: {"index_html": re.sub(r"\?v=\d{8}-[a-z0-9-]+", "", basis["index_html"])}),
         ("Anker aus index.html entfernt",
-         lambda: (jahre, index_html.replace('id="powerflow-anker"', 'id="weg"'), js, kraftwerke, grundkarte, netz)),
+         lambda: ersetze("index_html", 'id="powerflow-anker"', 'id="weg"')),
         ("Namensnennung aus dem Modul entfernt",
-         lambda: (jahre, index_html, js.replace("Bundesnetzagentur | SMARD.de", "irgendwer"), kraftwerke, grundkarte, netz)),
+         lambda: ersetze("js", "Bundesnetzagentur | SMARD.de", "irgendwer")),
         ("Herkunft der Grundkarte entfernt",
-         lambda: (jahre, index_html, js.replace("Natural Earth", "irgendwoher"), kraftwerke, grundkarte, netz)),
-        ("Zuruecksetzen-Knopf entfernt",
-         lambda: (jahre, index_html, js.replace("Zurücksetzen", "Weg"), kraftwerke, grundkarte, netz)),
-        ("toISOString() ins Modul geschmuggelt",
-         lambda: (jahre, index_html, js + "\nvar x = new Date().toISOString();", kraftwerke, grundkarte, netz)),
-        ("localStorage ins Modul geschmuggelt",
-         lambda: (jahre, index_html, js + "\nlocalStorage.setItem('a','b');", kraftwerke, grundkarte, netz)),
-        ("zweiter Regler ins Modul geschmuggelt",
-         lambda: (jahre, index_html, js + '\nvar y = el("input", { type: "range" });', kraftwerke, grundkarte, netz)),
-        ("Bilanz eines einzelnen Tages verfaelscht",
-         lambda: (mit_jahr(netzlast_verdreifachen), index_html, js, kraftwerke, grundkarte, netz)),
-        ("Faktor 1000 an einem einzelnen Tag",
-         lambda: (mit_jahr(faktor_tausend), index_html, js, kraftwerke, grundkarte, netz)),
-        ("Regelzonensumme an einem Tag verfaelscht",
-         lambda: (mit_jahr(zone_kappen), index_html, js, kraftwerke, grundkarte, netz)),
-        ("Residuallast an einem Tag verfaelscht",
-         lambda: (mit_jahr(residual_verfaelschen), index_html, js, kraftwerke, grundkarte, netz)),
-        ("Eine Regelzone fehlt",
-         lambda: (mit_jahr(zone_entfernen), index_html, js, kraftwerke, grundkarte, netz)),
-        ("Kraftwerk ohne Koordinate",
-         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: k["anlagen"][0].update(lat=None)), grundkarte, netz)),
-        ("Kraftwerk ausserhalb Deutschlands",
-         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: k["anlagen"][0].update(lat=41.9, lon=12.5)), grundkarte, netz)),
-        ("Feld staat aus den Stammdaten entfernt",
-         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: [a.pop("staat", None) for a in k["anlagen"]]), grundkarte, netz)),
-        ("Ein Bundesland fehlt in der Grundkarte",
-         lambda: (jahre, index_html, js, kraftwerke, _aendere(grundkarte, lambda g: g["bundeslaender"].pop()), netz)),
-        ("Lizenzangabe der Grundkarte entfernt",
-         lambda: (jahre, index_html, js, kraftwerke, _aendere(grundkarte, lambda g: g.update(_lizenz="")), netz)),
-        ("Bekannter Quellenfehler aus der Liste entfernt",
-         lambda: (_ohne_auffaellig(jahre), index_html, js, kraftwerke, grundkarte, netz)),
-        ("Quellenfehler stillschweigend korrigiert statt verzeichnet",
-         lambda: (_korrigiert(jahre), index_html, js, kraftwerke, grundkarte, netz)),
+         lambda: ersetze("js", "Natural Earth", "irgendwoher")),
         ("ODbL-Namensnennung aus dem Modul entfernt",
-         lambda: (jahre, index_html, js.replace("OpenStreetMap contributors", "irgendwer"),
-                  kraftwerke, grundkarte, netz)),
+         lambda: ersetze("js", "OpenStreetMap contributors", "irgendwer")),
         ("Warnung \"keinen Lastfluss\" aus der Karte entfernt",
-         lambda: (jahre, index_html, js.replace("keinen Lastfluss", "den Lastfluss"),
-                  kraftwerke, grundkarte, netz)),
-        ("Share-alike-Hinweis aus einer Netzdatei entfernt",
-         lambda: (jahre, index_html, js, kraftwerke, grundkarte,
-                  _netz_ohne(netz, "_share_alike"))),
-        ("Netzdatei auf [Breite, Laenge] gedreht",
-         lambda: (jahre, index_html, js, kraftwerke, grundkarte, _netz_gedreht(netz))),
+         lambda: ersetze("js", "keinen Lastfluss", "den Lastfluss")),
+        ("Hinweis auf die schematische Pfeillage entfernt",
+         lambda: ersetze("js", "schematisch", "genau")),
+        ("Tabellenansicht des Diagramms entfernt",
+         lambda: ersetze("js", "Als Tabelle anzeigen", "Nichts")),
+        ("Zuruecksetzen-Knopf entfernt",
+         lambda: ersetze("js", "Zurücksetzen", "Weg")),
+        ("toISOString() ins Modul geschmuggelt",
+         lambda: {"js": basis["js"] + "\nvar x = new Date().toISOString();"}),
+        ("localStorage ins Modul geschmuggelt",
+         lambda: {"js": basis["js"] + "\nlocalStorage.setItem('a','b');"}),
+        ("zweiter Regler ins Modul geschmuggelt",
+         lambda: {"js": basis["js"] + '\nvar y = el("input", { type: "range" });'}),
+        ("Traegerfarbton aus einem Themenblock entfernt",
+         lambda: {"css": basis["css"].replace("  --tr-wind: #5f92dd;\n", "", 1)}),
+        ("Bilanz eines einzelnen Tages verfaelscht",
+         lambda: mit_jahr(lambda d: d["netzlast"].__setitem__(
+             ersten_belegten(d), d["netzlast"][ersten_belegten(d)] * 3))),
+        ("Faktor 1000 an einem einzelnen Tag",
+         lambda: mit_jahr(lambda d: d["netzlast"].__setitem__(
+             ersten_belegten(d), d["netzlast"][ersten_belegten(d)] / 1000))),
+        ("Regelzonensumme an einem Tag verfaelscht",
+         lambda: mit_jahr(lambda d: d["regelzonen"]["50Hertz"]["netzlast"].__setitem__(
+             ersten_belegten(d), 0.0))),
+        ("Residuallast an einem Tag verfaelscht",
+         lambda: mit_jahr(lambda d: d["residuallast"].__setitem__(
+             ersten_belegten(d), d["residuallast"][ersten_belegten(d)] + 5000.0))),
+        ("Eine Regelzone fehlt",
+         lambda: mit_jahr(lambda d: d["regelzonen"].pop("TenneT"))),
+        ("Bekannter Quellenfehler aus der Liste entfernt",
+         lambda: {"jahre": _ohne_auffaellig(basis["jahre"])}),
+        ("Quellenfehler stillschweigend korrigiert statt verzeichnet",
+         lambda: {"jahre": _korrigiert(basis["jahre"])}),
+        ("Eine Stunde im Verlauf verfaelscht",
+         verlauf_verfaelscht),
+        ("Kraftwerk ohne Koordinate",
+         lambda: {"kraftwerke": _aendere(basis["kraftwerke"],
+                                         lambda k: k["anlagen"][0].update(lat=None))}),
+        ("Kraftwerk ausserhalb Deutschlands",
+         lambda: {"kraftwerke": _aendere(basis["kraftwerke"],
+                                         lambda k: k["anlagen"][0].update(lat=41.9, lon=12.5))}),
+        ("Feld staat aus den Stammdaten entfernt",
+         lambda: {"kraftwerke": _aendere(basis["kraftwerke"],
+                                         lambda k: [a.pop("staat", None) for a in k["anlagen"]])}),
+        ("Ein Bundesland fehlt in der Grundkarte",
+         lambda: {"grundkarte": _aendere(basis["grundkarte"],
+                                         lambda g: g["bundeslaender"].pop())}),
+        ("Lizenzangabe der Grundkarte entfernt",
+         lambda: {"grundkarte": _aendere(basis["grundkarte"], lambda g: g.update(_lizenz=""))}),
         ("Grundkarte auf [Breite, Laenge] gedreht",
-         lambda: (jahre, index_html, js, kraftwerke, _gedreht(grundkarte), netz)),
+         lambda: {"grundkarte": _gedreht(basis["grundkarte"])}),
+        ("Share-alike-Hinweis aus einer Netzdatei entfernt",
+         lambda: {"netz": _netz_ohne(basis["netz"], "_share_alike")}),
+        ("Netzdatei auf [Breite, Laenge] gedreht",
+         lambda: {"netz": _netz_gedreht(basis["netz"])}),
     ]
 
     print("Negativtests -- jede Pruefung muss bei verfaelschter Eingabe anschlagen.")
     print()
     misslungen = 0
     for name, mach in faelle:
-        befund = pruefe_alles(*mach())
+        eingabe = dict(basis)
+        eingabe.update(mach())
+        befund = pruefe_alles(**eingabe)
         schlug_an = bool(befund.fehler)
         print(f"  [{'ok   ' if schlug_an else 'PROBL'}] {name}"
               + ("" if schlug_an else "  <-- Pruefung hat NICHT angeschlagen"))
@@ -523,13 +605,6 @@ def negativtests() -> int:
         return 1
     print(f"Alle {len(faelle)} Negativtests haben angeschlagen.")
     return 0
-
-
-def _aendere(doc: dict, aenderung) -> dict:
-    import copy
-    k = copy.deepcopy(doc)
-    aenderung(k)
-    return k
 
 
 def _ohne_auffaellig(jahre: dict) -> dict:
@@ -547,6 +622,13 @@ def _korrigiert(jahre: dict) -> dict:
     for d in k.values():
         for a in d.get("auffaellig", []):
             a["originalwert"] = 25_000.0   # auf einen plausiblen Wert gezogen
+    return k
+
+
+def _aendere(doc: dict, aenderung) -> dict:
+    import copy
+    k = copy.deepcopy(doc)
+    aenderung(k)
     return k
 
 
@@ -588,7 +670,7 @@ def main(argv: list[str]) -> int:
             print("FEHLER: Datei fehlt:", n)
         return 1
 
-    befund = pruefe_alles(*eingaben())
+    befund = pruefe_alles(**dict(zip(FELDER, eingaben())))
     for t in befund.ok:
         print("  ok    ", t)
     for t in befund.fehler:

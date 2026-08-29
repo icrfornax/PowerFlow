@@ -33,6 +33,14 @@
   --netz-380: #ffd479;
   --netz-220: #b9a7d6;
   --netz-110: #6f8592;
+  --tr-kern: #9d76dd;
+  --tr-braun: #b8763a;
+  --tr-stein: #dd5f9e;
+  --tr-gas: #d0722f;
+  --tr-sonst: #7d8d99;
+  --tr-bio: #5fa64f;
+  --tr-wind: #5f92dd;
+  --tr-pv: #a8881a;
   --fokus: #6cc7ff;
   --radius: 10px;
   --schrift-familie: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -64,6 +72,14 @@
     --netz-380: #b06d00;
     --netz-220: #6a55a0;
     --netz-110: #8496a3;
+  --tr-kern: #8b5fd0;
+    --tr-braun: #a5652a;
+    --tr-stein: #c0508f;
+    --tr-gas: #e0703a;
+    --tr-sonst: #8b9aa6;
+    --tr-bio: #4f8f3f;
+    --tr-wind: #4a7fd6;
+    --tr-pv: #c08a10;
     --fokus: #0b6bb5;
   }
 }
@@ -76,6 +92,14 @@
   --netz-380: #b06d00;
   --netz-220: #6a55a0;
   --netz-110: #8496a3;
+  --tr-kern: #8b5fd0;
+  --tr-braun: #a5652a;
+  --tr-stein: #c0508f;
+  --tr-gas: #e0703a;
+  --tr-sonst: #8b9aa6;
+  --tr-bio: #4f8f3f;
+  --tr-wind: #4a7fd6;
+  --tr-pv: #c08a10;
   --grund: #f6f8fa;
   --flaeche: #ffffff;
   --flaeche-hoch: #eef2f5;
@@ -101,6 +125,14 @@
   --netz-380: #ffd479;
   --netz-220: #b9a7d6;
   --netz-110: #6f8592;
+  --tr-kern: #9d76dd;
+  --tr-braun: #b8763a;
+  --tr-stein: #dd5f9e;
+  --tr-gas: #d0722f;
+  --tr-sonst: #7d8d99;
+  --tr-bio: #5fa64f;
+  --tr-wind: #5f92dd;
+  --tr-pv: #a8881a;
   --grund: #0e1418;
   --flaeche: #151d23;
   --flaeche-hoch: #1c262e;
@@ -431,3 +463,78 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- Tagesverlauf ----------
+   Die Traegerfarben sind mit dem Validierer geprueft: Helligkeitsband, Chroma,
+   Abstand bei Farbsehschwaeche und Kontrast gegen die jeweilige Flaeche. Hell
+   und dunkel sind getrennt gewaehlt, nicht umgerechnet. "Sonstige" ist bewusst
+   grau -- die Sammelposition bekommt keinen eigenen Farbton. */
+
+.pf-verlauf { background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 14px 15px; position: relative; }
+.pf-diagramm { display: block; width: 100%; height: auto; }
+.pf-diagramm:focus-visible { outline: 2px solid var(--fokus); outline-offset: 2px; }
+
+.pf-gitter line { stroke: var(--linie); stroke-width: 1; }
+.pf-gitter text { fill: var(--schrift-still); font-size: 11px;
+  font-family: var(--schrift-zahl); }
+.pf-gitter text.pf-achsentitel { fill: var(--schrift-still); font-size: 10px;
+  letter-spacing: 0.06em; }
+
+.pf-lastlinie { stroke: var(--schrift); stroke-width: 2; stroke-linejoin: round;
+  stroke-linecap: round; }
+.pf-kreuz { stroke: var(--schrift-still); stroke-width: 1; stroke-dasharray: 3 3; }
+
+.pf-ablesung { margin: 10px 0 0; font-size: 0.84rem; min-height: 3.2em; }
+.pf-ablesung strong { color: var(--schrift); font-family: var(--schrift-zahl); }
+.pf-ablesung-liste { display: flex; flex-wrap: wrap; gap: 3px 16px; margin-top: 4px; }
+.pf-ablesung-zeile { display: inline-flex; align-items: center; gap: 6px;
+  color: var(--schrift-leise); font-variant-numeric: tabular-nums; }
+.pf-ablesung-zeile i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.pf-legende-traeger i { border-radius: 2px; }
+.pf-legende i.pf-last, .pf-ablesung-zeile i.pf-last {
+  width: 16px; height: 2px; border-radius: 1px; background: var(--schrift); }
+
+.pf-tabellenschalter {
+  margin-top: 10px; background: transparent; color: var(--schrift-leise);
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  padding: 6px 12px; font-size: 0.82rem; cursor: pointer; font-family: inherit;
+}
+.pf-tabellenschalter:hover { color: var(--schrift); border-color: var(--schrift-still); }
+.pf-tabellenschalter:focus-visible { outline: 2px solid var(--fokus); outline-offset: 2px; }
+
+/* ---------- Kartenbedienung und Auswahl ---------- */
+
+.pf-kartenbedienung {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--linie);
+}
+.pf-kartenhinweis { font-size: 0.78rem; color: var(--schrift-still); flex: 1 1 240px; }
+.pf-karte[data-zieht] { cursor: grabbing; }
+.pf-karte { cursor: grab; touch-action: none; }
+.pf-karte circle[tabindex] { cursor: pointer; }
+.pf-karte circle[data-gewaehlt] {
+  stroke: var(--fokus); stroke-width: 2.5; stroke-opacity: 1;
+  vector-effect: non-scaling-stroke;
+}
+.pf-karte circle:focus-visible { outline: none; stroke: var(--fokus);
+  stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+
+.pf-kuppel .pf-pfeil-ziel { cursor: pointer; }
+
+.pf-auswahl {
+  margin: 12px 0 0; padding: 12px 14px; border-radius: var(--radius);
+  background: var(--flaeche-hoch); border: 1px solid var(--linie);
+  min-height: 4.5em;
+}
+.pf-auswahl-leer { margin: 0; color: var(--schrift-still); font-size: 0.84rem; }
+.pf-auswahl-art { margin: 0; font-size: 0.72rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--schrift-still); }
+.pf-auswahl h3 { margin: 2px 0 8px; font-size: 1rem; color: var(--schrift); }
+.pf-auswahl-liste { display: grid; grid-template-columns: max-content 1fr;
+  gap: 2px 14px; margin: 0; font-size: 0.84rem; }
+.pf-auswahl-liste dt { color: var(--schrift-still); }
+.pf-auswahl-liste dd { margin: 0; color: var(--schrift-leise);
+  font-variant-numeric: tabular-nums; }
+.pf-auswahl-fuss { margin: 9px 0 0; font-size: 0.78rem; color: var(--schrift-still);
+  border-top: 1px solid var(--linie); padding-top: 7px; }
