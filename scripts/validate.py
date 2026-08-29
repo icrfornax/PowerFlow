@@ -35,6 +35,10 @@ PFLICHTDATEIEN = [
     "data/netz-hochspannung.json",
     "data/netz-umspannwerke.json",
     "LIZENZ-DATEN.md",
+    # Ohne .nojekyll laeuft die Auslieferung auf GitHub Pages durch Jekyll.
+    # Die Seite ist reines statisches HTML; Jekyll bringt nichts und kann
+    # Dateien unterschlagen. Die Datei ist leer und muss leer bleiben duerfen.
+    ".nojekyll",
 ]
 
 PFLICHT_IN_INDEX = [

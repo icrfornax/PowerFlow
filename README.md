@@ -2,7 +2,11 @@ PowerFlow
 
 Statisches Daten-Dashboard zu Stromflüssen und -mengen im deutschen Stromnetz.
 
-Status: Rumpf. Leitfrage und freie Variable stehen (freie Variable: der Kalendertag), siehe CLAUDE.md. GitHub Pages ist noch nicht eingerichtet; die Seite läuft lokal mit `python -m http.server`.
+Status: Rumpf. Leitfrage und freie Variable stehen (freie Variable: der Kalendertag), siehe CLAUDE.md.
+
+Live: https://icrfornax.github.io/PowerFlow/ — ausgeliefert von GitHub Pages aus dem Zweig main. Die Datei .nojekyll schaltet die Jekyll-Verarbeitung ab: die Seite ist reines statisches HTML, und die Dateien unter data/ sollen unverändert ausgeliefert werden.
+
+Lokal: `python -m http.server 8765` im Repository.
 
 Leitfrage
 
