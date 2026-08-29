@@ -31,6 +31,10 @@ PFLICHTDATEIEN = [
     "data/tage-verzeichnis.json",
     "data/kraftwerke.json",
     "data/grundkarte.json",
+    "data/netz-hoechstspannung.json",
+    "data/netz-hochspannung.json",
+    "data/netz-umspannwerke.json",
+    "LIZENZ-DATEN.md",
 ]
 
 PFLICHT_IN_INDEX = [
@@ -50,7 +54,17 @@ PFLICHT_IN_JS = [
     "23c",                            # Grund, warum Leitungsfluesse fehlen
     "Konsistenzprüfung",              # SMARD gegen Energy-Charts
     "Zurücksetzen",                   # Pflichtknopf
+    "OpenStreetMap contributors",     # geforderte Namensnennung ODbL
+    "ODbL",                           # Lizenz der Netzgeometrie
+    "keinen Lastfluss",               # die Karte darf nicht als Fluss gelesen werden
 ]
+
+# Netzdateien aus OpenStreetMap. Die Spannungsebenen, die jede enthalten muss.
+NETZDATEIEN = {
+    "data/netz-hoechstspannung.json": {"art": "linie", "min_volt": 220_000, "min_anzahl": 5_000},
+    "data/netz-hochspannung.json": {"art": "linie", "min_volt": 110_000, "min_anzahl": 20_000},
+    "data/netz-umspannwerke.json": {"art": "punkt", "min_volt": 110_000, "min_anzahl": 2_000},
+}
 
 # Toleranzen der Selbstkontrollen, in Prozent bzw. MWh je Tag.
 #
@@ -212,7 +226,7 @@ def tagesbefunde(jahr: int, d: dict) -> list[str]:
 
 
 def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
-                 kraftwerke: dict, grundkarte: dict) -> Befund:
+                 kraftwerke: dict, grundkarte: dict, netz: dict) -> Befund:
     b = Befund()
 
     for name in PFLICHTDATEIEN:
@@ -334,21 +348,69 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         RAHMEN[2] - 3 <= p[0] <= RAHMEN[3] + 3 and RAHMEN[0] - 2 <= p[1] <= RAHMEN[1] + 3
         for p in punkte), "Grundkarten-Koordinaten liegen in [Laenge, Breite]-Reihenfolge")
 
+    # --- Netzgeometrie aus OpenStreetMap ---
+    # Die Lizenz ist eine ANDERE als bei den uebrigen Daten (ODbL statt CC BY
+    # bzw. gemeinfrei) und verpflichtet zum Share-alike. Verschwindet die
+    # Angabe, verletzt die Seite die Lizenz. Deshalb wird sie hier geprueft.
+    for name, regel in NETZDATEIEN.items():
+        d = netz.get(name) or {}
+        objekte = d.get("objekte", [])
+        b.pruefe(len(objekte) >= regel["min_anzahl"],
+                 f"{name}: {len(objekte):,} Objekte (mindestens {regel['min_anzahl']:,})")
+        b.pruefe("ODbL" in (d.get("_lizenz") or ""),
+                 f"{name}: Lizenz ODbL im Dateikopf genannt")
+        b.pruefe("OpenStreetMap contributors" in (d.get("_namensnennung") or ""),
+                 f"{name}: Namensnennung im Dateikopf genannt")
+        b.pruefe("KEINE MESSUNG" in (d.get("_hinweis") or "").upper(),
+                 f"{name}: Hinweis, dass es keine Messung ist")
+        b.pruefe("ODbL" in (d.get("_share_alike") or ""),
+                 f"{name}: Share-alike-Hinweis vorhanden")
+
+        zu_klein = [o for o in objekte if (o.get("v") or 0) < regel["min_volt"]]
+        b.pruefe(not zu_klein,
+                 f"{name}: alle Objekte mindestens {regel['min_volt'] // 1000} kV "
+                 f"({len(zu_klein)} darunter)")
+
+        if regel["art"] == "linie":
+            koord = [pkt for o in objekte for pkt in o.get("p", [])]
+            kurz = [o for o in objekte if len(o.get("p", [])) < 2]
+            b.pruefe(not kurz, f"{name}: keine Linie mit weniger als zwei Punkten")
+        else:
+            koord = [[o.get("lon"), o.get("lat")] for o in objekte]
+        # [Laenge, Breite]-Reihenfolge und Lage in Deutschland. Ein Dreher
+        # faellt hier sofort auf.
+        falsch = [k for k in koord
+                  if not (RAHMEN[2] - 1 <= k[0] <= RAHMEN[3] + 1
+                          and RAHMEN[0] - 1 <= k[1] <= RAHMEN[1] + 1)]
+        b.pruefe(not falsch,
+                 f"{name}: alle Koordinaten in [Laenge, Breite] und im Rahmen "
+                 f"({len(falsch)} daneben)")
+
+    lizenztext = lade("LIZENZ-DATEN.md")
+    for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",
+                    "© OpenStreetMap contributors", "23c"):
+        b.pruefe(pflicht in lizenztext, f"LIZENZ-DATEN.md nennt: {pflicht!r}")
+
     return b
+
+
+def netzdateien() -> dict[str, dict]:
+    return {n: json.loads(lade(n)) for n in NETZDATEIEN}
 
 
 def eingaben() -> tuple:
     return (jahresdateien(), lade("index.html"), lade("assets/powerflow.js"),
             json.loads(lade("data/kraftwerke.json")),
-            json.loads(lade("data/grundkarte.json")))
+            json.loads(lade("data/grundkarte.json")),
+            netzdateien())
 
 
 def negativtests() -> int:
     """Verfaelscht jede Pruefgroesse und weist nach, dass die Pruefung anschlaegt."""
     import copy
 
-    jahre, index_html, js, kraftwerke, grundkarte = eingaben()
-    grund = pruefe_alles(jahre, index_html, js, kraftwerke, grundkarte)
+    jahre, index_html, js, kraftwerke, grundkarte, netz = eingaben()
+    grund = pruefe_alles(jahre, index_html, js, kraftwerke, grundkarte, netz)
     if grund.fehler:
         print("Die Negativtests brauchen einen sauberen Ausgangszustand, aber es gibt Fehler:")
         for f in grund.fehler:
@@ -381,48 +443,64 @@ def negativtests() -> int:
         del d["regelzonen"]["TenneT"]
 
     faelle = [
+        # Die Version wird aus der Datei gelesen, nicht fest eingetragen: ein
+        # hart notierter Cache-Buster veraltet beim naechsten Versionswechsel
+        # und der Negativtest wird stillschweigend wirkungslos. Genau das ist
+        # hier schon einmal passiert.
         ("Cache-Buster entfernt",
-         lambda: (jahre, index_html.replace("?v=20260830-tageswahl", ""), js, kraftwerke, grundkarte)),
+         lambda: (jahre, re.sub(r"\?v=\d{8}-[a-z0-9-]+", "", index_html), js,
+                  kraftwerke, grundkarte, netz)),
         ("Anker aus index.html entfernt",
-         lambda: (jahre, index_html.replace('id="powerflow-anker"', 'id="weg"'), js, kraftwerke, grundkarte)),
+         lambda: (jahre, index_html.replace('id="powerflow-anker"', 'id="weg"'), js, kraftwerke, grundkarte, netz)),
         ("Namensnennung aus dem Modul entfernt",
-         lambda: (jahre, index_html, js.replace("Bundesnetzagentur | SMARD.de", "irgendwer"), kraftwerke, grundkarte)),
+         lambda: (jahre, index_html, js.replace("Bundesnetzagentur | SMARD.de", "irgendwer"), kraftwerke, grundkarte, netz)),
         ("Herkunft der Grundkarte entfernt",
-         lambda: (jahre, index_html, js.replace("Natural Earth", "irgendwoher"), kraftwerke, grundkarte)),
+         lambda: (jahre, index_html, js.replace("Natural Earth", "irgendwoher"), kraftwerke, grundkarte, netz)),
         ("Zuruecksetzen-Knopf entfernt",
-         lambda: (jahre, index_html, js.replace("Zurücksetzen", "Weg"), kraftwerke, grundkarte)),
+         lambda: (jahre, index_html, js.replace("Zurücksetzen", "Weg"), kraftwerke, grundkarte, netz)),
         ("toISOString() ins Modul geschmuggelt",
-         lambda: (jahre, index_html, js + "\nvar x = new Date().toISOString();", kraftwerke, grundkarte)),
+         lambda: (jahre, index_html, js + "\nvar x = new Date().toISOString();", kraftwerke, grundkarte, netz)),
         ("localStorage ins Modul geschmuggelt",
-         lambda: (jahre, index_html, js + "\nlocalStorage.setItem('a','b');", kraftwerke, grundkarte)),
+         lambda: (jahre, index_html, js + "\nlocalStorage.setItem('a','b');", kraftwerke, grundkarte, netz)),
         ("zweiter Regler ins Modul geschmuggelt",
-         lambda: (jahre, index_html, js + '\nvar y = el("input", { type: "range" });', kraftwerke, grundkarte)),
+         lambda: (jahre, index_html, js + '\nvar y = el("input", { type: "range" });', kraftwerke, grundkarte, netz)),
         ("Bilanz eines einzelnen Tages verfaelscht",
-         lambda: (mit_jahr(netzlast_verdreifachen), index_html, js, kraftwerke, grundkarte)),
+         lambda: (mit_jahr(netzlast_verdreifachen), index_html, js, kraftwerke, grundkarte, netz)),
         ("Faktor 1000 an einem einzelnen Tag",
-         lambda: (mit_jahr(faktor_tausend), index_html, js, kraftwerke, grundkarte)),
+         lambda: (mit_jahr(faktor_tausend), index_html, js, kraftwerke, grundkarte, netz)),
         ("Regelzonensumme an einem Tag verfaelscht",
-         lambda: (mit_jahr(zone_kappen), index_html, js, kraftwerke, grundkarte)),
+         lambda: (mit_jahr(zone_kappen), index_html, js, kraftwerke, grundkarte, netz)),
         ("Residuallast an einem Tag verfaelscht",
-         lambda: (mit_jahr(residual_verfaelschen), index_html, js, kraftwerke, grundkarte)),
+         lambda: (mit_jahr(residual_verfaelschen), index_html, js, kraftwerke, grundkarte, netz)),
         ("Eine Regelzone fehlt",
-         lambda: (mit_jahr(zone_entfernen), index_html, js, kraftwerke, grundkarte)),
+         lambda: (mit_jahr(zone_entfernen), index_html, js, kraftwerke, grundkarte, netz)),
         ("Kraftwerk ohne Koordinate",
-         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: k["anlagen"][0].update(lat=None)), grundkarte)),
+         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: k["anlagen"][0].update(lat=None)), grundkarte, netz)),
         ("Kraftwerk ausserhalb Deutschlands",
-         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: k["anlagen"][0].update(lat=41.9, lon=12.5)), grundkarte)),
+         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: k["anlagen"][0].update(lat=41.9, lon=12.5)), grundkarte, netz)),
         ("Feld staat aus den Stammdaten entfernt",
-         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: [a.pop("staat", None) for a in k["anlagen"]]), grundkarte)),
+         lambda: (jahre, index_html, js, _aendere(kraftwerke, lambda k: [a.pop("staat", None) for a in k["anlagen"]]), grundkarte, netz)),
         ("Ein Bundesland fehlt in der Grundkarte",
-         lambda: (jahre, index_html, js, kraftwerke, _aendere(grundkarte, lambda g: g["bundeslaender"].pop()))),
+         lambda: (jahre, index_html, js, kraftwerke, _aendere(grundkarte, lambda g: g["bundeslaender"].pop()), netz)),
         ("Lizenzangabe der Grundkarte entfernt",
-         lambda: (jahre, index_html, js, kraftwerke, _aendere(grundkarte, lambda g: g.update(_lizenz="")))),
+         lambda: (jahre, index_html, js, kraftwerke, _aendere(grundkarte, lambda g: g.update(_lizenz="")), netz)),
         ("Bekannter Quellenfehler aus der Liste entfernt",
-         lambda: (_ohne_auffaellig(jahre), index_html, js, kraftwerke, grundkarte)),
+         lambda: (_ohne_auffaellig(jahre), index_html, js, kraftwerke, grundkarte, netz)),
         ("Quellenfehler stillschweigend korrigiert statt verzeichnet",
-         lambda: (_korrigiert(jahre), index_html, js, kraftwerke, grundkarte)),
+         lambda: (_korrigiert(jahre), index_html, js, kraftwerke, grundkarte, netz)),
+        ("ODbL-Namensnennung aus dem Modul entfernt",
+         lambda: (jahre, index_html, js.replace("OpenStreetMap contributors", "irgendwer"),
+                  kraftwerke, grundkarte, netz)),
+        ("Warnung \"keinen Lastfluss\" aus der Karte entfernt",
+         lambda: (jahre, index_html, js.replace("keinen Lastfluss", "den Lastfluss"),
+                  kraftwerke, grundkarte, netz)),
+        ("Share-alike-Hinweis aus einer Netzdatei entfernt",
+         lambda: (jahre, index_html, js, kraftwerke, grundkarte,
+                  _netz_ohne(netz, "_share_alike"))),
+        ("Netzdatei auf [Breite, Laenge] gedreht",
+         lambda: (jahre, index_html, js, kraftwerke, grundkarte, _netz_gedreht(netz))),
         ("Grundkarte auf [Breite, Laenge] gedreht",
-         lambda: (jahre, index_html, js, kraftwerke, _gedreht(grundkarte))),
+         lambda: (jahre, index_html, js, kraftwerke, _gedreht(grundkarte), netz)),
     ]
 
     print("Negativtests -- jede Pruefung muss bei verfaelschter Eingabe anschlagen.")
@@ -465,6 +543,26 @@ def _korrigiert(jahre: dict) -> dict:
     for d in k.values():
         for a in d.get("auffaellig", []):
             a["originalwert"] = 25_000.0   # auf einen plausiblen Wert gezogen
+    return k
+
+
+def _netz_ohne(netz: dict, feld: str) -> dict:
+    import copy
+    k = copy.deepcopy(netz)
+    for d in k.values():
+        d[feld] = ""
+    return k
+
+
+def _netz_gedreht(netz: dict) -> dict:
+    import copy
+    k = copy.deepcopy(netz)
+    for name, d in k.items():
+        for o in d["objekte"]:
+            if "p" in o:
+                o["p"] = [[q[1], q[0]] for q in o["p"]]
+            elif "lon" in o:
+                o["lon"], o["lat"] = o["lat"], o["lon"]
     return k
 
 

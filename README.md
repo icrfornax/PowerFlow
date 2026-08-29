@@ -29,12 +29,15 @@ Belege
     docs/beleg-kraftwerksdaten.md   Kraftwerksstandorte und Erzeugung je Block
     docs/beleg-tagesreihen.md       Tagesauflösung, Datenqualität, bekannte Mängel
     docs/beleg-grundkarte.md        Herkunft und Lizenz der Kartengeometrie
+    docs/beleg-netzgeometrie.md     Leitungen und Umspannwerke aus OpenStreetMap
+    LIZENZ-DATEN.md                 die drei Datenlizenzen und ihre Folgen
 
 Prüfen
 
     python scripts/fetch-tagesreihen.py
     python scripts/fetch-kraftwerke.py
     python scripts/fetch-grundkarte.py
+    python scripts/fetch-netz.py
     python scripts/validate.py
     python scripts/validate.py --negativtests
     python -m http.server 8765
@@ -59,4 +62,4 @@ Flüsse auf einzelnen Hoch- und Höchstspannungsleitungen. Nach § 23c Abs. 2 En
 
 Lizenz
 
-Der Code steht unter der MIT-Lizenz (siehe LICENSE). Die Lizenz gilt für den Code, nicht für die Daten — für diese gelten die Bedingungen der jeweiligen Quelle, siehe oben.
+Der Code steht unter der MIT-Lizenz (siehe LICENSE). Für die Daten unter data/ gilt das nicht: sie stammen aus drei Quellen mit drei verschiedenen Lizenzen — CC BY 4.0 (SMARD), gemeinfrei (Natural Earth) und ODbL 1.0 mit Share-alike (OpenStreetMap). Die Einzelheiten und ihre Folgen stehen in LIZENZ-DATEN.md.

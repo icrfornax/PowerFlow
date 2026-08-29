@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Deutschland · Stromfluss-Labor</title>
 <meta name="description" content="Tagesbilanz des deutschen Stromsystems aus gemessenen Daten der Bundesnetzagentur: Erzeugung nach Energieträger, Netzlast, Regelzonen, Kraftwerksstandorte und physikalischer Stromfluss je Kuppelstelle. Frei wählbarer Kalendertag ab 2015.">
-<link rel="stylesheet" href="assets/powerflow.css?v=20260830-tageswahl">
+<link rel="stylesheet" href="assets/powerflow.css?v=20260830-netz">
 </head>
 <body>
 
@@ -26,12 +26,18 @@
       je Energieträger, Regelzonen und Außenhandel je Nachbarland, ein Wert je Tag</li>
       <li><a href="data/kraftwerke.json">Kraftwerksstandorte mit Koordinaten</a></li>
       <li><a href="data/grundkarte.json">Grundkarte</a></li>
+      <li><a href="data/netz-hoechstspannung.json">Höchstspannungsleitungen 220/380 kV</a></li>
+      <li><a href="data/netz-hochspannung.json">Hochspannungsleitungen 110 kV</a></li>
+      <li><a href="data/netz-umspannwerke.json">Umspannwerke ab 110 kV</a></li>
     </ul>
-    <p>Datenquelle: Bundesnetzagentur | SMARD.de, Lizenz CC BY 4.0.
-    Grundkarte: Natural Earth, gemeinfrei.</p>
+    <p>Datenquelle Strommengen: Bundesnetzagentur | SMARD.de, Lizenz CC BY 4.0.
+    Grundkarte: Natural Earth, gemeinfrei.
+    Leitungen und Umspannwerke: © OpenStreetMap contributors, Lizenz ODbL 1.0 —
+    siehe LIZENZ-DATEN.md. Diese Dateien zeigen Verlauf und Spannungsebene,
+    <strong>keinen Lastfluss</strong>.</p>
   </div>
 </noscript>
 
-<script src="assets/powerflow.js?v=20260830-tageswahl"></script>
+<script src="assets/powerflow.js?v=20260830-netz"></script>
 </body>
 </html>

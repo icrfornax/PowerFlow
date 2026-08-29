@@ -30,6 +30,9 @@
   --karte-nachbar: #141b21;
   --karte-land: #1a242c;
   --karte-grenze: #2f3f4a;
+  --netz-380: #ffd479;
+  --netz-220: #b9a7d6;
+  --netz-110: #6f8592;
   --fokus: #6cc7ff;
   --radius: 10px;
   --schrift-familie: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -58,6 +61,9 @@
     --karte-nachbar: #e2e8ed;
     --karte-land: #ffffff;
     --karte-grenze: #c3ced7;
+    --netz-380: #b06d00;
+    --netz-220: #6a55a0;
+    --netz-110: #8496a3;
     --fokus: #0b6bb5;
   }
 }
@@ -67,6 +73,9 @@
   --karte-nachbar: #e2e8ed;
   --karte-land: #ffffff;
   --karte-grenze: #c3ced7;
+  --netz-380: #b06d00;
+  --netz-220: #6a55a0;
+  --netz-110: #8496a3;
   --grund: #f6f8fa;
   --flaeche: #ffffff;
   --flaeche-hoch: #eef2f5;
@@ -89,6 +98,9 @@
   --karte-nachbar: #141b21;
   --karte-land: #1a242c;
   --karte-grenze: #2f3f4a;
+  --netz-380: #ffd479;
+  --netz-220: #b9a7d6;
+  --netz-110: #6f8592;
   --grund: #0e1418;
   --flaeche: #151d23;
   --flaeche-hoch: #1c262e;
@@ -288,6 +300,27 @@ body {
 }
 .pf-legende span { display: inline-flex; align-items: center; gap: 6px; }
 .pf-legende i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.pf-legende i.pf-strich { width: 16px; height: 2px; border-radius: 1px; }
+
+/* Netzebenen. Farbe nach Spannung, nicht dekorativ. */
+.pf-netz-110 { opacity: 0.55; }
+.pf-netz-hoechst { opacity: 0.9; }
+.pf-netz-werk circle { fill-opacity: 0.8; }
+
+.pf-ebenen {
+  display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 12px 0 0;
+  padding-top: 12px; border-top: 1px solid var(--linie);
+  font-size: 0.83rem; color: var(--schrift-leise);
+}
+.pf-ebene { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
+.pf-ebene input { accent-color: var(--fokus); cursor: pointer; }
+.pf-ebene input:focus-visible { outline: 2px solid var(--fokus); outline-offset: 2px; }
+.pf-ebene[data-laedt] { opacity: 0.5; }
+
+.pf-karte-warnung {
+  font-size: 0.8rem; color: var(--orange); margin: 10px 0 0;
+  border-left: 2px solid var(--orange); padding-left: 10px;
+}
 
 /* ---------- Tabelle ---------- */
 
