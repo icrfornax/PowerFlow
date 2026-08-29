@@ -55,8 +55,10 @@ Gemessen oder als Stammdatum bereitgestellt und damit im Umfang:
   viertelstuendlicher Erzeugung — **belegt**, `docs/beleg-kraftwerksdaten.md`
 - Redispatch als eigene Kachel (netztransparenz.de) — noch nicht erschlossen,
   braucht ein Zugangstoken
-- Geografie von Leitungen und Umspannwerken (Hoechst-, Hoch-, ggf.
-  Mittelspannung) — **Quelle noch zu belegen**, offener Punkt
+- Geografie von Leitungen und Umspannwerken — **belegt**,
+  `docs/beleg-netzgeometrie.md`: 10.022 Abschnitte 220/380 kV, 39.452 Abschnitte
+  110 kV, 5.259 Umspannwerke aus OpenStreetMap. Mittelspannung ist dort kaum
+  erfasst und bleibt aussen vor. Masten (207.805) sind nicht im Umfang.
 
 Nicht im Umfang, weil nicht messbar: **Fluesse auf einzelnen Leitungen** und
 **Fluesse zwischen den vier Regelzonen**. Nach § 23c Abs. 2 EnWG werden
@@ -114,6 +116,10 @@ die Regelzonenbilanz.
 - Datum immer lokal formatieren, **nie** `toISOString()`. Das rechnet nach UTC
   und verschiebt in Europa jeden Tag um eins.
 - Kein `localStorage`. Aller Zustand kommt aus den Dateien im Repository.
+- **Drei Datenlizenzen, getrennt zu fuehren:** CC BY 4.0 (SMARD), gemeinfrei
+  (Natural Earth), ODbL 1.0 mit Share-alike (OpenStreetMap). Siehe
+  `LIZENZ-DATEN.md`. Der Code bleibt MIT. Die Lizenzen faerben nicht
+  aufeinander ab, aber die ODbL-Namensnennung darf nirgends fehlen.
 - `data/` fuer CSV/JSON, `scripts/` fuer Python-Abrufskripte. Python-
   Standardbibliothek wo moeglich; jede zusaetzliche Abhaengigkeit begruenden.
 - Cache-Buster an CSS und JS (`?v=JJJJMMTT-stichwort`), bei jeder Lieferung
@@ -163,8 +169,8 @@ Ausserdem erledigt: Tagesreihen 2015-2026 in SMARD-Aufloesung "day", Tagesregler
 mit Zuruecksetzen, Grundkarte aus Natural Earth (gemeinfrei, ohne fremde
 Kartenkacheln), CSV-Export je gewaehltem Tag.
 
-Noch offen: Leitungen und Umspannwerke; Redispatch; Intraday-Verlauf;
-Browsertest; Workflows; Methodik-PDF; Regelzonen als Flaeche auf der Karte.
+Noch offen: Redispatch; Intraday-Verlauf; Browsertest; Workflows; Methodik-PDF;
+Regelzonen als Flaeche auf der Karte; GitHub Pages ist nicht eingerichtet.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 

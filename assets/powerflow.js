@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260830-tageswahl";
+  var VERSION = "20260830-netz";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -91,8 +91,32 @@
     starttag: null,     // fuer den Zuruecksetzen-Knopf
     minTag: null,
     maxTag: null,
-    wurzel: null
+    wurzel: null,
+    // Netzgeometrie aus OpenStreetMap, ODbL. Wird erst geladen, wenn die
+    // zugehoerige Ebene eingeschaltet wird -- die 110-kV-Ebene allein ist
+    // 5,9 MB gross.
+    netz: {},
+    ebenen: {
+      kraftwerke: true,
+      umspannwerke: true,
+      hoechstspannung: true,
+      hochspannung: false
+    }
   };
+
+  var NETZDATEI = {
+    hoechstspannung: "data/netz-hoechstspannung.json",
+    hochspannung: "data/netz-hochspannung.json",
+    umspannwerke: "data/netz-umspannwerke.json"
+  };
+
+  function netzLaden(name) {
+    if (Z.netz[name]) { return Promise.resolve(Z.netz[name]); }
+    return fetch(NETZDATEI[name] + "?v=" + VERSION).then(function (r) {
+      if (!r.ok) { throw new Error(NETZDATEI[name] + ": HTTP " + r.status); }
+      return r.json();
+    }).then(function (d) { Z.netz[name] = d; return d; });
+  }
 
   function jahrLaden(jahr) {
     if (Z.jahre[jahr]) { return Promise.resolve(Z.jahre[jahr]); }
@@ -357,6 +381,21 @@
     return n;
   }
 
+  /* Spannungsebenen. Farbe und Staerke nach Ebene, nicht dekorativ:
+     je hoeher die Spannung, desto heller und kraeftiger die Linie. */
+  var EBENEN = [
+    { ab: 380000, name: "380 kV", farbe: "var(--netz-380)", breite: 1.1 },
+    { ab: 220000, name: "220 kV", farbe: "var(--netz-220)", breite: 0.8 },
+    { ab: 110000, name: "110 kV", farbe: "var(--netz-110)", breite: 0.5 }
+  ];
+
+  function ebeneVon(volt) {
+    for (var i = 0; i < EBENEN.length; i++) {
+      if (volt >= EBENEN[i].ab) { return EBENEN[i]; }
+    }
+    return null;
+  }
+
   function karte(grundkarte, anlagen) {
     var B = 640, H = 800, rand = 16;
 
@@ -387,7 +426,7 @@
     var vx = (B - spanX * skala) / 2, vy = (H - spanY * skala) / 2;
     function X(lon) { return vx + (lon - lonMin) * kx * skala; }
     function Y(lat) { return vy + (latMax - lat) * skala; }
-    function pfad(ring) {
+    function ringPfad(ring) {
       var d = "";
       for (var i = 0; i < ring.length; i++) {
         d += (i ? "L" : "M") + X(ring[i][0]).toFixed(1) + " " + Y(ring[i][1]).toFixed(1);
@@ -397,44 +436,130 @@
 
     var svg = s("svg", {
       "class": "pf-karte", viewBox: "0 0 " + B + " " + H, role: "img",
-      "aria-label": "Karte Deutschlands mit den Standorten von " + anlagen.length
-        + " Kraftwerken, eingefaerbt nach Regelzone"
+      "aria-label": "Karte Deutschlands mit Hoechstspannungsnetz, Umspannwerken und den "
+        + "Standorten von " + anlagen.length + " Kraftwerken"
     });
 
     var gNachbarn = s("g", { "class": "pf-geo-nachbar" });
     grundkarte.nachbarn.forEach(function (n) {
-      n.ringe.forEach(function (r) { gNachbarn.appendChild(s("path", { d: pfad(r) })); });
+      n.ringe.forEach(function (r) { gNachbarn.appendChild(s("path", { d: ringPfad(r) })); });
     });
     svg.appendChild(gNachbarn);
 
     var gLaender = s("g", { "class": "pf-geo-land" });
     grundkarte.bundeslaender.forEach(function (b) {
       b.ringe.forEach(function (r) {
-        var p = s("path", { d: pfad(r) });
-        p.appendChild(s("title")).textContent = b.name;
-        gLaender.appendChild(p);
+        var pth = s("path", { d: ringPfad(r) });
+        pth.appendChild(s("title")).textContent = b.name;
+        gLaender.appendChild(pth);
       });
     });
     svg.appendChild(gLaender);
 
-    var gPunkte = s("g", { "class": "pf-geo-anlage" });
-    anlagen.slice().sort(function (a, b) {
-      return (a.leistung_mw || 0) - (b.leistung_mw || 0);
-    }).forEach(function (a) {
-      var mw = a.leistung_mw || 0;
-      var farbe = ZONENFARBE[a.regelzone] || "var(--schrift-still)";
-      var c = s("circle", {
-        cx: X(a.lon).toFixed(1), cy: Y(a.lat).toFixed(1),
-        r: Math.max(1.6, Math.sqrt(mw) * 0.30).toFixed(1),
-        fill: farbe, stroke: farbe
+    /* Leitungen. Bei knapp 40.000 Wegen waeren 40.000 SVG-Elemente zu langsam.
+       Deshalb EIN Pfadelement je Spannungsebene mit vielen Teilzuegen. Preis
+       dafuer: kein eigener Tooltip je Leitung. Das ist es wert -- die Leitung
+       traegt ohnehin keine Zahl, die man ablesen koennte. */
+    function leitungsgruppe(objekte, klasse) {
+      var g = s("g", { "class": klasse });
+      EBENEN.forEach(function (e) {
+        var d = "";
+        objekte.forEach(function (o) {
+          if (ebeneVon(o.v) !== e) { return; }
+          var p = o.p;
+          for (var i = 0; i < p.length; i++) {
+            d += (i ? "L" : "M") + X(p[i][0]).toFixed(1) + " " + Y(p[i][1]).toFixed(1);
+          }
+        });
+        if (!d) { return; }
+        g.appendChild(s("path", {
+          d: d, fill: "none", stroke: e.farbe, "stroke-width": e.breite,
+          "stroke-linecap": "round", "stroke-linejoin": "round",
+          "vector-effect": "non-scaling-stroke"
+        }));
       });
-      c.appendChild(s("title")).textContent =
-        (a.ort || "") + " · " + (a.energietraeger || "") + " · " + nf0.format(mw) + " MW · "
-        + a.regelzone + (a.staat && a.staat !== "Deutschland" ? " · " + a.staat : "");
-      gPunkte.appendChild(c);
-    });
-    svg.appendChild(gPunkte);
+      return g;
+    }
+
+    if (Z.ebenen.hochspannung && Z.netz.hochspannung) {
+      svg.appendChild(leitungsgruppe(Z.netz.hochspannung.objekte, "pf-netz-110"));
+    }
+    if (Z.ebenen.hoechstspannung && Z.netz.hoechstspannung) {
+      svg.appendChild(leitungsgruppe(Z.netz.hoechstspannung.objekte, "pf-netz-hoechst"));
+    }
+
+    if (Z.ebenen.umspannwerke && Z.netz.umspannwerke) {
+      var gW = s("g", { "class": "pf-netz-werk" });
+      Z.netz.umspannwerke.objekte.forEach(function (w) {
+        var e = ebeneVon(w.v);
+        if (!e) { return; }
+        var c = s("circle", {
+          cx: X(w.lon).toFixed(1), cy: Y(w.lat).toFixed(1),
+          r: (w.v >= 380000 ? 2.1 : w.v >= 220000 ? 1.6 : 1.0).toFixed(1),
+          fill: e.farbe
+        });
+        c.appendChild(s("title")).textContent =
+          (w.n || "Umspannwerk") + " · " + e.name + (w.b ? " · " + w.b : "");
+        gW.appendChild(c);
+      });
+      svg.appendChild(gW);
+    }
+
+    if (Z.ebenen.kraftwerke) {
+      var gPunkte = s("g", { "class": "pf-geo-anlage" });
+      anlagen.slice().sort(function (a, b) {
+        return (a.leistung_mw || 0) - (b.leistung_mw || 0);
+      }).forEach(function (a) {
+        var mw = a.leistung_mw || 0;
+        var farbe = ZONENFARBE[a.regelzone] || "var(--schrift-still)";
+        var c = s("circle", {
+          cx: X(a.lon).toFixed(1), cy: Y(a.lat).toFixed(1),
+          r: Math.max(1.6, Math.sqrt(mw) * 0.30).toFixed(1),
+          fill: farbe, stroke: farbe
+        });
+        c.appendChild(s("title")).textContent =
+          (a.ort || "") + " · " + (a.energietraeger || "") + " · " + nf0.format(mw) + " MW · "
+          + a.regelzone + (a.staat && a.staat !== "Deutschland" ? " · " + a.staat : "");
+        gPunkte.appendChild(c);
+      });
+      svg.appendChild(gPunkte);
+    }
     return svg;
+  }
+
+  /* Ebenen-Schalter. Das ist KEIN Regler im Sinne der Datendisziplin: er
+     veraendert keine Zahl, sondern nur, was sichtbar ist. Die einzige freie
+     Variable bleibt der Kalendertag. */
+  function ebenenSchalter() {
+    var kasten = el("div", { "class": "pf-ebenen" });
+    [
+      { schluessel: "kraftwerke", text: "Kraftwerke", geladen: true },
+      { schluessel: "umspannwerke", text: "Umspannwerke ab 110 kV", datei: "umspannwerke" },
+      { schluessel: "hoechstspannung", text: "Leitungen 220/380 kV", datei: "hoechstspannung" },
+      { schluessel: "hochspannung", text: "Leitungen 110 kV (5,9 MB)", datei: "hochspannung" }
+    ].forEach(function (e) {
+      var id = "pf-ebene-" + e.schluessel;
+      var wrap = el("label", { "class": "pf-ebene", "for": id });
+      var box = el("input", { type: "checkbox", id: id });
+      box.checked = !!Z.ebenen[e.schluessel];
+      box.addEventListener("change", function () {
+        Z.ebenen[e.schluessel] = box.checked;
+        if (box.checked && e.datei && !Z.netz[e.datei]) {
+          wrap.setAttribute("data-laedt", "1");
+          netzLaden(e.datei).then(zeichnen).catch(function (fehler) {
+            Z.ebenen[e.schluessel] = false;
+            wrap.removeAttribute("data-laedt");
+            window.alert("Ebene konnte nicht geladen werden: " + fehler.message);
+          });
+        } else {
+          zeichnen();
+        }
+      });
+      wrap.appendChild(box);
+      wrap.appendChild(document.createTextNode(" " + e.text));
+      kasten.appendChild(wrap);
+    });
+    return kasten;
   }
 
   // ---- CSV-Export ---------------------------------------------------------
@@ -770,7 +895,15 @@
     var roll = el("div", { "class": "pf-karte-rollbereich" });
     roll.appendChild(karte(Z.grundkarte, Z.kraftwerke.anlagen));
     karteHuelle.appendChild(roll);
+    karteHuelle.appendChild(ebenenSchalter());
+
     var legende = el("div", { "class": "pf-legende" });
+    EBENEN.forEach(function (e) {
+      var sp = el("span");
+      sp.appendChild(el("i", { "class": "pf-strich", style: "background:" + e.farbe + ";" }));
+      sp.appendChild(document.createTextNode(e.name));
+      legende.appendChild(sp);
+    });
     Object.keys(ZONENFARBE).forEach(function (z) {
       var sp = el("span");
       sp.appendChild(el("i", { style: "background:" + ZONENFARBE[z] + ";" }));
@@ -779,21 +912,47 @@
     });
     legende.appendChild(el("span", { text: "Punktfläche ∝ Nettoleistung" }));
     karteHuelle.appendChild(legende);
+
+    // Dieser Satz steht direkt an der Karte, nicht nur im Popover: eine
+    // gezeichnete Leitung soll niemand als Lastfluss lesen.
+    karteHuelle.appendChild(el("p", {
+      "class": "pf-karte-warnung",
+      text: "Die Leitungen zeigen Verlauf und Spannungsebene — keinen Lastfluss und keine "
+        + "Auslastung. Wie viel Strom über eine einzelne Leitung fließt, wird nach "
+        + "§ 23c Abs. 2 EnWG nicht veröffentlicht."
+    }));
+
+    var anzahlen = [];
+    if (Z.netz.hoechstspannung) {
+      anzahlen.push(nf0.format(Z.netz.hoechstspannung.anzahl) + " Leitungsabschnitte 220/380 kV");
+    }
+    if (Z.netz.hochspannung) {
+      anzahlen.push(nf0.format(Z.netz.hochspannung.anzahl) + " Abschnitte 110 kV");
+    }
+    if (Z.netz.umspannwerke) {
+      anzahlen.push(nf0.format(Z.netz.umspannwerke.anzahl) + " Umspannwerke");
+    }
+    anzahlen.push(nf0.format(Z.kraftwerke.anzahl) + " Kraftwerke");
+
     infoKnopf(karteHuelle, {
-      wert: Z.kraftwerke.anzahl + " Anlagen aus den SMARD-Kraftwerksstammdaten, jede an ihrer "
-        + "tatsächlichen Koordinate. Grundkarte: Natural Earth, gemeinfrei, als SVG gezeichnet "
-        + "— es werden keine fremden Kartenkacheln geladen.",
-      grenzenTitel: "Was noch fehlt",
-      grenzen: "Leitungen und Umspannwerke fehlen noch. Die Stammdaten enthalten überwiegend "
-        + "konventionelle Anlagen und Speicher — Wind- und Solarparks sind darin nicht einzeln "
-        + "geführt. Die Landesgrenzen sind vereinfacht und dienen nur der Orientierung.",
+      wert: anzahlen.join(", ") + ". Kraftwerke aus den SMARD-Stammdaten, jede an ihrer "
+        + "tatsächlichen Koordinate. Leitungen und Umspannwerke aus OpenStreetMap. "
+        + "Grundkarte: Natural Earth, gemeinfrei, als SVG gezeichnet — es werden keine "
+        + "fremden Kartenkacheln geladen.",
+      grenzenTitel: "Was die Karte nicht zeigt",
+      grenzen: "Keinen Lastfluss und keine Auslastung. OpenStreetMap ist eine "
+        + "Gemeinschaftserhebung, keine amtliche Quelle: die Erfassung kann unvollständig "
+        + "oder veraltet sein, besonders bei 110 kV. Mittelspannung ist dort kaum erfasst. "
+        + "Die Landesgrenzen sind vereinfacht und dienen nur der Orientierung. Die "
+        + "Regelzonen sind nicht als Fläche dargestellt — dafür fehlt eine belegbare "
+        + "Geometrie; die Farbe der Kraftwerkspunkte nennt die Zone.",
       quellen: QUELLE_SMARD.concat([
+        { text: "OpenStreetMap contributors (ODbL)", url: "https://www.openstreetmap.org/copyright" },
         { text: "Natural Earth", url: "https://www.naturalearthdata.com/" }]),
-      messung: "Stammdaten, keine Messung. Die Punkte zeigen, wo eine Anlage steht und wie "
-        + "groß sie ist — nicht, wohin ihr Strom fließt."
-    }, "Karte der Kraftwerksstandorte");
-    neu.appendChild(abschnitt("Karte · " + Z.kraftwerke.anzahl + " Kraftwerksstandorte",
-      karteHuelle));
+      messung: "Stammdaten und Geografie, keine Messung. Die Karte zeigt, wo etwas steht "
+        + "und wofür es gebaut ist — nicht, wohin der Strom fließt."
+    }, "Karte des Netzes und der Kraftwerksstandorte");
+    neu.appendChild(abschnitt("Karte · Netz und Kraftwerke", karteHuelle));
 
     // --- Tabelle Aussenhandel ---
     var tabRoll = el("div", { "class": "pf-tabellen-rollbereich" });
@@ -840,7 +999,8 @@
       "Flüsse auf einzelnen Hoch- und Höchstspannungsleitungen. Nach § 23c Abs. 2 EnWG werden "
         + "grenzüberschreitende Lastflüsse nur zusammengefasst je Kuppelstelle veröffentlicht. "
         + "Öffentliche Leitungsauslastungen sind Modellrechnungen.",
-      "Leitungen und Umspannwerke. Die Quellenlage dafür wird gerade aufgearbeitet.",
+      "Lastflüsse auf den gezeichneten Leitungen. Die Karte zeigt ihren Verlauf und ihre "
+        + "Spannungsebene, mehr gibt die Quellenlage nicht her.",
       "Redispatch. Noch nicht eingebunden — braucht einen Zugang zur netztransparenz-API."
     ].forEach(function (t) { ul.appendChild(el("li", { text: t })); });
     nicht.appendChild(ul);
@@ -850,7 +1010,8 @@
     offen.appendChild(el("h3", { text: "Offene Punkte" }));
     var ul2 = el("ul");
     [
-      "Leitungen und Umspannwerke — Quelle wird belegt.",
+      "Regelzonen als Fläche auf der Karte — dafür fehlt eine belegbare Geometrie.",
+      "Mittelspannung — in OpenStreetMap kaum erfasst.",
       "Intraday-Verlauf: die Seite zeigt bisher nur Tagessummen, keine Viertelstundenkurve.",
       "Methodik-PDF und der Gesamtlauf über alle Referenzjahre fehlen noch.",
       "Der Kraftwerks-Endpunkt von SMARD ist undokumentiert und kann sich ohne Ankündigung "
@@ -886,7 +1047,10 @@
         + '<a href="https://creativecommons.org/licenses/by/4.0/deed.de" target="_blank" '
         + 'rel="noopener">CC BY 4.0</a>. Grundkarte: '
         + '<a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">'
-        + 'Natural Earth</a>, gemeinfrei. Gegengeprüft gegen Energy-Charts (Fraunhofer ISE) '
+        + 'Natural Earth</a>, gemeinfrei. Leitungen und Umspannwerke: '
+        + '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">'
+        + '© OpenStreetMap contributors</a>, Lizenz ODbL 1.0. '
+        + 'Gegengeprüft gegen Energy-Charts (Fraunhofer ISE) '
         + '— das ist eine Konsistenzprüfung, keine unabhängige Gegenprobe: beide Quellen gehen '
         + 'auf dieselbe ENTSO-E-Erhebung zurück. Gegenprobe gegen Destatis auf der Jahressumme.'
     }));
@@ -935,7 +1099,11 @@
     Promise.all([
       hole("data/tage-verzeichnis.json"),
       hole("data/grundkarte.json"),
-      hole("data/kraftwerke.json")
+      hole("data/kraftwerke.json"),
+      // Die beiden voreingestellten Netzebenen. Die 110-kV-Ebene wird erst
+      // geladen, wenn jemand sie einschaltet -- sie ist 5,9 MB gross.
+      netzLaden("hoechstspannung"),
+      netzLaden("umspannwerke")
     ]).then(function (teile) {
       Z.verzeichnis = teile[0];
       Z.grundkarte = teile[1];
