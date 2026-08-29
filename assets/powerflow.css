@@ -1,0 +1,337 @@
+/* PowerFlow -- Grundschema.
+   Dunkel ist die Grundfassung, hell das gleichwertig gepflegte Gegenstueck.
+   Semantische Farbe nie dekorativ:
+     Teal    Zufluss, Ueberschuss, positiv
+     Orange  Warnung, Luecke, Defizit
+     Gruen   Zielpfad
+     Violett Bestand / Netz
+*/
+
+:root {
+  color-scheme: dark light;
+
+  --grund: #0e1418;
+  --flaeche: #151d23;
+  --flaeche-hoch: #1c262e;
+  --linie: #2a3841;
+  --schrift: #e6edf3;
+  --schrift-leise: #93a4b1;
+  --schrift-still: #6b7c88;
+
+  --teal: #2fb3a3;
+  --teal-schwach: rgba(47, 179, 163, 0.15);
+  --orange: #e08a3c;
+  --orange-schwach: rgba(224, 138, 60, 0.15);
+  --gruen: #4aa564;
+  --violett: #8d7bb8;
+  --violett-schwach: rgba(141, 123, 184, 0.15);
+
+  --fokus: #6cc7ff;
+  --radius: 10px;
+  --schrift-familie: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --schrift-zahl: "SF Mono", "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-thema="dunkel"]) {
+    --grund: #f6f8fa;
+    --flaeche: #ffffff;
+    --flaeche-hoch: #eef2f5;
+    --linie: #d6dee5;
+    --schrift: #16202a;
+    --schrift-leise: #4f6270;
+    --schrift-still: #74858f;
+
+    --teal: #14806f;
+    --teal-schwach: rgba(20, 128, 111, 0.12);
+    --orange: #b25f14;
+    --orange-schwach: rgba(178, 95, 20, 0.12);
+    --gruen: #2f7a45;
+    --violett: #6a55a0;
+    --violett-schwach: rgba(106, 85, 160, 0.12);
+
+    --fokus: #0b6bb5;
+  }
+}
+
+:root[data-thema="hell"] {
+  --grund: #f6f8fa;
+  --flaeche: #ffffff;
+  --flaeche-hoch: #eef2f5;
+  --linie: #d6dee5;
+  --schrift: #16202a;
+  --schrift-leise: #4f6270;
+  --schrift-still: #74858f;
+  --teal: #14806f;
+  --teal-schwach: rgba(20, 128, 111, 0.12);
+  --orange: #b25f14;
+  --orange-schwach: rgba(178, 95, 20, 0.12);
+  --gruen: #2f7a45;
+  --violett: #6a55a0;
+  --violett-schwach: rgba(106, 85, 160, 0.12);
+  --fokus: #0b6bb5;
+}
+
+:root[data-thema="dunkel"] {
+  --grund: #0e1418;
+  --flaeche: #151d23;
+  --flaeche-hoch: #1c262e;
+  --linie: #2a3841;
+  --schrift: #e6edf3;
+  --schrift-leise: #93a4b1;
+  --schrift-still: #6b7c88;
+  --teal: #2fb3a3;
+  --teal-schwach: rgba(47, 179, 163, 0.15);
+  --orange: #e08a3c;
+  --orange-schwach: rgba(224, 138, 60, 0.15);
+  --gruen: #4aa564;
+  --violett: #8d7bb8;
+  --violett-schwach: rgba(141, 123, 184, 0.15);
+  --fokus: #6cc7ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--grund);
+  color: var(--schrift);
+  font-family: var(--schrift-familie);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+.pf-huelle {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 20px 72px;
+}
+
+/* ---------- Kopf ---------- */
+
+.pf-kopf { border-bottom: 1px solid var(--linie); padding-bottom: 18px; margin-bottom: 26px; }
+.pf-kopf h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+.pf-kopf .pf-unterzeile { color: var(--schrift-leise); font-size: 0.95rem; margin: 0; }
+.pf-kopf .pf-bahn { color: var(--schrift-still); font-size: 0.82rem; letter-spacing: 0.06em;
+  text-transform: uppercase; margin: 10px 0 0; }
+
+.pf-kopfzeile { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start;
+  justify-content: space-between; }
+
+.pf-thema-knopf {
+  background: var(--flaeche-hoch); color: var(--schrift-leise);
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  padding: 7px 12px; font-size: 0.85rem; cursor: pointer; font-family: inherit;
+}
+.pf-thema-knopf:hover { color: var(--schrift); }
+
+/* ---------- Abschnitte ---------- */
+
+.pf-abschnitt { margin: 34px 0 0; }
+.pf-abschnitt > h2 {
+  font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--schrift-still); margin: 0 0 12px; font-weight: 600;
+}
+
+/* ---------- Kennzahlen-Kacheln ---------- */
+
+.pf-kacheln {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.pf-kachel {
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 14px 15px; position: relative;
+}
+.pf-kachel .pf-titel {
+  font-size: 0.78rem; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--schrift-still); margin: 0 26px 8px 0;
+}
+.pf-kachel .pf-wert {
+  font-family: var(--schrift-zahl); font-size: 1.55rem; line-height: 1.15;
+  font-variant-numeric: tabular-nums; margin: 0;
+}
+.pf-kachel .pf-einheit { font-size: 0.85rem; color: var(--schrift-leise); margin-left: 4px; }
+.pf-kachel .pf-bezug {
+  font-size: 0.8rem; color: var(--schrift-leise); margin: 6px 0 0;
+}
+.pf-kachel .pf-marke {
+  font-size: 0.72rem; color: var(--schrift-still); margin: 8px 0 0;
+  border-top: 1px solid var(--linie); padding-top: 7px;
+}
+.pf-kachel[data-akzent="teal"] .pf-wert { color: var(--teal); }
+.pf-kachel[data-akzent="orange"] .pf-wert { color: var(--orange); }
+.pf-kachel[data-akzent="violett"] .pf-wert { color: var(--violett); }
+
+/* ---------- Info-Knopf und Popover ---------- */
+
+.pf-info {
+  position: absolute; top: 11px; right: 11px;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid var(--linie); background: var(--flaeche-hoch);
+  color: var(--schrift-leise); font-size: 0.72rem; font-weight: 700;
+  line-height: 1; cursor: pointer; padding: 0; font-family: inherit;
+}
+.pf-info:hover, .pf-info[aria-expanded="true"] { color: var(--schrift); border-color: var(--schrift-still); }
+.pf-info:focus-visible, .pf-thema-knopf:focus-visible, .pf-abzug:focus-visible {
+  outline: 2px solid var(--fokus); outline-offset: 2px;
+}
+
+.pf-popover {
+  position: absolute; z-index: 40; top: 34px; right: 8px;
+  width: min(340px, calc(100vw - 48px));
+  background: var(--flaeche-hoch); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 13px 14px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+  font-size: 0.83rem; line-height: 1.5;
+}
+.pf-popover h4 {
+  margin: 0 0 3px; font-size: 0.72rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still);
+}
+.pf-popover p { margin: 0 0 10px; color: var(--schrift-leise); }
+.pf-popover .pf-messung {
+  border-top: 1px solid var(--linie); padding-top: 8px; margin-top: 2px;
+  color: var(--schrift); font-size: 0.8rem;
+}
+.pf-popover a { color: var(--fokus); }
+
+/* ---------- Flussbild: Zufluss | Netz | Abfluss ---------- */
+
+.pf-fluss {
+  display: grid; gap: 12px;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+@media (max-width: 860px) { .pf-fluss { grid-template-columns: 1fr; } }
+
+.pf-saeule {
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 14px 15px;
+}
+.pf-saeule > h3 {
+  margin: 0 0 2px; font-size: 0.78rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--schrift-still);
+}
+.pf-saeule > .pf-saeule-summe {
+  font-family: var(--schrift-zahl); font-size: 1.2rem; margin: 0 0 12px;
+  font-variant-numeric: tabular-nums;
+}
+.pf-saeule[data-rolle="zufluss"] { border-left: 3px solid var(--teal); }
+.pf-saeule[data-rolle="zufluss"] .pf-saeule-summe { color: var(--teal); }
+.pf-saeule[data-rolle="netz"] { border-left: 3px solid var(--violett); }
+.pf-saeule[data-rolle="netz"] .pf-saeule-summe { color: var(--violett); }
+.pf-saeule[data-rolle="abfluss"] { border-left: 3px solid var(--orange); }
+.pf-saeule[data-rolle="abfluss"] .pf-saeule-summe { color: var(--orange); }
+
+.pf-balken { display: grid; gap: 5px; margin: 0; }
+.pf-balken .pf-zeile {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px;
+  align-items: baseline; font-size: 0.84rem;
+}
+.pf-balken .pf-name { color: var(--schrift-leise); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.pf-balken .pf-zahl { font-family: var(--schrift-zahl); font-variant-numeric: tabular-nums;
+  color: var(--schrift); }
+.pf-balken .pf-schiene {
+  grid-column: 1 / -1; height: 4px; border-radius: 2px;
+  background: var(--flaeche-hoch); overflow: hidden; margin-bottom: 3px;
+}
+.pf-balken .pf-fuellung { height: 100%; border-radius: 2px; }
+
+/* ---------- Karte ---------- */
+
+.pf-karte-huelle {
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 14px 15px; position: relative;
+}
+.pf-karte-rollbereich { overflow-x: auto; }
+.pf-karte { display: block; width: 100%; height: auto; max-width: 620px; margin: 0 auto; }
+.pf-karte circle { transition: r 120ms ease, opacity 120ms ease; }
+.pf-karte circle:focus-visible { outline: 2px solid var(--fokus); }
+
+.pf-legende {
+  display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 12px 0 0;
+  font-size: 0.8rem; color: var(--schrift-leise);
+}
+.pf-legende span { display: inline-flex; align-items: center; gap: 6px; }
+.pf-legende i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+/* ---------- Tabelle ---------- */
+
+.pf-tabellen-rollbereich { overflow-x: auto; }
+table.pf-tabelle {
+  width: 100%; border-collapse: collapse; font-size: 0.86rem; min-width: 560px;
+}
+table.pf-tabelle th, table.pf-tabelle td {
+  text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--linie);
+  font-variant-numeric: tabular-nums;
+}
+table.pf-tabelle th:first-child, table.pf-tabelle td:first-child {
+  text-align: left; font-variant-numeric: normal;
+}
+table.pf-tabelle th {
+  color: var(--schrift-still); font-weight: 600; font-size: 0.76rem;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+table.pf-tabelle td.pf-plus { color: var(--teal); }
+table.pf-tabelle td.pf-minus { color: var(--orange); }
+table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78rem; }
+
+/* ---------- Hinweiskasten ---------- */
+
+.pf-kasten {
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-left: 3px solid var(--orange); border-radius: var(--radius);
+  padding: 14px 16px; font-size: 0.88rem; color: var(--schrift-leise);
+}
+.pf-kasten[data-art="offen"] { border-left-color: var(--violett); }
+.pf-kasten h3 { margin: 0 0 8px; font-size: 0.92rem; color: var(--schrift); }
+.pf-kasten ul { margin: 0; padding-left: 18px; }
+.pf-kasten li { margin-bottom: 5px; }
+.pf-kasten li:last-child { margin-bottom: 0; }
+.pf-kasten code {
+  font-family: var(--schrift-zahl); font-size: 0.85em;
+  background: var(--flaeche-hoch); padding: 1px 5px; border-radius: 4px;
+}
+
+/* ---------- Regler-Platzhalter ---------- */
+
+.pf-regler-platz {
+  background: var(--flaeche); border: 1px dashed var(--linie);
+  border-radius: var(--radius); padding: 14px 16px;
+  color: var(--schrift-leise); font-size: 0.88rem;
+}
+.pf-regler-platz strong { color: var(--schrift); }
+
+/* ---------- Downloads ---------- */
+
+.pf-abzuege { display: flex; flex-wrap: wrap; gap: 9px; }
+.pf-abzug {
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 9px 13px; font-size: 0.85rem;
+  color: var(--schrift-leise); text-decoration: none;
+}
+.pf-abzug:hover { color: var(--schrift); border-color: var(--schrift-still); }
+.pf-abzug span { color: var(--schrift-still); font-size: 0.78rem; margin-left: 6px; }
+
+/* ---------- Fussnote ---------- */
+
+.pf-fussnote {
+  margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--linie);
+  font-size: 0.8rem; color: var(--schrift-still); line-height: 1.65;
+}
+.pf-fussnote a { color: var(--schrift-leise); }
+.pf-fussnote p { margin: 0 0 7px; }
+
+.pf-laden { color: var(--schrift-still); font-size: 0.9rem; padding: 26px 0; }
+.pf-fehler {
+  background: var(--orange-schwach); border: 1px solid var(--orange);
+  border-radius: var(--radius); padding: 14px 16px; color: var(--schrift);
+  font-size: 0.88rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
