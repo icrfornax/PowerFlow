@@ -220,6 +220,21 @@ try {
   pruefe(bausteine.karte === 1, "Karte vorhanden");
   pruefe(bausteine.ebenen >= 4, `${bausteine.ebenen} Ebenenschalter`);
 
+  // Die Voreinstellung ist eine Woche und muss stuendlich laufen.
+  const vorgabe = await js(`(function () {
+    const v = document.getElementById("pf-von").value, b = document.getElementById("pf-bis").value;
+    const kopf = [...document.querySelectorAll(".pf-abschnitt > h2")]
+      .map((h) => h.textContent).find((x) => /Verlauf/.test(x)) || "";
+    const punkte = document.querySelectorAll(".pf-flaechen path").length;
+    const trenner = document.querySelectorAll(".pf-tagestrenner").length;
+    return { von: v, bis: b, kopf, punkte, trenner };
+  })()`);
+  pruefe(/Stundenwerte/.test(vorgabe.kopf),
+    `Voreinstellung ${vorgabe.von}..${vorgabe.bis} laeuft stuendlich`, vorgabe.kopf);
+  pruefe(vorgabe.trenner >= 5,
+    `${vorgabe.trenner} Tagestrenner im Wochenverlauf`);
+  await foto("verlauf-woche", ".pf-verlauf");
+
   // --- Waagerechter Ueberlauf, drei Breiten ---
   for (const [name, breite, hoehe, mobil] of [
     ["gross", 1280, 900, false], ["schmal", 768, 900, false], ["mobil", 390, 844, true],

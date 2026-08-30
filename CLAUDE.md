@@ -46,9 +46,10 @@ Waehlbar ist jeder Zeitraum ab 01.01.2015.
 Der **Bezugswert ist damit fest**: derselbe Zeitraum ein Jahr frueher, reale
 Messwerte. Kein Monatsmittel, keine geglaettete Kurve.
 
-**Darstellungstiefe folgt der Laenge:** ein einzelner Tag wird stuendlich
-gezeigt (`data/verlauf/`), ein laengerer Zeitraum tageweise (`data/tage/`).
-Ueber Wochen hinweg waeren Stunden weder lesbar noch noetig.
+**Darstellungstiefe folgt der Laenge:** bis einschliesslich sieben Tage
+stuendlich (`data/verlauf/`), darueber tageweise (`data/tage/`). Eine Woche sind
+168 Punkte und noch gut zu lesen; ein Monat in Stundenwerten waere Kammputz.
+Vorbild fuer die Darstellung ist energy-charts.info.
 
 ## Umfang
 

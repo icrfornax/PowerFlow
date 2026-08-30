@@ -502,14 +502,24 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-lastlinie { stroke: var(--schrift); stroke-width: 2; stroke-linejoin: round;
   stroke-linecap: round; }
 .pf-kreuz { stroke: var(--schrift-still); stroke-width: 1; stroke-dasharray: 3 3; }
+/* Trennlinie um Mitternacht. Ohne sie verschwimmt eine Woche in Stundenwerten
+   zu einer einzigen Kurve, und man sieht nicht mehr, wo ein Tag aufhoert. */
+.pf-tagestrenner { stroke: var(--linie); stroke-width: 1; }
 
-.pf-ablesung { margin: 10px 0 0; font-size: 0.84rem; min-height: 3.2em; }
+/* Die Ablesung wird abgesetzt, sonst sieht sie aus wie eine zweite Legende.
+   Sie zeigt den Wert unter dem Fadenkreuz, die Legende den Anteil am Zeitraum. */
+.pf-ablesung {
+  margin: 10px 0 0; font-size: 0.84rem; min-height: 3.4em;
+  background: var(--flaeche-hoch); border-radius: var(--radius);
+  padding: 9px 12px;
+}
 .pf-ablesung strong { color: var(--schrift); font-family: var(--schrift-zahl); }
 .pf-ablesung-liste { display: flex; flex-wrap: wrap; gap: 3px 16px; margin-top: 4px; }
 .pf-ablesung-zeile { display: inline-flex; align-items: center; gap: 6px;
   color: var(--schrift-leise); font-variant-numeric: tabular-nums; }
 .pf-ablesung-zeile i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
 .pf-legende-traeger i { border-radius: 2px; }
+.pf-legende-titel { color: var(--schrift-still); }
 .pf-legende i.pf-last, .pf-ablesung-zeile i.pf-last {
   width: 16px; height: 2px; border-radius: 1px; background: var(--schrift); }
 
