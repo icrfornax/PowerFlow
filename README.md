@@ -2,7 +2,11 @@ PowerFlow
 
 Statisches Daten-Dashboard zu Stromflüssen und -mengen im deutschen Stromnetz.
 
-Status: Rumpf. Leitfrage und freie Variable stehen (freie Variable: der Kalendertag), siehe CLAUDE.md.
+Status: Rumpf. Automatik
+
+Drei GitHub-Actions-Workflows: taeglich der SMARD-Abruf (Tages- und Stundenwerte im selben Lauf, weil die Quelle nachmeldet), monatlich die Stammdaten und die Netzgeometrie, und bei jeder Aenderung der Tuersteher aus scripts/validate.py samt Negativtests. Kein Workflow pusht mit --force; der Pages-Bau wird selbst angestossen, weil ein Push mit dem Standard-Token keine weiteren Workflows ausloest.
+
+Leitfrage und freie Variable stehen (freie Variable: der Kalendertag), siehe CLAUDE.md.
 
 Live: https://icrfornax.github.io/PowerFlow/ — ausgeliefert von GitHub Pages aus dem Zweig main. Die Datei .nojekyll schaltet die Jekyll-Verarbeitung ab: die Seite ist reines statisches HTML, und die Dateien unter data/ sollen unverändert ausgeliefert werden.
 
@@ -25,6 +29,7 @@ Aufbau
     scripts/fetch-*.py    Abrufskripte
     scripts/validate.py   Türsteher vor dem Deploy, mit Negativtests
     docs/beleg-*.md       Nachweise je Datenquelle
+    .github/workflows/    drei Workflows: taeglicher Abruf, Stammdaten, Tuersteher
 
 Belege
 

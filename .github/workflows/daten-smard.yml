@@ -1,0 +1,99 @@
+name: Daten SMARD
+
+# Taeglicher Abruf der Strommengen. EIN Workflow je Datenquelle -- faellt SMARD
+# aus, bleiben die uebrigen Jobs davon unberuehrt.
+#
+# Tages- und Stundenwerte werden im SELBEN Lauf geholt. Das ist nicht
+# Bequemlichkeit: SMARD meldet zurueckliegende Werte nach. Am 30.08.2026 stand
+# der 28.08. zuerst bei 1.214.078,00 MWh und nach dem naechsten Abruf bei
+# 1.213.793,75 MWh. Wer die beiden Reihen zu verschiedenen Zeiten holt, bekommt
+# zwei Staende, und die Gegenprobe in scripts/validate.py schlaegt zu Recht an.
+#
+# Deshalb werden auch das laufende UND das vorige Jahr neu geholt, nicht nur
+# die letzten Tage: Nachmeldungen reichen weiter zurueck, als man denkt, und
+# meta_data.version taugt nicht zu ihrer Erkennung (siehe docs/beleg-smard.md).
+
+on:
+  schedule:
+    # 05:12 UTC. Krumme Minute mit Absicht: zur vollen Stunde ist die
+    # Warteschlange bei GitHub am laengsten.
+    - cron: "12 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: daten-smard
+  cancel-in-progress: false
+
+jobs:
+  abrufen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Tageswerte holen (laufendes und voriges Jahr)
+        run: |
+          python scripts/fetch-tagesreihen.py "$(date -u +%Y)" "$(( $(date -u +%Y) - 1 ))"
+
+      - name: Stundenwerte nachtragen (letzte vier Wochen)
+        run: python scripts/fetch-verlauf.py --wochen 4
+
+      - name: Tuersteher
+        run: |
+          python scripts/validate.py
+          python scripts/validate.py --negativtests
+
+      - name: Aenderungen feststellen
+        id: diff
+        run: |
+          if git diff --quiet -- data/; then
+            echo "geaendert=nein" >> "$GITHUB_OUTPUT"
+            echo "Keine Aenderung an data/ -- nichts zu tun."
+          else
+            echo "geaendert=ja" >> "$GITHUB_OUTPUT"
+            git diff --stat -- data/
+          fi
+
+      - name: Committen und pushen
+        if: steps.diff.outputs.geaendert == 'ja'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Daten: SMARD-Abruf $(date -u +%Y-%m-%d)"
+          # Push-Wiederholung: bei "fetch first" den Branch nachholen, rebasen,
+          # erneut versuchen. Bis zu dreimal. NIEMALS --force -- bei einem
+          # echten Konflikt bricht der Lauf sichtbar ab, statt fremde Arbeit
+          # stillschweigend zu ueberschreiben.
+          for versuch in 1 2 3; do
+            if git push; then
+              echo "Push im Versuch $versuch gelungen."
+              exit 0
+            fi
+            echo "Push fehlgeschlagen, Versuch $versuch. Hole nach und rebase."
+            git fetch origin main || exit 1
+            git rebase origin/main || {
+              echo "Echter Konflikt beim Rebase. Abbruch ohne force."
+              git rebase --abort || true
+              exit 1
+            }
+          done
+          echo "Push auch nach drei Versuchen nicht moeglich."
+          exit 1
+
+      - name: Pages-Bau anstossen
+        if: steps.diff.outputs.geaendert == 'ja'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Ein Push mit dem Standard-GITHUB_TOKEN loest KEINE weiteren
+          # Workflows aus. Der Pages-Bau muss deshalb selbst angestossen werden,
+          # sonst liegen die neuen Daten im Repository, aber nicht auf der Seite.
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds"

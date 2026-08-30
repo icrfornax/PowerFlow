@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260830-verlauf";
+  var VERSION = "20260830-zeitraum";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -60,13 +60,6 @@
     d.setDate(d.getDate() + tage);
     return nachIso(d);
   }
-  function vorjahrstag(iso) {
-    var t = iso.split("-");
-    // Der 29. Februar hat kein Gegenstueck im Vorjahr. Dann gibt es keinen
-    // Bezugswert -- der wird als fehlend angezeigt, nicht ersetzt.
-    return (Number(t[0]) - 1) + "-" + t[1] + "-" + t[2];
-  }
-
   function el(tag, attrs, kinder) {
     var n = document.createElement(tag);
     if (attrs) {
@@ -86,9 +79,12 @@
     verzeichnis: null,
     grundkarte: null,
     kraftwerke: null,
-    jahre: {},          // Jahr -> geladene Jahresdatei
-    tag: null,
-    starttag: null,     // fuer den Zuruecksetzen-Knopf
+    jahre: {},          // Jahr -> geladene Jahresdatei mit Tageswerten
+    verlauf: {},        // Monat -> geladene Monatsdatei mit Stundenwerten
+    von: null,          // erster Tag des Zeitraums
+    bis: null,          // letzter Tag des Zeitraums, einschliesslich
+    startVon: null,     // fuer den Zuruecksetzen-Knopf
+    startBis: null,
     minTag: null,
     maxTag: null,
     wurzel: null,
@@ -96,8 +92,8 @@
     // zugehoerige Ebene eingeschaltet wird -- die 110-kV-Ebene allein ist
     // 5,9 MB gross.
     netz: {},
-    verlauf: {},
-    // Zoomzustand und Auswahl der Karte. Beides ueberlebt einen Tageswechsel.
+    // Zoomzustand und Auswahl der Karte. Beides ueberlebt einen Wechsel des
+    // Zeitraums.
     karte: { sicht: null, auswahl: null },
     ebenen: {
       kuppelstellen: true,
@@ -123,7 +119,9 @@
   }
 
   function jahrLaden(jahr) {
-    if (Z.jahre[jahr]) { return Promise.resolve(Z.jahre[jahr]); }
+    if (Object.prototype.hasOwnProperty.call(Z.jahre, jahr)) {
+      return Promise.resolve(Z.jahre[jahr]);
+    }
     var eintrag = Z.verzeichnis.jahre.filter(function (j) { return j.jahr === jahr; })[0];
     if (!eintrag) { Z.jahre[jahr] = null; return Promise.resolve(null); }
     return fetch(eintrag.datei + "?v=" + VERSION).then(function (r) {
@@ -132,10 +130,35 @@
     }).then(function (d) { Z.jahre[jahr] = d; return d; });
   }
 
-  /* Liest einen Wert aus einer Jahresdatei ueber einen Schluesselpfad. */
-  function wert(iso, pfad) {
-    var jahr = Number(iso.slice(0, 4));
-    var d = Z.jahre[jahr];
+  // ---- Zeitraum -----------------------------------------------------------
+  /* Die freie Variable ist der dargestellte ZEITRAUM. Ein einzelner Tag ist der
+     Sonderfall von = bis. Alles Uebrige bleibt gemessen. */
+
+  function tageImZeitraum(von, bis) {
+    var raus = [], t = von, schutz = 0;
+    while (t <= bis && schutz++ < 4000) { raus.push(t); t = verschoben(t, 1); }
+    return raus;
+  }
+
+  function anzahlTage(von, bis) { return tageImZeitraum(von, bis).length; }
+
+  function jahreImZeitraum(von, bis) {
+    var raus = [];
+    for (var j = Number(von.slice(0, 4)); j <= Number(bis.slice(0, 4)); j++) { raus.push(j); }
+    return raus;
+  }
+
+  /* Ein Jahr frueher. Der 29. Februar hat kein Gegenstueck -- dann wird der
+     28. genommen und das im Bezugstext gesagt, statt still zu verschieben. */
+  function vorjahrstag(iso) {
+    var t = iso.split("-");
+    var jahr = Number(t[0]) - 1;
+    if (t[1] === "02" && t[2] === "29") { return jahr + "-02-28"; }
+    return jahr + "-" + t[1] + "-" + t[2];
+  }
+
+  function zeileImJahr(iso, pfad) {
+    var d = Z.jahre[Number(iso.slice(0, 4))];
     if (!d) { return null; }
     var i = d.tage.indexOf(iso);
     if (i < 0) { return null; }
@@ -148,87 +171,120 @@
     return v === undefined ? null : v;
   }
 
-  function summeUeber(iso, gruppe, unterschluessel) {
-    var jahr = Number(iso.slice(0, 4));
-    var d = Z.jahre[jahr];
-    if (!d) { return null; }
-    var i = d.tage.indexOf(iso);
-    if (i < 0) { return null; }
-    var quelle = d[gruppe];
-    var s = 0, gefunden = false;
-    Object.keys(quelle).forEach(function (k) {
-      var reihe = unterschluessel ? quelle[k][unterschluessel] : quelle[k];
-      if (reihe && reihe[i] !== null && reihe[i] !== undefined) {
-        s += reihe[i]; gefunden = true;
-      }
+  /* Summe eines Feldes ueber den Zeitraum. Fehlende Tage werden NICHT als Null
+     gezaehlt -- die Zahl der belegten Tage wird mitgegeben, damit die Anzeige
+     eine Luecke benennen kann. */
+  function summeZeitraum(von, bis, pfad) {
+    var summe = 0, belegt = 0;
+    tageImZeitraum(von, bis).forEach(function (t) {
+      var v = zeileImJahr(t, pfad);
+      if (v !== null) { summe += v; belegt++; }
     });
-    return gefunden ? s : null;
+    return belegt ? { wert: summe, belegt: belegt } : { wert: null, belegt: 0 };
   }
 
-  /* Alle Kennzahlen eines Tages an einer Stelle. Wird fuer den gewaehlten Tag
-     und fuer den Vorjahrestag mit derselben Funktion gerechnet -- damit kann
-     der Vergleich nicht auseinanderlaufen. */
-  function kennzahlen(iso) {
-    var netzlast = wert(iso, ["netzlast"]);
-    if (netzlast === null) { return null; }
-    var erzeugung = summeUeber(iso, "erzeugung");
-    var imp = summeUeber(iso, "aussenhandel", "import");
-    var exp = summeUeber(iso, "aussenhandel", "export");
+  function summeGruppe(von, bis, gruppe, unterschluessel) {
+    var summe = 0, gefunden = false;
+    tageImZeitraum(von, bis).forEach(function (t) {
+      var d = Z.jahre[Number(t.slice(0, 4))];
+      if (!d) { return; }
+      var i = d.tage.indexOf(t);
+      if (i < 0) { return; }
+      Object.keys(d[gruppe]).forEach(function (k) {
+        var reihe = unterschluessel ? d[gruppe][k][unterschluessel] : d[gruppe][k];
+        if (reihe && reihe[i] !== null && reihe[i] !== undefined) {
+          summe += reihe[i]; gefunden = true;
+        }
+      });
+    });
+    return gefunden ? summe : null;
+  }
+
+  /* Alle Kennzahlen eines Zeitraums an einer Stelle. Wird fuer den gewaehlten
+     Zeitraum und fuer denselben Zeitraum im Vorjahr mit derselben Funktion
+     gerechnet -- damit kann der Vergleich nicht auseinanderlaufen. */
+  function kennzahlen(von, bis) {
+    var netz = summeZeitraum(von, bis, ["netzlast"]);
+    if (netz.wert === null) { return null; }
+    var erzeugung = summeGruppe(von, bis, "erzeugung");
+    var imp = summeGruppe(von, bis, "aussenhandel", "import");
+    var exp = summeGruppe(von, bis, "aussenhandel", "export");
     var saldo = (imp === null || exp === null) ? null : imp - exp;
+    var tage = anzahlTage(von, bis);
     return {
-      tag: iso,
-      netzlast: netzlast,
+      von: von, bis: bis, tage: tage, belegt: netz.belegt,
+      netzlast: netz.wert,
       erzeugung: erzeugung,
-      residuallast: wert(iso, ["residuallast"]),
-      pumpen: wert(iso, ["pumpspeicherverbrauch"]),
+      residuallast: summeZeitraum(von, bis, ["residuallast"]).wert,
+      pumpen: summeZeitraum(von, bis, ["pumpspeicherverbrauch"]).wert,
       imp: imp,
       exp: exp,
       saldo: saldo,
-      rest: (erzeugung === null || saldo === null) ? null : erzeugung + saldo - netzlast,
-      leistung: netzlast / 24
+      rest: (erzeugung === null || saldo === null) ? null : erzeugung + saldo - netz.wert,
+      // Mittlere Leistung ueber die belegten Tage, nicht ueber den Kalender:
+      // eine Luecke soll den Schnitt nicht nach unten ziehen.
+      leistung: netz.belegt ? netz.wert / (netz.belegt * 24) : null
     };
   }
 
-  function traeger(iso) {
-    var jahr = Number(iso.slice(0, 4));
-    var d = Z.jahre[jahr];
-    if (!d) { return []; }
-    var i = d.tage.indexOf(iso);
-    return Object.keys(d.erzeugung).map(function (name) {
-      return { name: name, mwh: d.erzeugung[name][i] };
+  function traeger(von, bis) {
+    var namen = {};
+    tageImZeitraum(von, bis).forEach(function (t) {
+      var d = Z.jahre[Number(t.slice(0, 4))];
+      if (d) { Object.keys(d.erzeugung).forEach(function (n) { namen[n] = true; }); }
+    });
+    return Object.keys(namen).map(function (name) {
+      return { name: name, mwh: summeZeitraum(von, bis, ["erzeugung", name]).wert };
     }).filter(function (e) { return e.mwh !== null; })
       .sort(function (a, b) { return b.mwh - a.mwh; });
   }
 
-  function zonen(iso) {
-    var jahr = Number(iso.slice(0, 4));
-    var d = Z.jahre[jahr];
+  function zonen(von, bis) {
+    var d = Z.jahre[Number(von.slice(0, 4))];
     if (!d) { return []; }
-    var i = d.tage.indexOf(iso);
     return Object.keys(d.regelzonen).map(function (z) {
-      var w = d.regelzonen[z];
-      var g = 0, fehlend = [];
-      Object.keys(w.erzeugung).forEach(function (t) {
-        var v = w.erzeugung[t][i];
-        if (v === null || v === undefined) { fehlend.push(t); } else { g += v; }
+      var last = summeZeitraum(von, bis, ["regelzonen", z, "netzlast"]).wert;
+      var gen = 0, gefunden = false, fehlend = [];
+      Object.keys(d.regelzonen[z].erzeugung).forEach(function (n) {
+        var w = summeZeitraum(von, bis, ["regelzonen", z, "erzeugung", n]).wert;
+        if (w === null) { fehlend.push(n); } else { gen += w; gefunden = true; }
       });
-      return { zone: z, netzlast: w.netzlast[i], erzeugung: g, saldo: g - w.netzlast[i],
-               fehlend: fehlend };
-    });
+      return { zone: z, netzlast: last, erzeugung: gefunden ? gen : null,
+               saldo: (last === null || !gefunden) ? null : gen - last, fehlend: fehlend };
+    }).filter(function (x) { return x.saldo !== null; });
   }
 
-  function laender(iso) {
-    var jahr = Number(iso.slice(0, 4));
-    var d = Z.jahre[jahr];
+  function laender(von, bis) {
+    var d = Z.jahre[Number(von.slice(0, 4))];
     if (!d) { return []; }
-    var i = d.tage.indexOf(iso);
     return Object.keys(d.aussenhandel).map(function (l) {
-      var a = d.aussenhandel[l];
-      return { land: l, imp: a["import"][i], exp: a.export[i],
-               saldo: (a["import"][i] === null || a.export[i] === null)
-                 ? null : a["import"][i] - a.export[i] };
+      var imp = summeZeitraum(von, bis, ["aussenhandel", l, "import"]).wert;
+      var exp = summeZeitraum(von, bis, ["aussenhandel", l, "export"]).wert;
+      return { land: l, imp: imp, exp: exp,
+               saldo: (imp === null || exp === null) ? null : imp - exp };
     }).filter(function (x) { return x.saldo !== null; })
       .sort(function (a, b) { return b.saldo - a.saldo; });
+  }
+
+  /* Beschriftung des Zeitraums. Ein Tag heisst wie ein Tag, ein ganzer Monat
+     wie ein Monat -- nicht "01.07. bis 31.07.". */
+  function zeitraumLang(von, bis) {
+    if (von === bis) { return datumLang(von); }
+    var a = ausIso(von), b = ausIso(bis);
+    var monatsende = nachIso(new Date(b.getFullYear(), b.getMonth() + 1, 0));
+    if (von.slice(8) === "01" && bis === monatsende && von.slice(0, 7) === bis.slice(0, 7)) {
+      return a.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+    }
+    if (von.slice(5) === "01-01" && bis.slice(5) === "12-31"
+        && von.slice(0, 4) === bis.slice(0, 4)) {
+      return "Jahr " + von.slice(0, 4);
+    }
+    return a.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })
+      + " bis " + b.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  function zeitraumKurz(von, bis) {
+    return von === bis ? von : von + " bis " + bis;
   }
 
   // ---- Info-Popover -------------------------------------------------------
@@ -323,13 +379,13 @@
     return k;
   }
 
-  /* Bezugszeile: derselbe Kalendertag im Vorjahr, realer Messwert. */
-  function bezugstext(heute, vorher, iso) {
+  /* Bezugszeile: derselbe Zeitraum ein Jahr frueher, reale Messwerte. */
+  function bezugstext(heute, vorher, vvon, vbis) {
     if (vorher === null || vorher === undefined) {
-      return "kein Vergleichswert für " + vorjahrstag(iso) + " vorhanden";
+      return "kein Vergleichswert für " + zeitraumKurz(vvon, vbis) + " vorhanden";
     }
     var p = prozent(heute, vorher);
-    return gwh(vorher, 1) + " GWh am " + vorjahrstag(iso) + " · "
+    return gwh(vorher, 1) + " GWh im Vorjahreszeitraum · "
       + (p >= 0 ? "+" : "−") + nf1.format(Math.abs(p)) + " %";
   }
 
@@ -378,13 +434,6 @@
     "TransnetBW": "var(--gruen)"
   };
 
-  var svgNS = "http://www.w3.org/2000/svg";
-  function s(tag, attrs) {
-    var n = document.createElementNS(svgNS, tag);
-    Object.keys(attrs || {}).forEach(function (k) { n.setAttribute(k, attrs[k]); });
-    return n;
-  }
-
   /* Spannungsebenen. Farbe und Staerke nach Ebene, nicht dekorativ:
      je hoeher die Spannung, desto heller und kraeftiger die Linie. */
   var EBENEN = [
@@ -426,8 +475,10 @@
     return n ? [x / n, y / n] : null;
   }
 
-  function karte(grundkarte, anlagen, iso) {
-    var B = 640, H = 800, rand = 16;
+  function karte(grundkarte, anlagen, von, bis) {
+    /* Breiter Ausschnitt: Deutschland fuellt die Hoehe, die Nachbarlaender
+       fuellen die Seiten. So bleibt links und rechts keine leere Flaeche. */
+    var B = 1000, H = 780, rand = 14;
 
     var lonMin = 1e9, lonMax = -1e9, latMin = 1e9, latMax = -1e9;
     grundkarte.bundeslaender.forEach(function (b) {
@@ -450,7 +501,9 @@
 
     var kx = Math.cos((latMin + latMax) / 2 * Math.PI / 180);
     var spanX = (lonMax - lonMin) * kx, spanY = latMax - latMin;
-    var skala = Math.min((B - 2 * rand) / spanX, (H - 2 * rand) / spanY);
+    // Auf die Hoehe einpassen und waagerecht mittig setzen -- die Karte soll
+    // ihren Rahmen ausfuellen, nicht in der Mitte schweben.
+    var skala = (H - 2 * rand) / spanY;
     var vx = (B - spanX * skala) / 2, vy = (H - spanY * skala) / 2;
     function X(lon) { return vx + (lon - lonMin) * kx * skala; }
     function Y(lat) { return vy + (latMax - lat) * skala; }
@@ -470,7 +523,8 @@
       role: "img", tabindex: "0",
       "aria-label": "Karte Deutschlands mit Hoechstspannungsnetz, Umspannwerken, "
         + "Kraftwerksstandorten und der gemessenen Richtung des Stromflusses an den "
-        + "Kuppelstellen zu den Nachbarlaendern"
+        + "Kuppelstellen zu den Nachbarlaendern im Zeitraum "
+        + zeitraumKurz(von, bis)
     });
 
     var gNachbarn = s("g", { "class": "pf-geo-nachbar" });
@@ -599,7 +653,7 @@
        der eine Richtung gezeigt wird -- weil sie hier gemessen ist. */
     if (Z.ebenen.kuppelstellen) {
       var mitte = [(lonMin + lonMax) / 2, (latMin + latMax) / 2];
-      var werte = laender(iso);
+      var werte = laender(von, bis);
       var groesstes = 0;
       werte.forEach(function (w) {
         if (Math.abs(w.saldo) > groesstes) { groesstes = Math.abs(w.saldo); }
@@ -654,7 +708,7 @@
           art: "Kuppelstelle", titel: w.land,
           zeilen: [["Richtung", einwaerts ? "Zufluss nach Deutschland"
                                           : "Abfluss aus Deutschland"],
-                   ["Saldo am " + iso, vz(w.saldo, 2) + " GWh"],
+                   ["Saldo " + zeitraumKurz(von, bis), vz(w.saldo, 2) + " GWh"],
                    ["Import", gwh(w.imp, 2) + " GWh"],
                    ["Export", gwh(w.exp, 2) + " GWh"]],
           fuss: "Gemessen. Richtung und Menge stammen aus den SMARD-Reihen für den "
@@ -806,15 +860,21 @@
     return kasten;
   }
 
-  // ---- Tagesverlauf -------------------------------------------------------
-  /* Gestapelte Flaechen: Erzeugung nach Energietraeger ueber den Tag, darueber
-     die Netzlast als Linie. Beide in GW -- EINE Achse, nie zwei.
+  // ---- Zeitreihe ----------------------------------------------------------
+  /* Gestapelte Flaechen: Erzeugung nach Energietraeger ueber die Zeit, darueber
+     die Netzlast als Linie. Beide in derselben Einheit -- EINE Achse, nie zwei.
+
+     Ein einzelner Tag wird stuendlich gezeigt (aus data/verlauf/), ein laengerer
+     Zeitraum tageweise (aus data/tage/). Ueber Wochen hinweg waeren Stunden
+     weder lesbar noch noetig.
 
      Zwoelf Traeger waeren als Stapel nicht lesbar. Gruppiert wird auf sieben
      farbige Baender plus ein graues "Sonstige". Die Farben sind mit dem
      Validierer geprueft (Helligkeitsband, Chroma, Farbsehschwaeche, Kontrast),
      hell und dunkel getrennt. Das graue "Sonstige" ist bewusst KEIN achter
-     Farbton, sondern die Sammelposition. */
+     Farbton, sondern die Sammelposition -- und es trennt im Stapel das Orange
+     des Erdgases vom Gruen der Biomasse, die bei Rotblindheit sonst kaum
+     auseinanderzuhalten waeren. */
   var TRAEGERGRUPPEN = [
     { name: "Kernenergie", token: "--tr-kern", quellen: ["Kernenergie"] },
     { name: "Braunkohle", token: "--tr-braun", quellen: ["Braunkohle"] },
@@ -841,8 +901,8 @@
       .catch(function () { Z.verlauf[m] = null; return null; });
   }
 
-  /* Stundenwerte eines Tages, gruppiert. Rueckgabe null, wenn der Monat fehlt. */
-  function verlaufTag(iso) {
+  /* Stundenwerte eines einzelnen Tages, gruppiert. */
+  function reiheStuendlich(iso) {
     var d = Z.verlauf[monatVon(iso)];
     if (!d) { return null; }
     var idx = [];
@@ -850,36 +910,66 @@
       if (d.stunden[i].slice(0, 10) === iso) { idx.push(i); }
     }
     if (!idx.length) { return null; }
-    var reihen = TRAEGERGRUPPEN.map(function (g) {
-      var werte = idx.map(function (k) {
-        var summe = 0;
-        g.quellen.forEach(function (q) {
-          var r = d.erzeugung[q];
-          if (r && r[k] !== null && r[k] !== undefined) { summe += r[k]; }
-        });
-        return summe;
-      });
-      return { name: g.name, token: g.token, werte: werte,
-               summe: werte.reduce(function (a, b) { return a + b; }, 0) };
-    });
     return {
-      stunden: idx.map(function (k) { return Number(d.stunden[k].slice(11, 13)); }),
+      teiler: 1000,           // MWh je Stunde -> GW
+      einheit: "GW",
+      marken: idx.map(function (k) { return d.stunden[k].slice(11, 13) + ":00"; }),
       netzlast: idx.map(function (k) { return d.netzlast[k]; }),
-      reihen: reihen
+      reihen: TRAEGERGRUPPEN.map(function (g) {
+        var werte = idx.map(function (k) {
+          var summe = 0;
+          g.quellen.forEach(function (q) {
+            var r = d.erzeugung[q];
+            if (r && r[k] !== null && r[k] !== undefined) { summe += r[k]; }
+          });
+          return summe;
+        });
+        return { name: g.name, token: g.token, werte: werte,
+                 summe: werte.reduce(function (a, b) { return a + b; }, 0) };
+      })
     };
   }
 
-  function verlaufDiagramm(iso) {
-    var v = verlaufTag(iso);
+  /* Tageswerte eines laengeren Zeitraums, gruppiert. */
+  function reiheTaeglich(von, bis) {
+    var tage = tageImZeitraum(von, bis);
+    if (!tage.length) { return null; }
+    return {
+      teiler: 1000,           // MWh je Tag -> GWh je Tag
+      einheit: "GWh am Tag",
+      marken: tage.map(function (t) { return t.slice(8) + "." + t.slice(5, 7) + "."; }),
+      tage: tage,
+      netzlast: tage.map(function (t) { return zeileImJahr(t, ["netzlast"]); }),
+      reihen: TRAEGERGRUPPEN.map(function (g) {
+        var werte = tage.map(function (t) {
+          var summe = 0;
+          g.quellen.forEach(function (q) {
+            var v = zeileImJahr(t, ["erzeugung", q]);
+            if (v !== null) { summe += v; }
+          });
+          return summe;
+        });
+        return { name: g.name, token: g.token, werte: werte,
+                 summe: werte.reduce(function (a, b) { return a + b; }, 0) };
+      })
+    };
+  }
+
+  function zeitreihe(von, bis) {
+    return von === bis ? reiheStuendlich(von) : reiheTaeglich(von, bis);
+  }
+
+  function zeitreihenDiagramm(von, bis) {
+    var v = zeitreihe(von, bis);
     var huelle = el("div", { "class": "pf-verlauf" });
     if (!v) {
       huelle.appendChild(el("p", { "class": "pf-laden",
-        text: "Für diesen Tag liegt noch kein Stundenverlauf im Repository." }));
+        text: "Für diesen Zeitraum liegt noch keine Kurve im Repository." }));
       return huelle;
     }
 
-    var B = 900, H = 320, links = 46, rechts = 12, oben = 16, unten = 26;
-    var n = v.stunden.length;
+    var B = 900, H = 320, links = 52, rechts = 12, oben = 16, unten = 26;
+    var n = v.marken.length;
     var innenB = B - links - rechts, innenH = H - oben - unten;
 
     var stapel = [], laufend = [], maxWert = 0, i;
@@ -891,34 +981,37 @@
     });
     laufend.forEach(function (x) { if (x > maxWert) { maxWert = x; } });
     v.netzlast.forEach(function (x) { if (x !== null && x > maxWert) { maxWert = x; } });
-    var achse = Math.max(10, Math.ceil(maxWert / 1000 / 10) * 10);
+    var roh = maxWert / v.teiler;
+    var schritt = Math.pow(10, Math.floor(Math.log(Math.max(roh, 1)) / Math.LN10));
+    var achse = Math.max(schritt, Math.ceil(roh / schritt) * schritt);
 
     function X(k) { return links + (n === 1 ? innenB / 2 : k / (n - 1) * innenB); }
-    function Y(mwh) { return oben + innenH - (mwh / 1000) / achse * innenH; }
+    function Y(mwh) { return oben + innenH - (mwh / v.teiler) / achse * innenH; }
 
     var svg = s("svg", {
       "class": "pf-diagramm", viewBox: "0 0 " + B + " " + H, role: "img",
       tabindex: "0",
-      "aria-label": "Erzeugung nach Energieträger im Tagesverlauf am " + datumLang(iso)
-        + ", gestapelt in GW, dazu die Netzlast als Linie"
+      "aria-label": "Erzeugung nach Energieträger, " + zeitraumLang(von, bis)
+        + ", gestapelt in " + v.einheit + ", dazu die Netzlast als Linie"
     });
 
     var gitter = s("g", { "class": "pf-gitter" });
-    for (var g = 0; g <= achse; g += achse / 4) {
-      var y = Y(g * 1000);
+    for (var g = 0; g <= achse + 1e-9; g += achse / 4) {
+      var y = Y(g * v.teiler);
       gitter.appendChild(s("line", { x1: links, x2: B - rechts, y1: y, y2: y }));
       var tx = s("text", { x: links - 6, y: y + 3.5, "text-anchor": "end" });
       tx.textContent = nf0.format(g);
       gitter.appendChild(tx);
     }
-    for (var h = 0; h < n; h += 3) {
+    var jeder = Math.max(1, Math.ceil(n / 12));
+    for (var h = 0; h < n; h += jeder) {
       var t2 = s("text", { x: X(h), y: H - 8, "text-anchor": "middle" });
-      t2.textContent = (v.stunden[h] < 10 ? "0" : "") + v.stunden[h];
+      t2.textContent = v.marken[h];
       gitter.appendChild(t2);
     }
     var einheit = s("text", { x: links - 6, y: oben - 4, "text-anchor": "end",
       "class": "pf-achsentitel" });
-    einheit.textContent = "GW";
+    einheit.textContent = v.einheit;
     gitter.appendChild(einheit);
     svg.appendChild(gitter);
 
@@ -927,8 +1020,7 @@
     var gFl = s("g", { "class": "pf-flaechen" });
     stapel.forEach(function (b) {
       if (b.reihe.summe <= 0) { return; }
-      var d = "M" + X(0).toFixed(1) + " " + Y(b.unten[0]).toFixed(1);
-      var k;
+      var d = "M" + X(0).toFixed(1) + " " + Y(b.unten[0]).toFixed(1), k;
       for (k = 0; k < n; k++) { d += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1); }
       for (k = n - 1; k >= 0; k--) { d += "L" + X(k).toFixed(1) + " " + Y(b.unten[k]).toFixed(1); }
       gFl.appendChild(s("path", {
@@ -957,21 +1049,21 @@
     var ablesung = el("div", { "class": "pf-ablesung", role: "status" });
     huelle.appendChild(ablesung);
 
-    var stunde = Math.min(12, n - 1);
+    var stelle = Math.min(Math.floor(n / 2), n - 1);
 
     function zeige(k) {
-      stunde = k;
+      stelle = k;
       kreuz.setAttribute("x1", X(k));
       kreuz.setAttribute("x2", X(k));
       ablesung.textContent = "";
-      ablesung.appendChild(el("strong", {
-        text: (v.stunden[k] < 10 ? "0" : "") + v.stunden[k] + ":00 Uhr" }));
+      ablesung.appendChild(el("strong", { text: v.tage ? datumLang(v.tage[k])
+        : v.marken[k] + " Uhr" }));
       var liste = el("div", { "class": "pf-ablesung-liste" });
       if (v.netzlast[k] !== null) {
         var zl = el("span", { "class": "pf-ablesung-zeile" });
         zl.appendChild(el("i", { "class": "pf-strich pf-last" }));
         zl.appendChild(document.createTextNode(
-          " Netzlast " + nf1.format(v.netzlast[k] / 1000) + " GW"));
+          " Netzlast " + nf1.format(v.netzlast[k] / v.teiler) + " " + v.einheit));
         liste.appendChild(zl);
       }
       v.reihen.slice().reverse().forEach(function (r) {
@@ -979,7 +1071,7 @@
         var z = el("span", { "class": "pf-ablesung-zeile" });
         z.appendChild(el("i", { style: "background:var(" + r.token + ");" }));
         z.appendChild(document.createTextNode(
-          " " + r.name + " " + nf1.format(r.werte[k] / 1000) + " GW"));
+          " " + r.name + " " + nf1.format(r.werte[k] / v.teiler)));
         liste.appendChild(z);
       });
       ablesung.appendChild(liste);
@@ -996,23 +1088,23 @@
       if (e.touches.length) { ausPosition(e.touches[0]); }
     }, { passive: true });
     svg.addEventListener("keydown", function (e) {
-      if (e.key === "ArrowRight") { zeige(Math.min(n - 1, stunde + 1)); }
-      else if (e.key === "ArrowLeft") { zeige(Math.max(0, stunde - 1)); }
+      if (e.key === "ArrowRight") { zeige(Math.min(n - 1, stelle + 1)); }
+      else if (e.key === "ArrowLeft") { zeige(Math.max(0, stelle - 1)); }
       else { return; }
       e.preventDefault();
     });
-    zeige(stunde);
+    zeige(stelle);
 
     /* Legende. Bei acht Baendern Pflicht; der Anteil steht dabei, damit die
        Identitaet nicht allein an der Farbe haengt. */
-    var tagessumme = v.reihen.reduce(function (a, r) { return a + r.summe; }, 0) || 1;
+    var gesamt = v.reihen.reduce(function (a, r) { return a + r.summe; }, 0) || 1;
     var legende = el("div", { "class": "pf-legende pf-legende-traeger" });
     v.reihen.slice().reverse().forEach(function (r) {
       if (!r.summe) { return; }
       var sp = el("span");
       sp.appendChild(el("i", { style: "background:var(" + r.token + ");" }));
       sp.appendChild(document.createTextNode(
-        r.name + " " + nf1.format(r.summe / tagessumme * 100) + " %"));
+        r.name + " " + nf1.format(r.summe / gesamt * 100) + " %"));
       legende.appendChild(sp);
     });
     var spl = el("span");
@@ -1036,21 +1128,21 @@
       if (auf && !tabHuelle.childNodes.length) {
         var tab = el("table", { "class": "pf-tabelle" });
         var kopfz = el("tr");
-        kopfz.appendChild(el("th", { text: "Stunde", scope: "col" }));
+        kopfz.appendChild(el("th", { text: v.tage ? "Tag" : "Stunde", scope: "col" }));
         v.reihen.forEach(function (r) {
-          if (r.summe) { kopfz.appendChild(el("th", { text: r.name + " GW", scope: "col" })); }
+          if (r.summe) { kopfz.appendChild(el("th", { text: r.name, scope: "col" })); }
         });
-        kopfz.appendChild(el("th", { text: "Netzlast GW", scope: "col" }));
+        kopfz.appendChild(el("th", { text: "Netzlast", scope: "col" }));
         var kopf = el("thead"); kopf.appendChild(kopfz); tab.appendChild(kopf);
         var koerper = el("tbody");
-        v.stunden.forEach(function (st, k) {
+        v.marken.forEach(function (mk, k) {
           var tr = el("tr");
-          tr.appendChild(el("td", { text: (st < 10 ? "0" : "") + st + ":00" }));
+          tr.appendChild(el("td", { text: v.tage ? v.tage[k] : mk }));
           v.reihen.forEach(function (r) {
-            if (r.summe) { tr.appendChild(el("td", { text: nf1.format(r.werte[k] / 1000) })); }
+            if (r.summe) { tr.appendChild(el("td", { text: nf1.format(r.werte[k] / v.teiler) })); }
           });
           tr.appendChild(el("td", { text: v.netzlast[k] === null ? "—"
-            : nf1.format(v.netzlast[k] / 1000) }));
+            : nf1.format(v.netzlast[k] / v.teiler) }));
           koerper.appendChild(tr);
         });
         tab.appendChild(koerper);
@@ -1063,25 +1155,27 @@
   }
 
   // ---- CSV-Export ---------------------------------------------------------
-  // Wird aus dem gewaehlten Tag erzeugt, damit der Abzug immer zu dem passt,
-  // was auf der Seite steht.
+  // Wird aus dem gewaehlten Zeitraum erzeugt, damit der Abzug immer zu dem
+  // passt, was auf der Seite steht.
 
-  function csvBauen(iso) {
-    var k = kennzahlen(iso);
-    var v = kennzahlen(vorjahrstag(iso));
+  function csvBauen(von, bis) {
+    var k = kennzahlen(von, bis);
+    var vv = vorjahrstag(von), vb = vorjahrstag(bis);
+    var v = kennzahlen(vv, vb) || {};
     var z = [
-      "# PowerFlow -- Tagesbilanz des deutschen Stromsystems",
-      "# Tag (Ortszeit Europe/Berlin): " + iso,
-      "# Vergleichstag: " + vorjahrstag(iso) + " (realer Messwert desselben Kalendertags,",
-      "#   kein Monatsmittel und keine geglaettete Kurve)",
+      "# PowerFlow -- Bilanz des deutschen Stromsystems",
+      "# Zeitraum (Ortszeit Europe/Berlin): " + von + " bis " + bis
+        + " (" + k.tage + " Kalendertage, " + k.belegt + " mit Daten)",
+      "# Vergleichszeitraum: " + vv + " bis " + vb + " -- derselbe Zeitraum ein Jahr",
+      "#   frueher, reale Messwerte, kein Monatsmittel und keine geglaettete Kurve",
       "# Quelle: SMARD, Bundesnetzagentur -- https://www.smard.de/",
       "# Lizenz: CC BY 4.0",
       "# Namensnennung: Bundesnetzagentur | SMARD.de",
       "# Erzeugt: " + new Date().toLocaleString("de-DE"),
       "#",
-      "# Einheit: MWh je Tag. Die SMARD-Reihen liefern eine Energiemenge je",
-      "# Intervall, keine mittlere Leistung. Nachgewiesen aus den Daten selbst:",
-      "# der Stundenwert ist die Summe der vier Viertelstundenwerte.",
+      "# Einheit: MWh. Die SMARD-Reihen liefern eine Energiemenge je Intervall,",
+      "# keine mittlere Leistung. Nachgewiesen aus den Daten selbst: der",
+      "# Stundenwert ist die Summe der vier Viertelstundenwerte.",
       "#",
       "# Zahlformat: Diese Datei ist maschinenlesbar und benutzt den PUNKT als",
       "# Dezimaltrennzeichen. Die Anzeige auf der Seite ist deutsch formatiert",
@@ -1096,45 +1190,46 @@
       "# Regelzonen UND Ausland. Er ist kein Fluss von einer Zone in eine andere;",
       "# solche Fluesse werden nicht veroeffentlicht.",
       "#",
-      "# Freie Variable ist der Kalendertag. Alles Uebrige ist gemessen.",
+      "# Freie Variable ist der dargestellte Zeitraum. Alles Uebrige ist gemessen.",
       "#",
-      "gruppe,name,tag,wert_mwh,vergleichstag,wert_mwh_vorjahr"
+      "gruppe,name,von,bis,wert_mwh,vergleich_von,vergleich_bis,wert_mwh_vorjahr"
     ];
     function zeile(gruppe, name, a, b) {
-      z.push([gruppe, name, iso, a === null ? "" : a.toFixed(2),
-              vorjahrstag(iso), (b === null || b === undefined) ? "" : b.toFixed(2)].join(","));
+      z.push([gruppe, name, von, bis, (a === null || a === undefined) ? "" : a.toFixed(2),
+              vv, vb, (b === null || b === undefined) ? "" : b.toFixed(2)].join(","));
     }
-    zeile("kennzahl", "netzlast", k.netzlast, v && v.netzlast);
-    zeile("kennzahl", "erzeugung", k.erzeugung, v && v.erzeugung);
-    zeile("kennzahl", "residuallast", k.residuallast, v && v.residuallast);
-    zeile("kennzahl", "pumpspeicherverbrauch", k.pumpen, v && v.pumpen);
-    zeile("kennzahl", "import", k.imp, v && v.imp);
-    zeile("kennzahl", "export", k.exp, v && v.exp);
-    zeile("kennzahl", "aussensaldo", k.saldo, v && v.saldo);
-    zeile("kennzahl", "bilanzrest", k.rest, v && v.rest);
+    zeile("kennzahl", "netzlast", k.netzlast, v.netzlast);
+    zeile("kennzahl", "erzeugung", k.erzeugung, v.erzeugung);
+    zeile("kennzahl", "residuallast", k.residuallast, v.residuallast);
+    zeile("kennzahl", "pumpspeicherverbrauch", k.pumpen, v.pumpen);
+    zeile("kennzahl", "import", k.imp, v.imp);
+    zeile("kennzahl", "export", k.exp, v.exp);
+    zeile("kennzahl", "aussensaldo", k.saldo, v.saldo);
+    zeile("kennzahl", "bilanzrest", k.rest, v.rest);
     var tv = {};
-    traeger(vorjahrstag(iso)).forEach(function (e) { tv[e.name] = e.mwh; });
-    traeger(iso).forEach(function (e) { zeile("erzeugung", e.name, e.mwh, tv[e.name]); });
+    traeger(vv, vb).forEach(function (e) { tv[e.name] = e.mwh; });
+    traeger(von, bis).forEach(function (e) { zeile("erzeugung", e.name, e.mwh, tv[e.name]); });
     var zv = {};
-    zonen(vorjahrstag(iso)).forEach(function (e) { zv[e.zone] = e; });
-    zonen(iso).forEach(function (e) {
+    zonen(vv, vb).forEach(function (e) { zv[e.zone] = e; });
+    zonen(von, bis).forEach(function (e) {
       zeile("regelzone_netzlast", e.zone, e.netzlast, zv[e.zone] && zv[e.zone].netzlast);
       zeile("regelzone_erzeugung", e.zone, e.erzeugung, zv[e.zone] && zv[e.zone].erzeugung);
       zeile("regelzone_saldo", e.zone, e.saldo, zv[e.zone] && zv[e.zone].saldo);
     });
     var lv = {};
-    laender(vorjahrstag(iso)).forEach(function (e) { lv[e.land] = e; });
-    laender(iso).forEach(function (e) {
+    laender(vv, vb).forEach(function (e) { lv[e.land] = e; });
+    laender(von, bis).forEach(function (e) {
       zeile("import", e.land, e.imp, lv[e.land] && lv[e.land].imp);
       zeile("export", e.land, e.exp, lv[e.land] && lv[e.land].exp);
     });
     return z.join("\n") + "\n";
   }
 
-  function csvHerunterladen(iso) {
-    var blob = new Blob([csvBauen(iso)], { type: "text/csv;charset=utf-8" });
+  function csvHerunterladen(von, bis) {
+    var blob = new Blob([csvBauen(von, bis)], { type: "text/csv;charset=utf-8" });
     var url = URL.createObjectURL(blob);
-    var a = el("a", { href: url, download: "powerflow-tagesbilanz-" + iso + ".csv" });
+    var a = el("a", { href: url,
+      download: "powerflow-" + (von === bis ? von : von + "_bis_" + bis) + ".csv" });
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1144,9 +1239,11 @@
   // ---- Zeichnen -----------------------------------------------------------
 
   function zeichnen() {
-    var iso = Z.tag;
-    var k = kennzahlen(iso);
-    var v = kennzahlen(vorjahrstag(iso)) || {};
+    var von = Z.von, bis = Z.bis;
+    var k = kennzahlen(von, bis);
+    var vv = vorjahrstag(von), vb = vorjahrstag(bis);
+    var v = kennzahlen(vv, vb) || {};
+    var einTag = von === bis;
     var neu = el("div", { "class": "pf-huelle" });
 
     // --- Kopf ---
@@ -1156,8 +1253,8 @@
     links.appendChild(el("h1", { text: "Deutschland · Stromfluss-Labor" }));
     links.appendChild(el("p", {
       "class": "pf-unterzeile",
-      text: "Tagesbilanz des deutschen Stromsystems am " + datumLang(iso)
-        + ". Alle Zahlen sind gemessene Tageswerte."
+      text: "Bilanz des deutschen Stromsystems · " + zeitraumLang(von, bis)
+        + ". Alle Zahlen sind gemessen."
     }));
     links.appendChild(el("p", { "class": "pf-bahn", text: "Zufluss · Netz · Abfluss" }));
     kopfzeile.appendChild(links);
@@ -1175,90 +1272,127 @@
     kopf.appendChild(kopfzeile);
     neu.appendChild(kopf);
 
-    // --- Der einzige Regler: der Kalendertag ---
+    // --- Der einzige Regler: der Zeitraum ---
     var regler = el("div", { "class": "pf-regler" });
-    var reglerKopf = el("div", { "class": "pf-regler-kopf" });
-    reglerKopf.appendChild(el("label", {
-      "class": "pf-regler-titel", "for": "pf-tagwahl",
-      text: "Kalendertag — die einzige freie Variable"
-    }));
-    regler.appendChild(reglerKopf);
+    regler.appendChild(el("span", { "class": "pf-regler-titel",
+      text: "Zeitraum — die einzige freie Variable" }));
 
     var reihe = el("div", { "class": "pf-regler-reihe" });
-    var zurueckKnopf = el("button", {
-      "class": "pf-schritt", type: "button", "aria-label": "Einen Tag zurück", text: "‹"
+    var zurueckKnopf = el("button", { "class": "pf-schritt", type: "button",
+      "aria-label": "Einen Zeitraum zurück", text: "‹" });
+    var feldVon = el("input", { "class": "pf-tagfeld", type: "date", id: "pf-von",
+      value: von, min: Z.minTag, max: Z.maxTag, "aria-label": "Erster Tag" });
+    var feldBis = el("input", { "class": "pf-tagfeld", type: "date", id: "pf-bis",
+      value: bis, min: Z.minTag, max: Z.maxTag, "aria-label": "Letzter Tag" });
+    var vorKnopf = el("button", { "class": "pf-schritt", type: "button",
+      "aria-label": "Einen Zeitraum vor", text: "›" });
+    var laenge = k ? k.tage : 1;
+    zurueckKnopf.disabled = von <= Z.minTag;
+    vorKnopf.disabled = bis >= Z.maxTag;
+    zurueckKnopf.addEventListener("click", function () {
+      zeitraumSetzen(verschoben(von, -laenge), verschoben(bis, -laenge));
     });
-    var feld = el("input", {
-      "class": "pf-tagfeld", type: "date", id: "pf-tagwahl", value: iso,
-      min: Z.minTag, max: Z.maxTag
+    vorKnopf.addEventListener("click", function () {
+      zeitraumSetzen(verschoben(von, laenge), verschoben(bis, laenge));
     });
-    var vorKnopf = el("button", {
-      "class": "pf-schritt", type: "button", "aria-label": "Einen Tag vor", text: "›"
-    });
-    zurueckKnopf.disabled = iso <= Z.minTag;
-    vorKnopf.disabled = iso >= Z.maxTag;
-    zurueckKnopf.addEventListener("click", function () { tagSetzen(verschoben(iso, -1)); });
-    vorKnopf.addEventListener("click", function () { tagSetzen(verschoben(iso, 1)); });
-    feld.addEventListener("change", function () { if (feld.value) { tagSetzen(feld.value); } });
+    function ausFeldern() {
+      if (feldVon.value && feldBis.value) { zeitraumSetzen(feldVon.value, feldBis.value); }
+    }
+    feldVon.addEventListener("change", ausFeldern);
+    feldBis.addEventListener("change", ausFeldern);
     reihe.appendChild(zurueckKnopf);
-    reihe.appendChild(feld);
+    reihe.appendChild(feldVon);
+    reihe.appendChild(el("span", { "class": "pf-bis", text: "bis" }));
+    reihe.appendChild(feldBis);
     reihe.appendChild(vorKnopf);
-
-    var zurueck = el("button", {
-      "class": "pf-zuruecksetzen", type: "button",
-      text: "Zurücksetzen"
+    var zurueck = el("button", { "class": "pf-zuruecksetzen", type: "button",
+      text: "Zurücksetzen" });
+    zurueck.disabled = von === Z.startVon && bis === Z.startBis;
+    zurueck.addEventListener("click", function () {
+      zeitraumSetzen(Z.startVon, Z.startBis);
     });
-    zurueck.disabled = iso === Z.starttag;
-    zurueck.addEventListener("click", function () { tagSetzen(Z.starttag); });
     reihe.appendChild(zurueck);
     regler.appendChild(reihe);
-    regler.appendChild(el("p", {
-      "class": "pf-regler-fuss",
+
+    // Schnellwahl. Sie setzt nur denselben Regler -- keine zweite Variable.
+    var schnell = el("div", { "class": "pf-schnellwahl" });
+    [
+      ["Letzter Tag", function () { return [Z.maxTag, Z.maxTag]; }],
+      ["Letzte 7 Tage", function () { return [verschoben(Z.maxTag, -6), Z.maxTag]; }],
+      ["Letzte 30 Tage", function () { return [verschoben(Z.maxTag, -29), Z.maxTag]; }],
+      ["Dieser Monat", function () {
+        return [Z.maxTag.slice(0, 8) + "01", Z.maxTag]; }],
+      ["Voriger Monat", function () {
+        var d = ausIso(Z.maxTag.slice(0, 8) + "01");
+        var a = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+        var b = new Date(d.getFullYear(), d.getMonth(), 0);
+        return [nachIso(a), nachIso(b)]; }],
+      ["Dieses Jahr", function () {
+        return [Z.maxTag.slice(0, 4) + "-01-01", Z.maxTag]; }]
+    ].forEach(function (w) {
+      var kn = el("button", { "class": "pf-schnell", type: "button", text: w[0] });
+      var ziel = w[1]();
+      if (ziel[0] === von && ziel[1] === bis) { kn.setAttribute("data-aktiv", "1"); }
+      kn.addEventListener("click", function () {
+        var z2 = w[1]();
+        zeitraumSetzen(z2[0], z2[1]);
+      });
+      schnell.appendChild(kn);
+    });
+    regler.appendChild(schnell);
+    regler.appendChild(el("p", { "class": "pf-regler-fuss",
       text: "Wählbar vom " + datumLang(Z.minTag) + " bis zum " + datumLang(Z.maxTag)
-        + ". Zurücksetzen stellt den Tag des ersten Seitenaufrufs wieder her ("
-        + datumLang(Z.starttag) + ")."
-    }));
+        + ". Ein einzelner Tag wird stündlich gezeigt, ein längerer Zeitraum tageweise. "
+        + "Zurücksetzen stellt den Zeitraum des ersten Seitenaufrufs wieder her." }));
     neu.appendChild(abschnitt("Freie Variable", regler));
 
+    if (!k) {
+      neu.appendChild(el("div", { "class": "pf-fehler",
+        text: "Für diesen Zeitraum liegen keine Daten vor." }));
+      Z.wurzel.parentNode.replaceChild(neu, Z.wurzel);
+      Z.wurzel = neu;
+      return;
+    }
+
     // --- Kennzahlen ---
+    var proTag = einTag ? "" : " · " + gwh(k.netzlast / k.belegt, 1) + " GWh je Tag";
     var kacheln = el("div", { "class": "pf-kacheln" });
 
     kacheln.appendChild(kachel({
       titel: "Netzlast", wert: gwh(k.netzlast, 1), einheit: "GWh", akzent: "violett",
-      bezug: bezugstext(k.netzlast, v.netzlast, iso),
+      bezug: bezugstext(k.netzlast, v.netzlast, vv, vb) + proTag,
       info: {
         wert: "SMARD-Filter 410 „Realisierter Stromverbrauch, Gesamt (Netzlast)“, Region DE, "
-          + "Tageswert in der Auflösung „day“. Gegen die eigene Viertelstundenreihe geprüft: "
-          + "Abweichung 0,02 MWh.",
+          + "summiert über " + k.belegt + " Tage. Gegen die eigene Viertelstundenreihe "
+          + "geprüft: Abweichung 0,02 MWh.",
         grenzenTitel: "Was die Zahl umfasst",
         grenzen: "Verbrauch im Netz der allgemeinen Versorgung. Der Pumpspeicherverbrauch ist "
-          + "darin enthalten — nachgewiesen daran, dass die Tagesbilanz nur so aufgeht. Nicht "
+          + "darin enthalten — nachgewiesen daran, dass die Bilanz nur so aufgeht. Nicht "
           + "enthalten ist Strom, den Industriebetriebe selbst erzeugen und selbst verbrauchen.",
         quellen: QUELLE_SMARD,
-        messung: "Messung. Der Vergleichswert ist der reale Messwert desselben Kalendertags "
-          + "im Vorjahr, keine Annahme."
+        messung: "Messung. Der Vergleichswert ist derselbe Zeitraum ein Jahr früher, "
+          + "reale Messwerte, keine Annahme."
       }
     }));
 
     kacheln.appendChild(kachel({
       titel: "Erzeugung", wert: gwh(k.erzeugung, 1), einheit: "GWh", akzent: "teal",
-      bezug: bezugstext(k.erzeugung, v.erzeugung, iso),
+      bezug: bezugstext(k.erzeugung, v.erzeugung, vv, vb),
       info: {
-        wert: "Summe der elf SMARD-Erzeugungsreihen für Region DE.",
-        grenzenTitel: "Was fehlt",
-        grenzen: "Kernenergie ist nicht enthalten: die Reihe (Filter 1224) endet am "
-          + "15.04.2023 um 23:45 Uhr. Für spätere Zeiträume liefert SMARD HTTP 404, nicht "
-          + "den Wert Null.",
+        wert: "Summe der zwölf SMARD-Erzeugungsreihen für Region DE über den Zeitraum.",
+        grenzenTitel: "Kernenergie",
+        grenzen: "Die Reihe für Kernenergie (Filter 1224) endet am 15.04.2023 um 23:45 Uhr. "
+          + "Für spätere Zeiträume liefert SMARD HTTP 404, nicht den Wert Null.",
         quellen: QUELLE_SMARD, messung: "Messung. Keine Annahme."
       }
     }));
 
     kacheln.appendChild(kachel({
       titel: "Import", wert: gwh(k.imp, 1), einheit: "GWh", akzent: "teal",
-      bezug: bezugstext(k.imp, v.imp, iso),
+      bezug: bezugstext(k.imp, v.imp, vv, vb),
       info: {
         wert: "Summe der stündlichen SMARD-Importreihen je Nachbarland (physikalischer "
-          + "Stromfluss), auf den Tag summiert. Die Reihen sind vorzeichenlos positiv.",
+          + "Stromfluss). Die Reihen sind vorzeichenlos positiv.",
         grenzenTitel: "Auflösung und Beleg",
         grenzen: "Der Außenhandel liegt nur stündlich vor, nicht viertelstündlich. Die "
           + "Filter-IDs stehen in keiner Dokumentation; sie wurden empirisch bestimmt und an "
@@ -1271,9 +1405,9 @@
 
     kacheln.appendChild(kachel({
       titel: "Export", wert: gwh(k.exp, 1), einheit: "GWh", akzent: "orange",
-      bezug: bezugstext(k.exp, v.exp, iso),
+      bezug: bezugstext(k.exp, v.exp, vv, vb),
       info: {
-        wert: "Summe der stündlichen SMARD-Exportreihen je Nachbarland, auf den Tag summiert.",
+        wert: "Summe der stündlichen SMARD-Exportreihen je Nachbarland.",
         grenzenTitel: "Auflösung und Beleg",
         grenzen: "Wie beim Import: stündlich, Filter-IDs empirisch belegt.",
         quellen: QUELLE_SMARD, messung: "Messung. Zuordnung der IDs belegt hergeleitet."
@@ -1284,9 +1418,9 @@
       titel: "Außensaldo", wert: vz(k.saldo, 1), einheit: "GWh",
       akzent: k.saldo >= 0 ? "teal" : "orange",
       bezug: (k.saldo >= 0 ? "Netto-Zufluss" : "Netto-Abfluss") + " · "
-        + bezugstext(k.saldo, v.saldo, iso),
+        + bezugstext(k.saldo, v.saldo, vv, vb),
       info: {
-        wert: "Import minus Export über alle Nachbarländer.",
+        wert: "Import minus Export über alle Nachbarländer im Zeitraum.",
         grenzenTitel: "Was der Saldo nicht sagt",
         grenzen: "Der Saldo sagt nichts darüber, welchen Weg der Strom im deutschen Netz "
           + "genommen hat. Flüsse zwischen den vier Regelzonen werden nicht veröffentlicht.",
@@ -1297,7 +1431,7 @@
     kacheln.appendChild(kachel({
       titel: "Bilanzrest", wert: vz(k.rest, 2), einheit: "GWh",
       bezug: (k.rest === null ? "—" : nf2.format(k.rest / k.netzlast * 100) + " % der Netzlast")
-        + " · " + bezugstext(k.rest, v.rest, iso),
+        + " · " + bezugstext(k.rest, v.rest, vv, vb),
       marke: "Selbstkontrolle — geht nicht auf null auf",
       info: {
         wert: "Erzeugung + Import − Export − Netzlast. Rechnet die anderen Kacheln gegen.",
@@ -1313,49 +1447,60 @@
           + "einzelnen günstigen Tag geeicht und ist zurückgenommen."
       }
     }));
-    neu.appendChild(abschnitt("Kennzahlen des Tages", kacheln));
+    neu.appendChild(abschnitt("Kennzahlen · " + zeitraumLang(von, bis), kacheln));
 
-    // --- Warnungen zum gewaehlten Tag ---
+    // --- Warnungen zum Zeitraum ---
     var warnungen = [];
-    var jd = Z.jahre[Number(iso.slice(0, 4))];
-    (jd && jd.auffaellig ? jd.auffaellig : []).forEach(function (a) {
-      if (a.tag !== iso) { return; }
-      warnungen.push("Die Quelle liefert für " + a.reihe + " an diesem Tag "
-        + nf0.format(a.originalwert) + " MWh. Das ist um Größenordnungen zu viel und "
-        + "kann nicht stimmen. Der Wert wird hier als fehlend geführt — nicht korrigiert "
-        + "und nicht geschätzt. Der Originalwert steht in data/tage/"
-        + iso.slice(0, 4) + ".json unter „auffaellig“.");
+    if (k.belegt < k.tage) {
+      warnungen.push("Von " + k.tage + " Kalendertagen des Zeitraums liegen nur " + k.belegt
+        + " mit Daten vor. Die Summen beziehen sich auf die belegten Tage; fehlende werden "
+        + "nicht als Null gezählt.");
+    }
+    jahreImZeitraum(von, bis).forEach(function (jahr) {
+      var jd = Z.jahre[jahr];
+      (jd && jd.auffaellig ? jd.auffaellig : []).forEach(function (a) {
+        if (a.tag < von || a.tag > bis) { return; }
+        warnungen.push("Die Quelle liefert für " + a.reihe + " am " + a.tag + " "
+          + nf0.format(a.originalwert) + " MWh. Das ist um Größenordnungen zu viel und kann "
+          + "nicht stimmen. Der Wert wird hier als fehlend geführt — nicht korrigiert und "
+          + "nicht geschätzt. Der Originalwert steht in data/tage/" + jahr + ".json unter "
+          + "„auffaellig“.");
+      });
     });
-    if (iso < "2019-01-01") {
+    if (von < "2019-01-01") {
       warnungen.push("Für Tage vor 2019 ist die Aufteilung auf die vier Regelzonen in der "
         + "Quelle unvollständig: 2015 fehlen an einzelnen Tagen bis zu 3,4 % der Last. Die "
-        + "Zonenwerte dieses Tages sind deshalb mit Vorsicht zu lesen. Die Ursache ist nicht "
-        + "geklärt.");
+        + "Zonenwerte dieses Zeitraums sind deshalb mit Vorsicht zu lesen. Die Ursache ist "
+        + "nicht geklärt.");
     }
     if (k.rest !== null && Math.abs(k.rest / k.netzlast * 100) > 5) {
-      warnungen.push("Die Tagesbilanz dieses Tages geht um "
+      warnungen.push("Die Bilanz dieses Zeitraums geht um "
         + nf1.format(Math.abs(k.rest / k.netzlast * 100)) + " % nicht auf. Das liegt über dem "
-        + "üblichen Bereich. Erzeugung, Import und Export der Quelle passen an diesem Tag "
-        + "nicht zur Netzlast.");
+        + "üblichen Bereich.");
     }
     if (warnungen.length) {
       var warnkasten = el("div", { "class": "pf-kasten" });
-      warnkasten.appendChild(el("h3", { text: "Zu diesem Tag" }));
+      warnkasten.appendChild(el("h3", { text: "Zu diesem Zeitraum" }));
       var wul = el("ul");
       warnungen.forEach(function (w) { wul.appendChild(el("li", { text: w })); });
       warnkasten.appendChild(wul);
       neu.appendChild(abschnitt("Hinweise zur Datenlage", warnkasten));
     }
 
+    // --- Zeitreihe ---
+    neu.appendChild(abschnitt(
+      (einTag ? "Tagesverlauf" : "Verlauf") + " · Erzeugung nach Energieträger",
+      zeitreihenDiagramm(von, bis)));
+
     // --- Flussbild ---
     var fluss = el("div", { "class": "pf-fluss" });
-    var tr = traeger(iso);
+    var tr = traeger(von, bis);
     var maxZu = Math.max.apply(null, tr.map(function (e) { return e.mwh; }));
     fluss.appendChild(saeule("zufluss", "Zufluss · Erzeugung", gwh(k.erzeugung, 1) + " GWh",
       balkenliste(tr, "var(--teal)", maxZu)));
 
     var netzInhalt = el("div");
-    var zz = zonen(iso).sort(function (a, b) { return b.saldo - a.saldo; });
+    var zz = zonen(von, bis).sort(function (a, b) { return b.saldo - a.saldo; });
     var maxAbs = Math.max.apply(null, zz.map(function (x) { return Math.abs(x.saldo); }));
     zz.forEach(function (x) {
       var h = el("div", { "class": "pf-balken" });
@@ -1364,44 +1509,35 @@
       zeileEl.appendChild(el("span", { "class": "pf-zahl", text: vz(x.saldo, 1) }));
       h.appendChild(zeileEl);
       var schiene = el("div", { "class": "pf-schiene" });
-      schiene.appendChild(el("div", {
-        "class": "pf-fuellung",
+      schiene.appendChild(el("div", { "class": "pf-fuellung",
         style: "width:" + (Math.abs(x.saldo) / maxAbs * 100).toFixed(1) + "%;background:"
-          + (x.saldo >= 0 ? "var(--teal)" : "var(--orange)") + ";"
-      }));
+          + (x.saldo >= 0 ? "var(--teal)" : "var(--orange)") + ";" }));
       h.appendChild(schiene);
       netzInhalt.appendChild(h);
     });
-    netzInhalt.appendChild(el("p", {
-      "class": "pf-bezug",
+    netzInhalt.appendChild(el("p", { "class": "pf-bezug",
       text: "Saldo = Erzeugung minus Netzlast je Regelzone, in GWh. Der Austausch mit allen "
         + "Nachbarn zusammen — anderen Regelzonen und Ausland. Kein Fluss von einer Zone in "
-        + "eine andere."
-    }));
+        + "eine andere." }));
     fluss.appendChild(saeule("netz", "Netz · Regelzonen", gwh(k.netzlast, 1) + " GWh Netzlast",
       netzInhalt));
 
-    var ll = laender(iso);
+    var ll = laender(von, bis);
     var ab = ll.filter(function (a) { return a.exp > 0; })
       .map(function (a) { return { name: a.land, mwh: a.exp }; })
       .sort(function (a, b) { return b.mwh - a.mwh; });
     var maxAb = Math.max.apply(null, ab.map(function (e) { return e.mwh; }));
     fluss.appendChild(saeule("abfluss", "Abfluss · Export", gwh(k.exp, 1) + " GWh",
       balkenliste(ab, "var(--orange)", maxAb)));
-    neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh am Tag)", fluss));
-
-    // --- Tagesverlauf ---
-    neu.appendChild(abschnitt(
-      "Tagesverlauf · Erzeugung nach Energieträger (GW)", verlaufDiagramm(iso)));
+    neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh im Zeitraum)", fluss));
 
     // --- Karte ---
     var karteHuelle = el("div", { "class": "pf-karte-huelle" });
     var roll = el("div", { "class": "pf-karte-rollbereich" });
-    var K = karte(Z.grundkarte, Z.kraftwerke.anlagen, iso);
+    var K = karte(Z.grundkarte, Z.kraftwerke.anlagen, von, bis);
     roll.appendChild(K.svg);
     karteHuelle.appendChild(roll);
 
-    // Bedienung der Karte. Zoom auch ohne Rad und ohne Zeigegeraet.
     var kbed = el("div", { "class": "pf-kartenbedienung" });
     [["+", "Hineinzoomen", 1 / 1.4], ["−", "Herauszoomen", 1.4]].forEach(function (b) {
       var kn = el("button", { "class": "pf-schritt", type: "button",
@@ -1426,6 +1562,7 @@
     var auswahlkasten = el("div", { "class": "pf-auswahl", id: "pf-auswahl",
       "aria-live": "polite" });
     karteHuelle.appendChild(auswahlkasten);
+
     karteHuelle.appendChild(ebenenSchalter());
 
     var legende = el("div", { "class": "pf-legende" });
@@ -1452,15 +1589,11 @@
     legende.appendChild(el("span", { text: "Punktfläche ∝ Nettoleistung" }));
     karteHuelle.appendChild(legende);
 
-    // Dieser Satz steht direkt an der Karte, nicht nur im Popover: eine
-    // gezeichnete Leitung soll niemand als Lastfluss lesen.
-    karteHuelle.appendChild(el("p", {
-      "class": "pf-karte-warnung",
+    karteHuelle.appendChild(el("p", { "class": "pf-karte-warnung",
       text: "Die Leitungen zeigen Verlauf und Spannungsebene — keinen Lastfluss und keine "
         + "Auslastung. Wie viel Strom über eine einzelne Leitung fließt, wird nach "
         + "§ 23c Abs. 2 EnWG nicht veröffentlicht. Eine Richtung zeigen nur die Pfeile an "
-        + "den Kuppelstellen: dort ist sie gemessen. Ihre Lage ist schematisch."
-    }));
+        + "den Kuppelstellen: dort ist sie gemessen. Ihre Lage ist schematisch." }));
 
     var anzahlen = [];
     if (Z.netz.hoechstspannung) {
@@ -1473,7 +1606,6 @@
       anzahlen.push(nf0.format(Z.netz.umspannwerke.anzahl) + " Umspannwerke");
     }
     anzahlen.push(nf0.format(Z.kraftwerke.anzahl) + " Kraftwerke");
-
     infoKnopf(karteHuelle, {
       wert: anzahlen.join(", ") + ". Kraftwerke aus den SMARD-Stammdaten, jede an ihrer "
         + "tatsächlichen Koordinate. Leitungen und Umspannwerke aus OpenStreetMap. "
@@ -1498,12 +1630,12 @@
     var tabRoll = el("div", { "class": "pf-tabellen-rollbereich" });
     var tab = el("table", { "class": "pf-tabelle" });
     var thead = el("thead"), kopfz = el("tr");
-    ["Nachbarland", "Import GWh", "Export GWh", "Saldo GWh", "Saldo Vorjahrestag"]
+    ["Nachbarland", "Import GWh", "Export GWh", "Saldo GWh", "Saldo Vorjahreszeitraum"]
       .forEach(function (t) { kopfz.appendChild(el("th", { text: t, scope: "col" })); });
     thead.appendChild(kopfz); tab.appendChild(thead);
     var tbody = el("tbody");
     var lv = {};
-    laender(vorjahrstag(iso)).forEach(function (e) { lv[e.land] = e; });
+    laender(vv, vb).forEach(function (e) { lv[e.land] = e; });
     ll.forEach(function (a) {
       var trEl = el("tr");
       trEl.appendChild(el("td", { text: a.land }));
@@ -1553,10 +1685,9 @@
       "Regelzonen als Fläche auf der Karte — dafür fehlt eine belegbare Geometrie.",
       "Richtung des Stromflusses innerhalb Deutschlands. Gezeigt wird sie nur an den "
         + "Kuppelstellen, weil sie nur dort gemessen ist.",
-      "Mittelspannung — in OpenStreetMap kaum erfasst.",
-      "Der Tagesverlauf zeigt Stundenwerte. Viertelstundenwerte lägen bei SMARD vor, "
-        + "wären als Datei aber viermal so groß.",
-      "Import und Export im Tagesverlauf — bisher nur als Tagessumme.",
+      "Import und Export im Verlauf — bisher nur als Summe des Zeitraums.",
+      "Anlagen aus dem Marktstammdatenregister: Wind- und Solarparks fehlen auf der Karte, "
+        + "weil die SMARD-Stammdaten sie nicht einzeln führen.",
       "Methodik-PDF und der Gesamtlauf über alle Referenzjahre fehlen noch.",
       "Der Kraftwerks-Endpunkt von SMARD ist undokumentiert und kann sich ohne Ankündigung "
         + "ändern."
@@ -1567,12 +1698,12 @@
     // --- Downloads ---
     var abzuege = el("div", { "class": "pf-abzuege" });
     var csvKnopf = el("button", { "class": "pf-abzug", type: "button",
-      text: "Tagesbilanz " + iso });
+      text: "Bilanz " + zeitraumKurz(von, bis) });
     csvKnopf.appendChild(el("span", { text: "CSV" }));
-    csvKnopf.addEventListener("click", function () { csvHerunterladen(iso); });
+    csvKnopf.addEventListener("click", function () { csvHerunterladen(von, bis); });
     abzuege.appendChild(csvKnopf);
     [
-      { d: "data/tage/" + iso.slice(0, 4) + ".json", t: "Tagesreihen " + iso.slice(0, 4), e: "JSON" },
+      { d: "data/tage/" + von.slice(0, 4) + ".json", t: "Tagesreihen " + von.slice(0, 4), e: "JSON" },
       { d: "data/kraftwerke.json", t: "Kraftwerksstandorte", e: "JSON" },
       { d: "data/grundkarte.json", t: "Grundkarte", e: "JSON" }
     ].forEach(function (a) {
@@ -1583,7 +1714,7 @@
     neu.appendChild(abschnitt("Downloads", abzuege));
 
     // --- Fussnote ---
-    var jahresdatei = Z.jahre[Number(iso.slice(0, 4))];
+    var jahresdatei = Z.jahre[Number(von.slice(0, 4))];
     var fuss = el("footer", { "class": "pf-fussnote" });
     fuss.appendChild(el("p", {
       html: 'Datenquelle: <a href="https://www.smard.de/" target="_blank" rel="noopener">'
@@ -1612,14 +1743,17 @@
     auswahlZeigen();
   }
 
-  function tagSetzen(iso) {
-    if (iso < Z.minTag) { iso = Z.minTag; }
-    if (iso > Z.maxTag) { iso = Z.maxTag; }
+  function zeitraumSetzen(von, bis) {
+    if (von > bis) { var h = von; von = bis; bis = h; }
+    if (von < Z.minTag) { von = Z.minTag; }
+    if (bis > Z.maxTag) { bis = Z.maxTag; }
     popoverSchliessen();
-    var jahr = Number(iso.slice(0, 4));
-    Promise.all([jahrLaden(jahr), jahrLaden(jahr - 1), verlaufLaden(iso)]).then(function () {
-      if (kennzahlen(iso) === null) { return; }
-      Z.tag = iso;
+    var noetig = jahreImZeitraum(von, bis).concat(
+      jahreImZeitraum(vorjahrstag(von), vorjahrstag(bis)));
+    var auftraege = noetig.map(jahrLaden);
+    if (von === bis) { auftraege.push(verlaufLaden(von)); }
+    Promise.all(auftraege).then(function () {
+      Z.von = von; Z.bis = bis;
       zeichnen();
     });
   }
@@ -1657,11 +1791,16 @@
       Z.minTag = jahre[0].erster_tag;
       var letzte = jahre[jahre.length - 1];
       Z.maxTag = letzte.letzter_belegter_tag || letzte.letzter_tag;
-      Z.starttag = Z.maxTag;
-      var jahr = Number(Z.maxTag.slice(0, 4));
-      return Promise.all([jahrLaden(jahr), jahrLaden(jahr - 1), verlaufLaden(Z.starttag)]);
+      // Voreinstellung: die letzten sieben belegten Tage. Ein einzelner Tag
+      // waere ein Sonderfall und wuerde die Zeitraumwahl verstecken.
+      Z.startVon = verschoben(Z.maxTag, -6);
+      Z.startBis = Z.maxTag;
+      var noetig = jahreImZeitraum(Z.startVon, Z.startBis).concat(
+        jahreImZeitraum(vorjahrstag(Z.startVon), vorjahrstag(Z.startBis)));
+      return Promise.all(noetig.map(jahrLaden));
     }).then(function () {
-      Z.tag = Z.starttag;
+      Z.von = Z.startVon;
+      Z.bis = Z.startBis;
       zeichnen();
     }).catch(function (fehler) {
       Z.wurzel.textContent = "";

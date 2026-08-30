@@ -36,6 +36,9 @@ PFLICHTDATEIEN = [
     "data/netz-hochspannung.json",
     "data/netz-umspannwerke.json",
     "LIZENZ-DATEN.md",
+    ".github/workflows/daten-smard.yml",
+    ".github/workflows/daten-stammdaten.yml",
+    ".github/workflows/pruefen.yml",
     # Ohne .nojekyll laeuft die Auslieferung auf GitHub Pages durch Jekyll.
     # Die Seite ist reines statisches HTML; Jekyll bringt nichts und kann
     # Dateien unterschlagen. Die Datei ist leer und muss leer bleiben duerfen.
@@ -64,6 +67,7 @@ PFLICHT_IN_JS = [
     "keinen Lastfluss",               # die Karte darf nicht als Fluss gelesen werden
     "schematisch",                    # Lage der Kuppelstellen-Pfeile
     "Als Tabelle anzeigen",           # Tabellenansicht des Diagramms
+    "die einzige freie Variable",     # Kennzeichnung des Reglers
 ]
 
 # Farbtokens des Tagesverlaufs. Sie sind mit dem Validierer der dataviz-Regeln
@@ -126,6 +130,12 @@ BEKANNT_AUFFAELLIG = ("2015-02-09", "aussenhandel/Schweiz/import")
 # tatsaechliche Ausdehnung der Regelzone.
 RAHMEN = (46.5, 55.5, 5.5, 15.5)
 
+# Jeder Pfad, der auf der Seite landet oder die Pruefung beeinflusst, muss im
+# paths-Filter des Pruef-Workflows stehen. Fehlt einer, laeuft seine Aenderung
+# ungeprueft durch.
+PFLICHT_IN_PATHS = ["index.html", ".nojekyll", "assets/**", "data/**",
+                    "scripts/**", "LIZENZ-DATEN.md"]
+
 BUNDESLAENDER = 16
 REGELZONEN = {"50Hertz", "TenneT", "Amprion", "TransnetBW"}
 
@@ -153,6 +163,22 @@ def ohne_kommentare(js: str) -> str:
     js = re.sub(r"/\*.*?\*/", " ", js, flags=re.S)
     js = re.sub(r"(?m)//.*$", " ", js)
     return js
+
+
+def ohne_yaml_kommentare(y: str) -> str:
+    """Entfernt reine Kommentarzeilen aus YAML.
+
+    Noetig, weil die Workflows in ihren Kommentaren ausdruecklich erklaeren,
+    was sie NICHT tun -- etwa "niemals --force". Eine Textsuche ueber die ganze
+    Datei bliebe daran haengen. Dieselbe Falle wie bei toISOString im
+    JavaScript, und sie ist mir dort schon einmal begegnet.
+    """
+    return "\n".join(z for z in y.split("\n") if not z.lstrip().startswith("#"))
+
+
+def workflowdateien() -> dict[str, str]:
+    return {n: lade(f".github/workflows/{n}")
+            for n in ("daten-smard.yml", "daten-stammdaten.yml", "pruefen.yml")}
 
 
 def jahresdateien() -> dict[int, dict]:
@@ -247,7 +273,7 @@ def tagesbefunde(jahr: int, d: dict) -> list[str]:
 
 def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  kraftwerke: dict, grundkarte: dict, netz: dict,
-                 css: str, verlauf: dict) -> Befund:
+                 css: str, verlauf: dict, workflows: dict) -> Befund:
     b = Befund()
 
     for name in PFLICHTDATEIEN:
@@ -271,9 +297,12 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe(js.lstrip().startswith("/*") and "(function ()" in js,
              "Modul ist als IIFE gekapselt")
 
-    # Genau EIN Regler. Ein zweites Bedienelement fuer eine gemessene Groesse
-    # waere ein Bruch der Datendisziplin.
-    b.pruefe(code.count('type: "date"') == 1, "genau ein Datumsregler im Modul")
+    # Genau EIN Regler -- der Zeitraum. Er besteht aus zwei Datumsfeldern (von
+    # und bis) und bleibt trotzdem eine einzige freie Variable; ein einzelner
+    # Tag ist der Sonderfall von = bis. Ein drittes Feld waere ein Bruch der
+    # Datendisziplin.
+    b.pruefe(code.count('type: "date"') == 2,
+             "genau zwei Datumsfelder (von und bis) -- ein Zeitraumregler")
     b.pruefe('type: "range"' not in code, "kein weiterer Schieberegler im Modul")
 
     # --- Jahresdateien ---
@@ -443,6 +472,24 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              + ("" if not abweichungen
                 else f" -- {len(abweichungen)} Abweichungen, erste: {abweichungen[0]}"))
 
+    # --- Workflows ---
+    pruefwf = workflows["pruefen.yml"]
+    for pfad in PFLICHT_IN_PATHS:
+        b.pruefe(f'"{pfad}"' in pruefwf,
+                 f"paths-Filter des Pruef-Workflows nennt: {pfad}")
+    for name in ("daten-smard.yml", "daten-stammdaten.yml"):
+        wf = ohne_yaml_kommentare(workflows[name])
+        # Push-Wiederholung mit Rebase, niemals --force.
+        b.pruefe("--force" not in wf, f"{name}: kein --force im Push")
+        b.pruefe("git rebase origin/main" in wf, f"{name}: Push-Wiederholung mit Rebase")
+        # Ein Push mit dem Standard-GITHUB_TOKEN loest keine weiteren Workflows
+        # aus -- der Pages-Bau muss selbst angestossen werden.
+        b.pruefe("pages/builds" in wf, f"{name}: stoesst den Pages-Bau selbst an")
+        # Der Tuersteher laeuft VOR dem Commit.
+        b.pruefe(wf.index("scripts/validate.py") < wf.index("git commit"),
+                 f"{name}: Tuersteher laeuft vor dem Commit")
+        b.pruefe("--negativtests" in wf, f"{name}: Negativtests laufen mit")
+
     lizenztext = lade("LIZENZ-DATEN.md")
     for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",
                     "© OpenStreetMap contributors", "23c"):
@@ -454,7 +501,7 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
 # Reihenfolge der Eingaben von eingaben(). Die Negativtests arbeiten ueber
 # diese Namen statt ueber Stellungsargumente.
 FELDER = ("jahre", "index_html", "js", "kraftwerke", "grundkarte", "netz",
-          "css", "verlauf")
+          "css", "verlauf", "workflows")
 
 
 def verlaufdateien() -> dict[str, dict]:
@@ -470,7 +517,8 @@ def eingaben() -> tuple:
     return (jahresdateien(), lade("index.html"), lade("assets/powerflow.js"),
             json.loads(lade("data/kraftwerke.json")),
             json.loads(lade("data/grundkarte.json")),
-            netzdateien(), lade("assets/powerflow.css"), verlaufdateien())
+            netzdateien(), lade("assets/powerflow.css"), verlaufdateien(),
+            workflowdateien())
 
 
 def negativtests() -> int:
@@ -543,6 +591,8 @@ def negativtests() -> int:
          lambda: {"js": basis["js"] + "\nlocalStorage.setItem('a','b');"}),
         ("zweiter Regler ins Modul geschmuggelt",
          lambda: {"js": basis["js"] + '\nvar y = el("input", { type: "range" });'}),
+        ("drittes Datumsfeld ins Modul geschmuggelt",
+         lambda: {"js": basis["js"] + '\nvar z3 = el("input", { type: "date" });'}),
         ("Traegerfarbton aus einem Themenblock entfernt",
          lambda: {"css": basis["css"].replace("  --tr-wind: #5f92dd;\n", "", 1)}),
         ("Bilanz eines einzelnen Tages verfaelscht",
@@ -583,6 +633,15 @@ def negativtests() -> int:
          lambda: {"grundkarte": _gedreht(basis["grundkarte"])}),
         ("Share-alike-Hinweis aus einer Netzdatei entfernt",
          lambda: {"netz": _netz_ohne(basis["netz"], "_share_alike")}),
+        ("Ein Pfad fehlt im paths-Filter des Workflows",
+         lambda: {"workflows": _wf_ohne(basis["workflows"], "pruefen.yml",
+                                        '      - "data/**"\n')}),
+        ("force-Push in einen Datenworkflow geschmuggelt",
+         lambda: {"workflows": _wf_mit(basis["workflows"], "daten-smard.yml",
+                                       "git push", "git push --force")}),
+        ("Pages-Anstoss aus einem Datenworkflow entfernt",
+         lambda: {"workflows": _wf_ohne(basis["workflows"], "daten-smard.yml",
+                                        "pages/builds")}),
         ("Netzdatei auf [Breite, Laenge] gedreht",
          lambda: {"netz": _netz_gedreht(basis["netz"])}),
     ]
@@ -629,6 +688,18 @@ def _aendere(doc: dict, aenderung) -> dict:
     import copy
     k = copy.deepcopy(doc)
     aenderung(k)
+    return k
+
+
+def _wf_ohne(workflows: dict, name: str, text: str) -> dict:
+    k = dict(workflows)
+    k[name] = k[name].replace(text, "")
+    return k
+
+
+def _wf_mit(workflows: dict, name: str, alt: str, neu: str) -> dict:
+    k = dict(workflows)
+    k[name] = k[name].replace(alt, neu, 1)
     return k
 
 

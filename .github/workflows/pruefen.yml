@@ -1,0 +1,53 @@
+name: Pruefen
+
+# Tuersteher fuer jede Aenderung am Code oder an den Daten. Er laeuft ohne
+# Netzzugriff -- geprueft wird, was im Repository liegt.
+#
+# Der paths-Filter muss JEDE Datei nennen, die auf der Seite landet oder die
+# Pruefung beeinflusst. Fehlt eine, laeuft ihre Aenderung ungeprueft durch.
+# Bei jeder neuen Datei mitpflegen.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - ".nojekyll"
+      - "assets/**"
+      - "data/**"
+      - "scripts/**"
+      - "LIZENZ-DATEN.md"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "index.html"
+      - ".nojekyll"
+      - "assets/**"
+      - "data/**"
+      - "scripts/**"
+      - "LIZENZ-DATEN.md"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tuersteher:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Pruefungen
+        run: python scripts/validate.py
+
+      - name: Negativtests
+        # Eine Pruefung, die nie hat fehlschlagen sehen, ist keine Pruefung.
+        run: python scripts/validate.py --negativtests
+
+      - name: JavaScript-Syntax
+        run: node --check assets/powerflow.js
