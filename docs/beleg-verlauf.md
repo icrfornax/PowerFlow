@@ -2,6 +2,22 @@
 
 Stand: 30.08.2026. Zuständige Skills: `datenquellen-strom`, `pruefpflichten`.
 
+## Wann stündlich, wann tageweise
+
+Bis **sieben Tage** einschließlich wird stündlich gezeigt, darüber tageweise.
+Eine Woche sind 168 Punkte — auf 900 px noch gut zu lesen. Vorbild ist die
+Darstellung von [energy-charts.info](https://www.energy-charts.info/charts/power/chart.htm?c=DE):
+gestapelte Flächen für die Erzeugung, die Netzlast als Linie darüber, eine
+Achse.
+
+Damit eine Woche in Stundenwerten nicht zu einer einzigen Kurve verschwimmt:
+
+- eine **senkrechte Trennlinie um Mitternacht**
+- die Achse trägt **Wochentag und Datum** statt 168 Stundenzahlen
+- die Ablesung nennt Datum **und** Uhrzeit
+
+Die Voreinstellung der Seite ist die letzte Woche und läuft damit stündlich.
+
 ## Woher die Stundenwerte kommen
 
 SMARD in der Auflösung `hour`, Region DE: Netzlast und zwölf Energieträger.

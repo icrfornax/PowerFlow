@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260831-browsertest";
+  var VERSION = "20260831-woche";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -917,31 +917,66 @@
       .catch(function () { Z.verlauf[m] = null; return null; });
   }
 
-  /* Stundenwerte eines einzelnen Tages, gruppiert. */
-  function reiheStuendlich(iso) {
-    var d = Z.verlauf[monatVon(iso)];
-    if (!d) { return null; }
-    var idx = [];
-    for (var i = 0; i < d.stunden.length; i++) {
-      if (d.stunden[i].slice(0, 10) === iso) { idx.push(i); }
+  /* Alle Monate, die ein Zeitraum beruehrt. Eine Woche liegt oft in zwei. */
+  function monateImZeitraum(von, bis) {
+    var raus = [], m = monatVon(von);
+    for (var schutz = 0; schutz < 400; schutz++) {
+      raus.push(m);
+      if (m === monatVon(bis)) { break; }
+      var j = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)) + 1;
+      if (mo > 12) { j++; mo = 1; }
+      m = j + "-" + (mo < 10 ? "0" : "") + mo;
     }
-    if (!idx.length) { return null; }
-    return {
-      teiler: 1000,           // MWh je Stunde -> GW
-      einheit: "GW",
-      marken: idx.map(function (k) { return d.stunden[k].slice(11, 13) + ":00"; }),
-      netzlast: idx.map(function (k) { return d.netzlast[k]; }),
-      reihen: TRAEGERGRUPPEN.map(function (g) {
-        var werte = idx.map(function (k) {
+    return raus;
+  }
+
+  function verlaufLadenZeitraum(von, bis) {
+    return Promise.all(monateImZeitraum(von, bis).map(function (m) {
+      return verlaufLaden(m + "-01");
+    }));
+  }
+
+  /* Bis zu dieser Laenge wird stuendlich gezeigt. Eine Woche sind 168 Punkte --
+     das ist auf 900 px noch gut zu lesen. Darueber wird es Kammputz. */
+  var STUNDEN_BIS_TAGE = 7;
+
+  /* Stundenwerte eines Zeitraums, gruppiert. Laeuft ueber alle beruehrten
+     Monatsdateien; eine Woche liegt oft in zweien. */
+  function reiheStuendlich(von, bis) {
+    var marken = [], netzlast = [], rohe = {}, tage = [];
+    TRAEGERGRUPPEN.forEach(function (g) { rohe[g.name] = []; });
+    var gefunden = false;
+    monateImZeitraum(von, bis).forEach(function (m) {
+      var d = Z.verlauf[m];
+      if (!d) { return; }
+      for (var i = 0; i < d.stunden.length; i++) {
+        var tag = d.stunden[i].slice(0, 10);
+        if (tag < von || tag > bis) { continue; }
+        gefunden = true;
+        marken.push(d.stunden[i].slice(11, 13));
+        tage.push(tag);
+        netzlast.push(d.netzlast[i]);
+        TRAEGERGRUPPEN.forEach(function (g) {
           var summe = 0;
           g.quellen.forEach(function (q) {
             var r = d.erzeugung[q];
-            if (r && r[k] !== null && r[k] !== undefined) { summe += r[k]; }
+            if (r && r[i] !== null && r[i] !== undefined) { summe += r[i]; }
           });
-          return summe;
+          rohe[g.name].push(summe);
         });
-        return { name: g.name, token: g.token, werte: werte,
-                 summe: werte.reduce(function (a, b) { return a + b; }, 0) };
+      }
+    });
+    if (!gefunden) { return null; }
+    return {
+      teiler: 1000,           // MWh je Stunde -> GW
+      einheit: "GW",
+      stuendlich: true,
+      marken: marken,
+      tage: tage,
+      netzlast: netzlast,
+      reihen: TRAEGERGRUPPEN.map(function (g) {
+        return { name: g.name, token: g.token, werte: rohe[g.name],
+                 summe: rohe[g.name].reduce(function (a, b) { return a + b; }, 0) };
       })
     };
   }
@@ -972,7 +1007,11 @@
   }
 
   function zeitreihe(von, bis) {
-    return von === bis ? reiheStuendlich(von) : reiheTaeglich(von, bis);
+    if (anzahlTage(von, bis) <= STUNDEN_BIS_TAGE) {
+      var s = reiheStuendlich(von, bis);
+      if (s) { return s; }
+    }
+    return reiheTaeglich(von, bis);
   }
 
   function zeitreihenDiagramm(von, bis) {
@@ -984,7 +1023,9 @@
       return huelle;
     }
 
-    var B = 900, H = 320, links = 52, rechts = 12, oben = 16, unten = 26;
+    // oben 30 statt 16: darunter passt die Einheit ueber die oberste
+    // Achsenbeschriftung, ohne sie zu ueberdecken.
+    var B = 900, H = 340, links = 52, rechts = 12, oben = 30, unten = 30;
     var n = v.marken.length;
     var innenB = B - links - rechts, innenH = H - oben - unten;
 
@@ -997,9 +1038,18 @@
     });
     laufend.forEach(function (x) { if (x > maxWert) { maxWert = x; } });
     v.netzlast.forEach(function (x) { if (x !== null && x > maxWert) { maxWert = x; } });
+    /* Runde Achsenwerte. Ein Viertel der Achse soll auf einer glatten Stufe
+       liegen -- 0/20/40/60/80 statt 0/23/45/68/90. */
     var roh = maxWert / v.teiler;
-    var schritt = Math.pow(10, Math.floor(Math.log(Math.max(roh, 1)) / Math.LN10));
-    var achse = Math.max(schritt, Math.ceil(roh / schritt) * schritt);
+    var stufe = 1;
+    var kandidaten = [1, 2, 2.5, 5, 10];
+    for (var z = -3; z <= 9 && stufe * 4 < roh; z++) {
+      for (var y2 = 0; y2 < kandidaten.length; y2++) {
+        stufe = kandidaten[y2] * Math.pow(10, z);
+        if (stufe * 4 >= roh) { break; }
+      }
+    }
+    var achse = stufe * 4;
 
     function X(k) { return links + (n === 1 ? innenB / 2 : k / (n - 1) * innenB); }
     function Y(mwh) { return oben + innenH - (mwh / v.teiler) / achse * innenH; }
@@ -1012,20 +1062,47 @@
     });
 
     var gitter = s("g", { "class": "pf-gitter" });
-    for (var g = 0; g <= achse + 1e-9; g += achse / 4) {
+    for (var g = 0; g <= achse + 1e-9; g += stufe) {
       var y = Y(g * v.teiler);
       gitter.appendChild(s("line", { x1: links, x2: B - rechts, y1: y, y2: y }));
       var tx = s("text", { x: links - 6, y: y + 3.5, "text-anchor": "end" });
-      tx.textContent = nf0.format(g);
+      tx.textContent = stufe < 1 ? nf1.format(g) : nf0.format(g);
       gitter.appendChild(tx);
     }
-    var jeder = Math.max(1, Math.ceil(n / 12));
-    for (var h = 0; h < n; h += jeder) {
-      var t2 = s("text", { x: X(h), y: H - 8, "text-anchor": "middle" });
-      t2.textContent = v.marken[h];
-      gitter.appendChild(t2);
+    /* Beschriftung der Zeitachse. Bei mehreren Tagen in Stundenaufloesung
+       zaehlen die TAGESGRENZEN, nicht die Stundenzahlen -- 168 Zahlen von 00
+       bis 23 waeren nur Kammputz. Dann eine senkrechte Trennlinie um
+       Mitternacht und das Datum mittig darunter. */
+    var wechsel = [];
+    if (v.tage) {
+      for (var w = 0; w < n; w++) {
+        if (w === 0 || v.tage[w] !== v.tage[w - 1]) { wechsel.push(w); }
+      }
     }
-    var einheit = s("text", { x: links - 6, y: oben - 4, "text-anchor": "end",
+    if (v.stuendlich && wechsel.length > 1) {
+      wechsel.forEach(function (anfang, i) {
+        if (i > 0) {
+          gitter.appendChild(s("line", { "class": "pf-tagestrenner",
+            x1: X(anfang), x2: X(anfang), y1: oben, y2: H - unten }));
+        }
+        var ende = (i + 1 < wechsel.length) ? wechsel[i + 1] : n;
+        var mitte = (X(anfang) + X(Math.max(anfang, ende - 1))) / 2;
+        var beschriftung = s("text", { x: mitte, y: H - 8, "text-anchor": "middle" });
+        var d = ausIso(v.tage[anfang]);
+        beschriftung.textContent = (wechsel.length > 9
+          ? d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
+          : d.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }));
+        gitter.appendChild(beschriftung);
+      });
+    } else {
+      var jeder = Math.max(1, Math.ceil(n / 12));
+      for (var h = 0; h < n; h += jeder) {
+        var t2 = s("text", { x: X(h), y: H - 8, "text-anchor": "middle" });
+        t2.textContent = v.marken[h] + (v.stuendlich ? "" : "");
+        gitter.appendChild(t2);
+      }
+    }
+    var einheit = s("text", { x: links - 6, y: oben - 12, "text-anchor": "end",
       "class": "pf-achsentitel" });
     einheit.textContent = v.einheit;
     gitter.appendChild(einheit);
@@ -1072,8 +1149,11 @@
       kreuz.setAttribute("x1", X(k));
       kreuz.setAttribute("x2", X(k));
       ablesung.textContent = "";
-      ablesung.appendChild(el("strong", { text: v.tage ? datumLang(v.tage[k])
-        : v.marken[k] + " Uhr" }));
+      ablesung.appendChild(el("strong", {
+        text: v.stuendlich
+          ? datumLang(v.tage[k]) + ", " + v.marken[k] + ":00 Uhr"
+          : datumLang(v.tage[k])
+      }));
       var liste = el("div", { "class": "pf-ablesung-liste" });
       if (v.netzlast[k] !== null) {
         var zl = el("span", { "class": "pf-ablesung-zeile" });
@@ -1115,6 +1195,8 @@
        Identitaet nicht allein an der Farbe haengt. */
     var gesamt = v.reihen.reduce(function (a, r) { return a + r.summe; }, 0) || 1;
     var legende = el("div", { "class": "pf-legende pf-legende-traeger" });
+    legende.appendChild(el("span", { "class": "pf-legende-titel",
+      text: "Anteil im Zeitraum:" }));
     v.reihen.slice().reverse().forEach(function (r) {
       if (!r.summe) { return; }
       var sp = el("span");
@@ -1144,7 +1226,7 @@
       if (auf && !tabHuelle.childNodes.length) {
         var tab = el("table", { "class": "pf-tabelle" });
         var kopfz = el("tr");
-        kopfz.appendChild(el("th", { text: v.tage ? "Tag" : "Stunde", scope: "col" }));
+        kopfz.appendChild(el("th", { text: v.stuendlich ? "Stunde" : "Tag", scope: "col" }));
         v.reihen.forEach(function (r) {
           if (r.summe) { kopfz.appendChild(el("th", { text: r.name, scope: "col" })); }
         });
@@ -1153,7 +1235,8 @@
         var koerper = el("tbody");
         v.marken.forEach(function (mk, k) {
           var tr = el("tr");
-          tr.appendChild(el("td", { text: v.tage ? v.tage[k] : mk }));
+          tr.appendChild(el("td", {
+            text: v.stuendlich ? v.tage[k] + " " + mk + ":00" : v.tage[k] }));
           v.reihen.forEach(function (r) {
             if (r.summe) { tr.appendChild(el("td", { text: nf1.format(r.werte[k] / v.teiler) })); }
           });
@@ -1504,8 +1587,10 @@
     }
 
     // --- Zeitreihe ---
+    var stuendlich = anzahlTage(von, bis) <= STUNDEN_BIS_TAGE;
     neu.appendChild(abschnitt(
-      (einTag ? "Tagesverlauf" : "Verlauf") + " · Erzeugung nach Energieträger",
+      "Verlauf · Erzeugung nach Energieträger"
+        + (stuendlich ? " · Stundenwerte" : " · Tageswerte"),
       zeitreihenDiagramm(von, bis)));
 
     // --- Flussbild ---
@@ -1770,7 +1855,9 @@
     var noetig = jahreImZeitraum(von, bis).concat(
       jahreImZeitraum(vorjahrstag(von), vorjahrstag(bis)));
     var auftraege = noetig.map(jahrLaden);
-    if (von === bis) { auftraege.push(verlaufLaden(von)); }
+    if (anzahlTage(von, bis) <= STUNDEN_BIS_TAGE) {
+      auftraege.push(verlaufLadenZeitraum(von, bis));
+    }
     Promise.all(auftraege).then(function () {
       Z.von = von; Z.bis = bis;
       zeichnen();
@@ -1816,7 +1903,8 @@
       Z.startBis = Z.maxTag;
       var noetig = jahreImZeitraum(Z.startVon, Z.startBis).concat(
         jahreImZeitraum(vorjahrstag(Z.startVon), vorjahrstag(Z.startBis)));
-      return Promise.all(noetig.map(jahrLaden));
+      return Promise.all(noetig.map(jahrLaden).concat(
+        [verlaufLadenZeitraum(Z.startVon, Z.startBis)]));
     }).then(function () {
       Z.von = Z.startVon;
       Z.bis = Z.startBis;
