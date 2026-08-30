@@ -150,6 +150,16 @@ class Befund:
         (self.ok if bedingung else self.fehler).append(text)
 
 
+def _im_git(pfad: str) -> bool:
+    import subprocess
+    try:
+        r = subprocess.run(["git", "ls-files", "--error-unmatch", pfad],
+                           cwd=WURZEL, capture_output=True)
+        return r.returncode == 0
+    except OSError:
+        return False
+
+
 def lade(pfad: str) -> str:
     return (WURZEL / pfad).read_text(encoding="utf-8")
 
@@ -494,6 +504,24 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # Entwicklers. Eine Pruefung, die nur laeuft, wenn jemand daran denkt,
     # laeuft irgendwann nicht mehr.
     b.pruefe("browsertest.mjs" in pruefwf, "Pruef-Workflow fuehrt den Browsertest aus")
+
+    # --- Geheimnisse ---
+    # Ein einmal gepushtes Geheimnis steht auch nach dem Loeschen noch in der
+    # History. Deshalb wird hier geprueft, dass .env ignoriert bleibt und die
+    # Vorlage leer ist.
+    ignoriert = lade(".gitignore")
+    b.pruefe(any(z.strip() == ".env" for z in ignoriert.splitlines()),
+             ".env steht in .gitignore")
+    b.pruefe(not (WURZEL / ".env").is_file() or not _im_git(".env"),
+             ".env ist nicht eingecheckt")
+    if (WURZEL / ".env.beispiel").is_file():
+        vorlage = lade(".env.beispiel")
+        gefuellt = [z for z in vorlage.splitlines()
+                    if "=" in z and not z.strip().startswith("#")
+                    and z.split("=", 1)[1].strip()]
+        b.pruefe(not gefuellt,
+                 "die Vorlage .env.beispiel enthaelt keine Werte"
+                 + (f" -- gefuellt: {[z.split('=')[0] for z in gefuellt]}" if gefuellt else ""))
 
     lizenztext = lade("LIZENZ-DATEN.md")
     for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",
