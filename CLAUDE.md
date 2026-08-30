@@ -230,8 +230,48 @@ Variable" ist weg.
 Ausserdem erledigt (31.08.2026): Regelzonen als Flaeche auf der Karte -- siehe
 den eigenen Abschnitt unten.
 
-Noch offen: Methodik-PDF; Import und Export im Verlauf; Anlagen aus dem
-Marktstammdatenregister.
+Ausserdem erledigt (31.08.2026): Windparks aus dem Marktstammdatenregister --
+siehe eigenen Abschnitt unten. Ausserdem behoben:
+Marken auf der Karte werden absteigend nach Leistung gezeichnet (der kleine
+Kreis liegt oben) und behalten beim Zoomen ihre Bildschirmgroesse, damit ein
+Zoom eine Haeufung ueberhaupt aufloest.
+
+Noch offen: Methodik-PDF; Import und Export im Verlauf.
+
+## Marktstammdatenregister
+
+Erledigt am 31.08.2026. Beleg: `docs/beleg-mastr.md`, Abruf durch
+`scripts/fetch-mastr.py`.
+
+**Der Gesamtdatenexport ist ein ZIP von 3,16 GB.** Gebraucht wird ein Bruchteil.
+Ein ZIP traegt sein Inhaltsverzeichnis am Ende, und der Server beantwortet
+Range-Anfragen -- das Skript liest deshalb gezielt einzelne Archivmitglieder.
+Fuer Wind sind das **9,5 MB statt 3.160 MB**. Wer das Skript umbaut, behaelt
+diesen Weg; ein voller Download waere in einem Workflow nicht tragbar.
+
+- **Einheit aus den Daten bewiesen:** E-115 = 3000, V90 = 2000, E-101 = 3050.
+  Das sind KILOWATT. Die Doku wurde nicht abgeschrieben.
+- **Groessenordnungsprobe gegen SMARD:** 81,62 GW Wind in Betrieb gegen eine
+  gemessene Spitze von 53,23 GW zeitgleich -- 65 %, plausibel.
+- **Zahlencodes werden aus `Katalogwerte.xml` aufgeloest, nie geraten.**
+- **Die Schwelle ist eine Wahl:** Windparks ab 5 MW. Grund ist nicht
+  Geschmack: unterhalb fehlen im Register haeufig die Koordinaten.
+- **Zusammengefasst wird ueber eine Angabe des Registers**, nicht ueber eigene
+  Naehe: `NameWindpark`. Der Ort eines Parks ist der Mittelwert der
+  Anlagenorte -- eine Rechnung, und sie wird benannt.
+- **Die Karte zeigt eine Auswahl, die Datei nicht:** alle Parks auf See und die
+  20 groessten an Land. Das steht an der Ebene. Die Datei unter `data/` bleibt
+  vollstaendig und steht im Abzug.
+- **SOLAR IST GEPRUEFT UND VERWORFEN.** 1,08 GB gepackt, und selbst ab 1 MW
+  blieben rund 11.500 Standorte -- kein Zugewinn auf einer Karte, die vom Netz
+  und von den grossen Erzeugern handelt. Entschieden von Immo am 31.08.2026.
+  Die Pruefergebnisse stehen in `docs/beleg-mastr.md`, damit niemand die
+  1,08 GB ein zweites Mal laedt, um dasselbe herauszufinden.
+- **Lizenz dl-de/by-2-0**, siebte Lizenz im Projekt. Absatz 3 verlangt den
+  Hinweis, DASS veraendert wurde -- er steht als Feld `_veraendert` in der
+  Datei. Kein Share-alike.
+- **1.030 Windanlagen in Betrieb haben keine Koordinate** und fehlen. Das ist
+  eine Luecke der Quelle und steht in den offenen Punkten.
 
 ## Regelzonen als Flaeche -- die einzige Ableitung
 

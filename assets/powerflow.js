@@ -18,7 +18,22 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260831-quellen";
+  /* Cache-Buster fuer alle Datendateien. Er wird aus dem EIGENEN Skriptpfad
+     gelesen, nicht daneben gepflegt: eine zweite Stelle laeuft irgendwann
+     auseinander, und genau das war passiert -- die index.html stand auf
+     20260831-mastr, diese Konstante noch auf 20260831-quellen. Nach einem
+     Deploy haette der Browser alte Datendateien ausliefern koennen, waehrend
+     Seite und Stylesheet neu waren.
+
+     document.currentScript ist beim Ausfuehren eines klassischen Skripts
+     gesetzt. Fehlt es wider Erwarten, bleibt der Wert leer und die Dateien
+     werden ohne Anhang geholt -- das ist schlechter als ein Buster, aber
+     besser als ein falscher. */
+  var VERSION = (function () {
+    var s = document.currentScript && document.currentScript.src;
+    var m = s && s.match(/[?&]v=([^&]+)/);
+    return m ? decodeURIComponent(m[1]) : "";
+  })();
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -104,6 +119,7 @@
       umspannwerke: true,
       hoechstspannung: true,
       hochspannung: false,
+      mastrwind: true,
       /* Voreingestellt AUS, und das ist Absicht: die Flaeche ist die einzige
          abgeleitete Geometrie auf dieser Seite. Wer sie sehen will, schaltet
          sie ein und liest dabei, was sie ist. */
@@ -115,7 +131,8 @@
     hoechstspannung: "data/netz-hoechstspannung.json",
     hochspannung: "data/netz-hochspannung.json",
     umspannwerke: "data/netz-umspannwerke.json",
-    zonenflaeche: "data/regelzonen-flaeche.json"
+    zonenflaeche: "data/regelzonen-flaeche.json",
+    mastrwind: "data/mastr-wind.json"
   };
 
   function netzLaden(name) {
@@ -690,6 +707,10 @@
         + zeitraumKurz(von, bis)
     });
 
+    // Auch der Anfangszustand bekommt seinen Faktor -- sonst haengt die
+    // Markengroesse davon ab, ob schon einmal gezoomt wurde.
+    svg.style.setProperty("--pf-zoom", (sicht.w / B).toFixed(4));
+
     var gNachbarn = s("g", { "class": "pf-geo-nachbar" });
     grundkarte.nachbarn.forEach(function (nb) {
       nb.ringe.forEach(function (r) { gNachbarn.appendChild(s("path", { d: ringPfad(r) })); });
@@ -807,9 +828,10 @@
       Z.netz.umspannwerke.objekte.forEach(function (w) {
         var e = ebeneVon(w.v);
         if (!e) { return; }
+        var rw = (w.v >= 380000 ? 2.1 : w.v >= 220000 ? 1.6 : 1.0);
         var c = s("circle", {
           cx: X(w.lon).toFixed(1), cy: Y(w.lat).toFixed(1),
-          r: (w.v >= 380000 ? 2.1 : w.v >= 220000 ? 1.6 : 1.0).toFixed(1),
+          r: rw.toFixed(1), style: "--r:" + rw.toFixed(2),
           fill: "var(--netz-unbekannt)"
         });
         waehlbar(c, {
@@ -825,16 +847,86 @@
       svg.appendChild(gW);
     }
 
+    /* Wind- und Solarparks aus dem Marktstammdatenregister.
+
+       Sie liegen UNTER den Kraftwerken aus den SMARD-Stammdaten, aber ueber den
+       Umspannwerken. Der Radius folgt derselben Formel wie bei den Kraftwerken
+       -- Wurzel der Leistung mal 0,30 -- damit ein 900-MW-Offshorepark und ein
+       900-MW-Braunkohleblock im Bild gleich gross sind. Ein Vergleich, der
+       sonst nur im Kopf stattfaende.
+
+       Farbe sagt WER: Wind traegt --tr-wind, Solar --tr-pv. Dieselben Toene wie
+       im Verlaufsdiagramm und bei den Regelzonenbaendern. */
+    function parkebene(schluessel, klasse, token, traeger, auswahl, beschriften) {
+      if (!Z.ebenen[schluessel] || !Z.netz[schluessel]) { return; }
+      var d = Z.netz[schluessel];
+      var g = s("g", { "class": "pf-geo-park " + klasse });
+      auswahl(d.objekte.slice().sort(function (a, b) { return b.kw - a.kw; }))
+        .forEach(function (o) {
+        var mw = o.kw / 1000;
+        var r = Math.max(1.4, Math.sqrt(mw) * 0.30);
+        var c = s("circle", {
+          cx: X(o.lon).toFixed(1), cy: Y(o.lat).toFixed(1),
+          r: r.toFixed(1), style: "--r:" + r.toFixed(2),
+          fill: "var(" + token + ")", stroke: "var(" + token + ")",
+          "data-traeger": traeger
+        });
+        waehlbar(c, beschriften(o, mw, d));
+        g.appendChild(c);
+      });
+      svg.appendChild(g);
+    }
+
+    /* AUSWAHL, keine Vollstaendigkeit -- und das steht auch so an der Ebene.
+       Alle 4.030 Windparks und alle Solarstandorte auf einmal machten aus der
+       Karte ein Nadelkissen; die Marken lagen dichter als die Leitungen
+       darunter. Gezeigt werden deshalb die groessten, und auf See alle: dort
+       sind es nur 47, und sie sind der interessante Teil.
+
+       Die Dateien unter data/ bleiben vollstaendig. Die Auswahl ist eine Frage
+       der Darstellung, nicht der Daten -- der Abzug im Quellenverzeichnis
+       enthaelt weiterhin jeden Park. */
+    var KARTE_GROESSTE = 20;
+
+    parkebene("mastrwind", "pf-park-wind", "--tr-wind", "Wind",
+      function (alle) {
+        var see = alle.filter(function (o) { return o.see; });
+        var land = alle.filter(function (o) { return !o.see; }).slice(0, KARTE_GROESSTE);
+        return see.concat(land);
+      },
+      function (o, mw, d) {
+        return {
+          art: o.see ? "Windpark auf See" : "Windpark an Land",
+          titel: o.n,
+          zeilen: [["Nettonennleistung", nf0.format(mw) + " MW"],
+                   ["Anlagen", nf0.format(o.a) + (o.a === 1 ? " Anlage" : " Anlagen")],
+                   ["Lage", o.see ? "auf See" : "an Land"],
+                   ["Älteste Anlage", o.j || "—"],
+                   ["Ort", nf1.format(o.lat) + " N, " + nf1.format(o.lon) + " O"]],
+          fuss: "Stammdatum aus dem Marktstammdatenregister der Bundesnetzagentur. "
+            + "Einzelne Anlagen sind über die Angabe des Betreibers zum Park "
+            + "zusammengefasst; der gezeigte Ort ist der Mittelwert der Anlagenorte. "
+            + "Die Leistung sagt, was der Park kann — nicht, was er erzeugt hat."
+        };
+      });
+
     if (Z.ebenen.kraftwerke) {
       var gPunkte = s("g", { "class": "pf-geo-anlage" });
+      /* ABSTEIGEND nach Leistung: der groesste Kreis wird zuerst gezeichnet und
+         liegt damit unten. Vorher war es umgekehrt -- Karlsruhe mit 1.706 MW
+         legte sich ueber alles in seiner Umgebung, und was darunter lag, war
+         nicht mehr anzuklicken. Beim Ueberlappen gewinnt jetzt der kleinere
+         Kreis, und das ist die richtige Wahl: der grosse ist auch daneben noch
+         zu treffen. */
       anlagen.slice().sort(function (a, b) {
-        return (a.leistung_mw || 0) - (b.leistung_mw || 0);
+        return (b.leistung_mw || 0) - (a.leistung_mw || 0);
       }).forEach(function (a) {
         var mw = a.leistung_mw || 0;
         var farbe = "var(" + traegerToken(a.energietraeger) + ")";
+        var ra = Math.max(1.6, Math.sqrt(mw) * 0.30);
         var c = s("circle", {
           cx: X(a.lon).toFixed(1), cy: Y(a.lat).toFixed(1),
-          r: Math.max(1.6, Math.sqrt(mw) * 0.30).toFixed(1),
+          r: ra.toFixed(1), style: "--r:" + ra.toFixed(2),
           fill: farbe, stroke: farbe,
           "data-zone": zoneNormal(a.regelzone),
           "data-traeger": TRAEGERGRUPPE_ANZEIGE[a.energietraeger] || "Sonstige"
@@ -941,6 +1033,17 @@
       neu.y = Math.max(-H * 0.3, Math.min(H * 1.3 - neu.h, neu.y));
       Z.karte.sicht = neu;
       svg.setAttribute("viewBox", [neu.x, neu.y, neu.w, neu.h].join(" "));
+      /* Marken bleiben beim Zoomen gleich GROSS auf dem Bildschirm, waehrend
+         die Geografie auseinandergeht. Nur so loest ein Zoom eine Haeufung
+         auf; skalierten die Kreise mit, saehe jede Zoomstufe gleich gedraengt
+         aus. Der Radius bleibt weiterhin proportional zur Wurzel der Leistung,
+         die Aussage der Marke aendert sich also nicht.
+
+         Gerechnet wird das im Stylesheet ueber eine einzige Variable -- 5.855
+         Kreise bei jedem Mausrad-Schritt einzeln anzufassen waere zu langsam.
+         Wo der Browser die CSS-Eigenschaft r nicht kennt, bleibt der
+         Attributwert stehen und die Karte verhaelt sich wie bisher. */
+      svg.style.setProperty("--pf-zoom", (neu.w / B).toFixed(4));
     }
 
     function zoomAn(faktor, zx, zy) {
@@ -1058,6 +1161,8 @@
       { schluessel: "kraftwerke", text: "Kraftwerke" },
       { schluessel: "umspannwerke", text: "Umspannwerke ab 110 kV", datei: "umspannwerke" },
       { schluessel: "hoechstspannung", text: "Leitungen 220/380 kV", datei: "hoechstspannung" },
+      { schluessel: "mastrwind",
+        text: "Windparks: alle auf See, 20 größte an Land", datei: "mastrwind" },
       { schluessel: "hochspannung", text: "Leitungen 110 kV (5,9 MB)", datei: "hochspannung" },
       { schluessel: "zonenflaeche", text: "Regelzonen als Fläche (abgeleitet)",
         datei: "zonenflaeche" }
@@ -2605,13 +2710,12 @@
       });
     }
     var gesehen = {};
-    Z.kraftwerke.anlagen.forEach(function (a) {
-      var name = TRAEGERGRUPPE_ANZEIGE[a.energietraeger] || "Sonstige";
+    function traegerKnopf(name, token) {
       if (gesehen[name]) { return; }
       gesehen[name] = true;
       var knopf = el("button", { "class": "pf-zonenknopf", type: "button",
-        "data-traeger": name, "aria-label": "Kraftwerke mit " + name + " hervorheben" });
-      knopf.appendChild(el("i", { style: "background:var(" + traegerToken(a.energietraeger) + ");" }));
+        "data-traeger": name, "aria-label": "Anlagen mit " + name + " hervorheben" });
+      knopf.appendChild(el("i", { style: "background:var(" + token + ");" }));
       knopf.appendChild(document.createTextNode(name));
       knopf.addEventListener("mouseenter", function () { traegerHervor(name); });
       knopf.addEventListener("focus", function () { traegerHervor(name); });
@@ -2619,7 +2723,16 @@
         traegerHervor(K.svg.getAttribute("data-traeger-hervor") === name ? null : name);
       });
       zeileTraeger.appendChild(knopf);
+    }
+    Z.kraftwerke.anlagen.forEach(function (a) {
+      traegerKnopf(TRAEGERGRUPPE_ANZEIGE[a.energietraeger] || "Sonstige",
+                   traegerToken(a.energietraeger));
     });
+    /* Wind und Photovoltaik stehen erst in der Legende, wenn ihre Ebene auch
+       geladen ist -- ein Knopf fuer etwas, das gerade nicht auf der Karte ist,
+       waere eine Behauptung. */
+    if (Z.ebenen.mastrwind && Z.netz.mastrwind) { traegerKnopf("Wind", "--tr-wind"); }
+
     zeileTraeger.addEventListener("mouseleave", function () {
       if (!zeileTraeger.querySelector("[data-aktiv]")) { traegerHervor(null); }
     });
@@ -2821,8 +2934,17 @@
       "Import und Export im Verlauf — bisher nur als Summe des Zeitraums, nicht "
         + "Stunde für Stunde.",
       "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie viermal so groß.",
-      "Anlagen aus dem Marktstammdatenregister, damit Wind- und Solarparks auf die "
-        + "Karte kommen.",
+      "Kleine Windparks. Die Karte zeigt Parks ab 5 MW — das sind 4.030 Parks "
+        + "mit 67,6 der 81,6 GW, die in Betrieb sind. Darunter fehlen im Register "
+        + "haeufig die Koordinaten.",
+      "Solaranlagen. Geprüft und bewusst nicht aufgenommen: selbst ab 1 MW blieben "
+        + "rund elftausend Standorte, und die Karte handelt vom Netz und von den "
+        + "großen Erzeugern. Was bei der Prüfung herauskam, steht in "
+        + "docs/beleg-mastr.md.",
+      "1.030 Windenergieanlagen in Betrieb haben im Register keine Koordinate und "
+        + "fehlen auf der Karte. Das ist eine Lücke der Quelle, keine Auswahl.",
+      "Eine Regelzone je Wind- oder Solarpark. Das Register führt sie nicht; die "
+        + "Parks bleiben deshalb ohne Zonenfarbe.",
       "Redispatch auf der Karte. Das Feld BETROFFENE_ANLAGE nennt teilweise "
         + "Blocknamen; die Zuordnung zu den Kraftwerkskoordinaten steht aus.",
       "Zugang zur ENTSO-E Transparency Platform ist beantragt. Damit ließe sich die "
@@ -2976,10 +3098,15 @@
       hole("data/kraftwerke.json"),
       hole("data/redispatch-verzeichnis.json"),
       hole("data/quellen.json"),
-      // Die beiden voreingestellten Netzebenen. Die 110-kV-Ebene wird erst
-      // geladen, wenn jemand sie einschaltet -- sie ist 5,9 MB gross.
+      // Die voreingestellten Ebenen. Die 110-kV-Ebene wird erst geladen, wenn
+      // jemand sie einschaltet -- sie ist 5,9 MB gross.
       netzLaden("hoechstspannung"),
-      netzLaden("umspannwerke")
+      netzLaden("umspannwerke"),
+      /* Die Parkebene darf den Seitenaufbau NICHT aufhalten. Fehlt
+         eine Datei -- etwa weil ein Abruf im Workflow gescheitert ist --, wird
+         die Ebene still weggelassen; alles andere steht trotzdem. Die
+         Alternative waere eine weisse Seite wegen einiger Kartenmarken. */
+      netzLaden("mastrwind").catch(function () { Z.ebenen.mastrwind = false; })
     ]).then(function (teile) {
       Z.verzeichnis = teile[0];
       Z.grundkarte = teile[1];

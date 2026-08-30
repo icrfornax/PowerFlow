@@ -56,6 +56,16 @@ QUELLEN = {
         "namensnennung": "keine gefordert",
         "erhebung": "aus den Dateien dieses Repositorys erzeugt, keine eigene Messung",
     },
+    "mastr": {
+        "name": "Marktstammdatenregister, Bundesnetzagentur",
+        "url": "https://www.marktstammdatenregister.de/MaStR/Datendownload",
+        "lizenz": "Datenlizenz Deutschland - Namensnennung - Version 2.0 (dl-de/by-2-0)",
+        "lizenz_url": "https://www.govdata.de/dl-de/by-2-0",
+        "namensnennung": ("Marktstammdatenregister, Bundesnetzagentur, "
+                          "Datenlizenz Deutschland - Namensnennung - Version 2.0 -- "
+                          "Daten gefiltert und je Park zusammengefasst (veraendert)"),
+        "erhebung": "amtliches Register; die Betreiber melden ihre Anlagen selbst",
+    },
     "abgeleitet": {
         "name": "PowerFlow, abgeleitet -- KEINE Messung",
         "url": "https://github.com/icrfornax/PowerFlow/blob/main/scripts/zonenflaeche.py",
@@ -111,6 +121,11 @@ GRUPPEN = [
      "Tagesaggregate: Arbeit nach Richtung, anweisendem Netzbetreiber und "
      "Primaerenergieart, in MWh.", "docs/beleg-redispatch.md",
      "redispatch-verzeichnis.json"),
+    ("mastr-wind.json", "mastr", "Windparks ab 5 MW",
+     "Ort, Nettonennleistung, Anzahl der Anlagen und Baujahr je Park, an Land und "
+     "auf See. Einzelne Anlagen sind ueber die Betreiberangabe NameWindpark "
+     "zusammengefasst; der Ort ist der Mittelwert der Anlagenorte. STAMMDATUM, keine "
+     "Messung.", "docs/beleg-mastr.md", None),
     # Die EINZIGE abgeleitete Geometrie des Projekts. Sie bekommt eine eigene
     # Quelle, damit sie im Verzeichnis nicht neben den Messungen steht.
     ("regelzonen-flaeche.json", "abgeleitet", "Regelzonen als Flaeche (abgeleitet)",

@@ -48,6 +48,13 @@ jobs:
         if: github.event_name == 'schedule' || inputs.netz
         run: python scripts/fetch-netz.py
 
+      - name: Windparks aus dem Marktstammdatenregister
+        # Holt gezielt aus dem 3,16-GB-Export: rund 10 MB per HTTP-Range.
+        # Das Skript bricht ab, wenn die Gesamtleistung ausserhalb des
+        # Plausiblen liegt (40 bis 200 GW).
+        if: github.event_name == 'schedule' || inputs.netz
+        run: python scripts/fetch-mastr.py
+
       - name: Regelzonenflaeche neu ableiten
         # Haengt an beiden Stammdatensaetzen: aendern sich Kraftwerke oder
         # Leitungen, muss die abgeleitete Flaeche mitwandern. Das Skript

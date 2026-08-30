@@ -13,6 +13,7 @@ verpflichtet zur Weitergabe unter denselben Bedingungen.
 | `data/grundkarte.json` | Natural Earth | gemeinfrei (public domain) | keine gefordert |
 | `data/netz-hoechstspannung.json`, `data/netz-hochspannung.json`, `data/netz-umspannwerke.json` | OpenStreetMap | **ODbL 1.0** | `© OpenStreetMap contributors` |
 | `data/redispatch/*.json` | netztransparenz.de (die vier ÜNB), auch über ENTSO-E | siehe unten — **teilweise ungeklärt** | `netztransparenz.de — 50Hertz, Amprion, TenneT, TransnetBW` |
+| `data/mastr-wind.json` | Marktstammdatenregister, Bundesnetzagentur | **dl-de/by-2-0** | `Marktstammdatenregister, Bundesnetzagentur` + Hinweis auf die Veränderung |
 | `data/regelzonen-flaeche.json` | **abgeleitet**, nicht erhoben — aus SMARD und OpenStreetMap | **ODbL 1.0** (die schärfere der beiden erbt) | `Bundesnetzagentur \| SMARD.de` und `© OpenStreetMap contributors` |
 
 ## SMARD — CC BY 4.0
@@ -31,6 +32,27 @@ Wörtlich: *"All versions of Natural Earth raster and vector map data found on
 this website are in the public domain."* Keine Namensnennung gefordert. Sie
 steht trotzdem in der Fußnote der Seite — wer eine Grafik prüfen will, soll
 wissen, woher die Geometrie kommt.
+
+## Marktstammdatenregister — Datenlizenz Deutschland, Namensnennung 2.0
+
+<https://www.marktstammdatenregister.de/MaStR/Datendownload> nennt unmittelbar
+neben dem XML-Gesamtdatenexport: *„Lizenz: Datenlizenz Deutschland –
+Namensnennung – Version 2.0"*.
+
+- **Namensnennung** nach Absatz 2 der Lizenz: Bezeichnung des Bereitstellers,
+  der Vermerk der Lizenz mit Verweis auf den Lizenztext, und ein Verweis auf den
+  Datensatz. Alle drei stehen im Kopf jeder `mastr-*.json`.
+- **Veränderungshinweis** nach Absatz 3: *„Veränderungen, Bearbeitungen, neue
+  Gestaltungen oder sonstige Abwandlungen sind im Quellenvermerk mit dem Hinweis
+  zu versehen, dass die Daten geändert wurden."* Hier wird gefiltert und je Park
+  zusammengefasst — das steht als eigenes Feld `_veraendert` in beiden Dateien.
+- **Eine kleine Unschärfe, benannt:** das Impressum des Registers erklärt die
+  Lizenz für Daten *„in den Formaten .xls und .csv"*. Der Gesamtdatenexport ist
+  XML. Die Downloadseite selbst nennt die Lizenz aber unmittelbar neben genau
+  diesem XML-Export, und das ist die speziellere Angabe. Sie wird hier
+  zugrunde gelegt. Wer daran zweifelt, liest zuerst `docs/beleg-mastr.md`.
+- Die Lizenz verlangt **kein** Share-alike. Sie färbt nicht auf die anderen
+  Dateien und nicht auf den Code ab.
 
 ## OpenStreetMap — ODbL 1.0, mit Share-alike
 

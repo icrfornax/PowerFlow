@@ -310,6 +310,13 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     for aussage in PFLICHT_IN_JS:
         b.pruefe(aussage in js, f"Seitentext enthaelt: {aussage!r}")
 
+    # Der Cache-Buster der DATENdateien wird im Skript aus dem eigenen Pfad
+    # gelesen, nicht als zweite Konstante gepflegt. Eine zweite Stelle lief
+    # auseinander -- genau deshalb steht hier eine Pruefung.
+    b.pruefe("document.currentScript" in js and 'v=([^&]+)' in js,
+             "Cache-Buster der Datendateien wird aus dem Skriptpfad gelesen")
+    b.pruefe(not re.search(r'var VERSION = "', js),
+             "keine zweite, von Hand gepflegte VERSION-Konstante")
     treffer = re.findall(r'(?:powerflow\.(?:css|js))\?v=(\d{8}-[a-z0-9-]+)', index_html)
     b.pruefe(len(treffer) == 2, "Cache-Buster an CSS und JS vorhanden")
     b.pruefe(len(set(treffer)) <= 1, "Cache-Buster an CSS und JS identisch")

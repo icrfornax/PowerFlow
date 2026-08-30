@@ -639,6 +639,80 @@ try {
     "keine Abschnittsueberschrift 'Freie Variable' mehr");
   await schlafen(300);
 
+  /* Windparks aus dem Marktstammdatenregister. Auf der Karte steht bewusst
+     eine AUSWAHL: alle Parks auf See und die 20 groessten an Land. Die Datei
+     unter data/ bleibt vollstaendig. */
+  const parks = await js(`(function () {
+    const svg = document.querySelector(".pf-karte");
+    const w = [...svg.querySelectorAll(".pf-park-wind circle")];
+    const legende = [...document.querySelectorAll(".pf-zonenknopf[data-traeger]")]
+      .map((x) => x.getAttribute("data-traeger"));
+    return {
+      wind: w.length,
+      windTraeger: w.length ? w[0].getAttribute("data-traeger") : null,
+      legende: legende,
+      radiusGesetzt: w.every((c) => parseFloat(c.style.getPropertyValue("--r")) > 0)
+    };
+  })()`);
+  pruefe(parks.wind > 40 && parks.wind < 120,
+    `Windparks auf der Karte: ${parks.wind} (alle auf See plus 20 an Land)`);
+  pruefe(parks.windTraeger === "Wind",
+    "Parks tragen ihren Energietraeger als Merkmal", String(parks.windTraeger));
+  pruefe(parks.legende.includes("Wind"),
+    "Wind steht in der Traegerlegende", parks.legende.join(" | "));
+  pruefe(parks.radiusGesetzt, "auch die Parkmarken tragen ihren Grundradius als --r");
+
+  const parkAuswahl = await js(`(function () {
+    document.querySelector(".pf-park-wind circle").dispatchEvent(
+      new MouseEvent("click", { bubbles: true }));
+    const k = document.getElementById("pf-auswahl");
+    return k ? k.textContent : "";
+  })()`);
+  pruefe(/Marktstammdatenregister/.test(parkAuswahl),
+    "die Auswahl eines Parks nennt das Marktstammdatenregister",
+    parkAuswahl.slice(0, 120));
+  pruefe(/Windpark/.test(parkAuswahl), "und sagt, dass es ein Windpark ist",
+    parkAuswahl.slice(0, 80));
+
+  /* Reihenfolge und Zoomverhalten der Marken. Beides war ein echter Mangel:
+     der groesste Kreis lag oben und verdeckte alles darunter, und weil die
+     Radien mitskalierten, half auch Zoomen nichts. */
+  const marken = await js(`(function () {
+    const svg = document.querySelector(".pf-karte");
+    const kw = [...svg.querySelectorAll(".pf-geo-anlage circle")];
+    const r = kw.map((c) => parseFloat(c.style.getPropertyValue("--r")));
+    let absteigend = true;
+    for (let i = 1; i < r.length; i++) { if (r[i] > r[i - 1] + 1e-9) { absteigend = false; } }
+    const px = (c) => c.getBoundingClientRect().width / 2;
+    const groesste = kw.reduce((a, b) => (px(b) > px(a) ? b : a), kw[0]);
+    return { anzahl: kw.length, absteigend: absteigend,
+             groesstePx: px(groesste), varianteGesetzt: r.every((x) => x > 0) };
+  })()`);
+  pruefe(marken.varianteGesetzt, "jede Kraftwerksmarke traegt ihren Grundradius als --r");
+  pruefe(marken.absteigend,
+    "Kraftwerke werden absteigend nach Leistung gezeichnet, der kleine Kreis liegt oben");
+
+  const gezoomt = await js(`(function () {
+    const plus = [...document.querySelectorAll(".pf-kartenbedienung button")]
+      .find((x) => x.textContent.trim() === "+");
+    for (let i = 0; i < 3; i++) { plus.click(); }
+    const svg = document.querySelector(".pf-karte");
+    const kw = [...svg.querySelectorAll(".pf-geo-anlage circle")];
+    const px = (c) => c.getBoundingClientRect().width / 2;
+    const groesste = kw.reduce((a, b) => (px(b) > px(a) ? b : a), kw[0]);
+    return { px: px(groesste),
+             faktor: parseFloat(getComputedStyle(svg).getPropertyValue("--pf-zoom")) };
+  })()`);
+  pruefe(gezoomt.faktor < 0.6,
+    `dreimal Zoomen verkleinert den Markenfaktor auf ${gezoomt.faktor}`);
+  pruefe(Math.abs(gezoomt.px - marken.groesstePx) < 2,
+    "die groesste Marke behaelt beim Zoomen ihre Bildschirmgroesse "
+      + `(${marken.groesstePx.toFixed(1)} px -> ${gezoomt.px.toFixed(1)} px)`,
+    "so und nur so loest ein Zoom eine Haeufung auf");
+  await js(`[...document.querySelectorAll(".pf-kartenbedienung button")]
+    .find((x) => /zur/i.test(x.textContent)).click()`);
+  await schlafen(400);
+
   const ebene = await js(`(function () {
     const b = document.getElementById("pf-ebene-kraftwerke");
     b.click();
@@ -683,7 +757,7 @@ try {
     `vier Hinweiskaesten: ${qu.kaesten.join(" | ")}`);
   pruefe(qu.quellenAbschnitt, "Abschnitt Quellen und Downloads vorhanden");
   pruefe(qu.datensaetze >= 10, `${qu.datensaetze} Datensaetze im Quellenverzeichnis`);
-  pruefe(qu.quellen.length === 6, `sechs Quellen genannt: ${qu.quellen.join(" | ")}`);
+  pruefe(qu.quellen.length === 7, `sieben Quellen genannt: ${qu.quellen.join(" | ")}`);
   // Die abgeleitete Flaeche muss im Verzeichnis als solche kenntlich sein und
   // darf nicht neben den Messungen stehen.
   pruefe(qu.quellen.some((x) => /KEINE Messung/.test(x)),

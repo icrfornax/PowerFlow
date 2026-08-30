@@ -408,6 +408,29 @@ body {
 .pf-zonenflaeche path { fill-opacity: 0.20; stroke: none; }
 .pf-zonenflaeche { pointer-events: none; }
 
+/* Marken in gleichbleibender Bildschirmgroesse. --pf-zoom setzt die Karte bei
+   jeder Zoomstufe (Breite des Ausschnitts geteilt durch die Grundbreite); r
+   wird damit gegengerechnet. So geht beim Hineinzoomen die Geografie
+   auseinander, waehrend die Kreise bleiben -- und eine Haeufung loest sich auf.
+
+   r ist hier eine CSS-Eigenschaft (SVG-Geometrieeigenschaft). Kennt ein
+   Browser sie nicht, greift der gleichlautende Attributwert und die Karte
+   verhaelt sich wie vorher. Nichts geht kaputt, es zoomt nur weniger schoen. */
+.pf-karte .pf-geo-anlage circle,
+.pf-karte .pf-geo-park circle,
+.pf-karte .pf-netz-werk circle {
+  r: calc(var(--r, 2) * var(--pf-zoom, 1) * 1px);
+}
+
+/* Windparks. Blasser als die Kraftwerke aus den SMARD-Stammdaten:
+   dort ist jede Anlage einzeln belegt, hier ist ein Park aus vielen Anlagen
+   zusammengefasst. Der Unterschied soll man sehen. */
+.pf-geo-park circle {
+  fill-opacity: 0.38; stroke-width: 0.7; stroke-opacity: 0.75;
+  transition: fill-opacity 120ms ease;
+}
+.pf-geo-park circle:hover { fill-opacity: 0.85; }
+
 .pf-geo-anlage circle {
   fill-opacity: 0.55; stroke-width: 0.8; stroke-opacity: 0.9;
   transition: fill-opacity 120ms ease;
@@ -780,17 +803,23 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-karte[data-hervor="TransnetBW"] [data-zone="TransnetBW"] { opacity: 1; }
 .pf-karte[data-hervor] .pf-netz-110,
 .pf-karte[data-hervor] .pf-netz-werk { opacity: 0.12; }
+/* Die Parks tragen keine Regelzone -- das Register fuehrt sie nicht. Beim
+   Hervorheben einer Zone treten sie deshalb zurueck, statt eine Zugehoerigkeit
+   vorzutaeuschen, die nicht belegt ist. */
+.pf-karte[data-hervor] .pf-geo-park { opacity: 0.10; }
 .pf-karte[data-hervor] .pf-geo-anlage circle:not([data-zone]) { opacity: 0.08; }
 
 /* Hervorheben eines Energietraegers. Zweite Codierung neben der Farbe: der
    schwaechste Farbabstand liegt im zulaessigen Grenzband, und ohne eine
    zweite Codierung waere er dort nicht zulaessig. */
-.pf-karte[data-traeger-hervor] .pf-geo-anlage circle { opacity: 0.07; }
+.pf-karte[data-traeger-hervor] .pf-geo-anlage circle,
+.pf-karte[data-traeger-hervor] .pf-geo-park circle { opacity: 0.07; }
 .pf-karte[data-traeger-hervor="Braunkohle"] circle[data-traeger="Braunkohle"],
 .pf-karte[data-traeger-hervor="Steinkohle"] circle[data-traeger="Steinkohle"],
 .pf-karte[data-traeger-hervor="Erdgas"] circle[data-traeger="Erdgas"],
 .pf-karte[data-traeger-hervor="Wasser & Biomasse"] circle[data-traeger="Wasser & Biomasse"],
-.pf-karte[data-traeger-hervor="Sonstige"] circle[data-traeger="Sonstige"] { opacity: 1; }
+.pf-karte[data-traeger-hervor="Sonstige"] circle[data-traeger="Sonstige"],
+.pf-karte[data-traeger-hervor="Wind"] circle[data-traeger="Wind"] { opacity: 1; }
 .pf-karte[data-traeger-hervor] .pf-netz-hoechst,
 .pf-karte[data-traeger-hervor] .pf-netz-110,
 .pf-karte[data-traeger-hervor] .pf-netz-werk { opacity: 0.15; }

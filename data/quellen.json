@@ -1,6 +1,6 @@
 {
  "_hinweis": "Quellenverzeichnis der Seite. Aus den tatsaechlich vorhandenen Dateien erzeugt, nicht von Hand gepflegt. Jede Datei unter data/ ist einer Quelle zugeordnet; scripts/quellen.py bricht ab, wenn eine ohne Zuordnung auftaucht. Alle ZAHLEN dieser Seite sind gemessen oder als Stammdatum veroeffentlicht -- nichts modelliert, nichts geschaetzt, nichts erfunden. Genau eine GEOMETRIE ist abgeleitet: die Flaeche der vier Regelzonen, weil es dafuer keine amtliche oder offene Geometrie gibt. Sie steht unter der eigenen Quelle „abgeleitet“, ist auf der Karte voreingestellt ausgeschaltet und nennt ihre gemessene Trefferquote.",
- "erzeugt": "2026-08-30T21:28:56+02:00",
+ "erzeugt": "2026-08-31T01:39:23+02:00",
  "quellen": {
   "smard": {
    "name": "SMARD, Bundesnetzagentur",
@@ -33,6 +33,14 @@
    "lizenz_url": "https://github.com/icrfornax/PowerFlow/blob/main/LICENSE",
    "namensnennung": "keine gefordert",
    "erhebung": "aus den Dateien dieses Repositorys erzeugt, keine eigene Messung"
+  },
+  "mastr": {
+   "name": "Marktstammdatenregister, Bundesnetzagentur",
+   "url": "https://www.marktstammdatenregister.de/MaStR/Datendownload",
+   "lizenz": "Datenlizenz Deutschland - Namensnennung - Version 2.0 (dl-de/by-2-0)",
+   "lizenz_url": "https://www.govdata.de/dl-de/by-2-0",
+   "namensnennung": "Marktstammdatenregister, Bundesnetzagentur, Datenlizenz Deutschland - Namensnennung - Version 2.0 -- Daten gefiltert und je Park zusammengefasst (veraendert)",
+   "erhebung": "amtliches Register; die Betreiber melden ihre Anlagen selbst"
   },
   "abgeleitet": {
    "name": "PowerFlow, abgeleitet -- KEINE Messung",
@@ -185,6 +193,18 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
   },
   {
+   "titel": "Windparks ab 5 MW",
+   "inhalt": "Ort, Nettonennleistung, Anzahl der Anlagen und Baujahr je Park, an Land und auf See. Einzelne Anlagen sind ueber die Betreiberangabe NameWindpark zusammengefasst; der Ort ist der Mittelwert der Anlagenorte. STAMMDATUM, keine Messung.",
+   "quelle": "mastr",
+   "beleg": "docs/beleg-mastr.md",
+   "dateien": 1,
+   "bytes": 382204,
+   "zeitraum": null,
+   "muster": "data/mastr-wind.json",
+   "abzug": "data/mastr-wind.json",
+   "alle": null
+  },
+  {
    "titel": "Regelzonen als Flaeche (abgeleitet)",
    "inhalt": "Interpolierte Ausdehnung der vier Regelzonen. Jede Rasterzelle bekommt die Zone ihres naechstgelegenen Stuetzpunktes; Stuetzpunkte sind Kraftwerke mit amtlicher Zonenangabe und Leitungen mit eindeutigem Betreiber. KEINE amtliche Grenze. Trefferquote gegen die amtliche Angabe von 596 Kraftwerken: 93,3 %.",
    "quelle": "abgeleitet",
@@ -202,13 +222,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 7059,
+   "bytes": 9544,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 168,
- "bytes_gesamt": 24525534
+ "dateien_gesamt": 169,
+ "bytes_gesamt": 24910223
 }
