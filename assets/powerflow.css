@@ -198,7 +198,9 @@ body {
 
 .pf-kacheln {
   display: grid; gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  /* 260 statt 210: bei sechs Kacheln ergibt das 4+2 statt 5+1, und die
+   letzte Kachel steht nicht allein in einer eigenen Reihe. */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .pf-kachel {
@@ -309,7 +311,7 @@ body {
   background: var(--karte-grund); border: 1px solid var(--linie);
   border-radius: var(--radius); padding: 14px 15px; position: relative;
 }
-.pf-karte-rollbereich { overflow-x: auto; }
+.pf-karte-rollbereich { overflow-x: auto; position: relative; }
 /* Die Karte fuellt ihren Rahmen. Kein max-width -- sonst bleibt links und
    rechts leere Flaeche stehen. */
 .pf-karte { display: block; width: 100%; height: auto; }
@@ -533,22 +535,50 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
   stroke: var(--fokus); stroke-width: 2.5; stroke-opacity: 1;
   vector-effect: non-scaling-stroke;
 }
+.pf-karte .pf-kuppel circle[data-gewaehlt] { stroke: none; }
 .pf-karte circle:focus-visible { outline: none; stroke: var(--fokus);
   stroke-width: 2.5; vector-effect: non-scaling-stroke; }
 
 .pf-kuppel .pf-pfeil-ziel { cursor: pointer; }
-
-.pf-auswahl {
-  margin: 12px 0 0; padding: 12px 14px; border-radius: var(--radius);
-  background: var(--flaeche-hoch); border: 1px solid var(--linie);
-  min-height: 4.5em;
+/* Die Auswahl eines Grenzpfeils wird als weiche Scheibe DAHINTER gezeigt.
+   Ein Ring darum sah aus wie ein Verbotsschild, weil der Pfeil ihn durchkreuzt. */
+.pf-kuppel .pf-pfeil-ziel[data-gewaehlt],
+.pf-kuppel .pf-pfeil-ziel:focus-visible {
+  fill: var(--fokus); fill-opacity: 0.2; stroke: none; outline: none;
 }
-.pf-auswahl-leer { margin: 0; color: var(--schrift-still); font-size: 0.84rem; }
+
+/* Der Auswahlkasten liegt als Einblendung IN der Karte. Unter der Karte war er
+   beim Klicken nicht im Blick -- man schaut auf die Karte, nicht ans
+   Seitenende. Oben LINKS, damit er nicht mit dem Info-Knopf oben rechts
+   kollidiert. */
+.pf-auswahl {
+  position: absolute; top: 10px; left: 10px; z-index: 5;
+  width: min(320px, calc(100% - 20px));
+  max-height: calc(100% - 20px); overflow-y: auto;
+  padding: 11px 30px 11px 13px; border-radius: var(--radius);
+  background: color-mix(in srgb, var(--flaeche-hoch) 92%, transparent);
+  border: 1px solid var(--linie);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+@media (max-width: 700px) {
+  /* Auf schmalen Schirmen wuerde die Einblendung oben die halbe Karte
+     verdecken. Deshalb unten quer, wo weniger Inhalt liegt. */
+  .pf-auswahl { top: auto; bottom: 8px; left: 8px; right: 8px; width: auto;
+    max-height: 55%; }
+}
+.pf-auswahl-zu {
+  position: absolute; top: 7px; right: 7px; width: 22px; height: 22px;
+  border-radius: 50%; border: 1px solid var(--linie); background: var(--flaeche);
+  color: var(--schrift-leise); font-size: 0.95rem; line-height: 1; cursor: pointer;
+  padding: 0; font-family: inherit;
+}
+.pf-auswahl-zu:hover { color: var(--schrift); border-color: var(--schrift-still); }
+.pf-auswahl-zu:focus-visible { outline: 2px solid var(--fokus); outline-offset: 2px; }
 .pf-auswahl-art { margin: 0; font-size: 0.72rem; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--schrift-still); }
-.pf-auswahl h3 { margin: 2px 0 8px; font-size: 1rem; color: var(--schrift); }
+.pf-auswahl h3 { margin: 2px 0 8px; font-size: 0.98rem; color: var(--schrift); }
 .pf-auswahl-liste { display: grid; grid-template-columns: max-content 1fr;
-  gap: 2px 14px; margin: 0; font-size: 0.84rem; }
+  gap: 2px 12px; margin: 0; font-size: 0.82rem; }
 .pf-auswahl-liste dt { color: var(--schrift-still); }
 .pf-auswahl-liste dd { margin: 0; color: var(--schrift-leise);
   font-variant-numeric: tabular-nums; }

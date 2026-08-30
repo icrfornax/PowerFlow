@@ -51,3 +51,26 @@ jobs:
 
       - name: JavaScript-Syntax
         run: node --check assets/powerflow.js
+
+      - name: Browsertest
+        # Steuert den auf dem Runner vorhandenen Chrome ueber das
+        # DevTools-Protokoll. Keine zusaetzliche Abhaengigkeit -- Node bringt
+        # seit v22 einen WebSocket-Client mit, Chrome kann den Debug-Port von
+        # Haus aus. Geprueft werden Dark, Light, 390 px, alle Info-Knoepfe,
+        # jedes Bedienelement, der CSV-Abzug und die Konsole.
+        run: |
+          python -m http.server 8080 --bind 127.0.0.1 &
+          for i in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8080/ > /dev/null && break
+            sleep 1
+          done
+          node scripts/browsertest.mjs http://127.0.0.1:8080
+
+      - name: Bildschirmfotos aufheben
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browsertest
+          path: .browsertest/
+          if-no-files-found: ignore
+          retention-days: 14
