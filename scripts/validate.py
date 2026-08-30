@@ -72,6 +72,8 @@ PFLICHT_IN_JS = [
     "die einzige freie Variable",     # Kennzeichnung des Reglers
     "netztransparenz.de",             # Namensnennung Redispatch
     "Eingriff ins Netz",              # Redispatch ist kein Lastfluss
+    "Unterdeckung",                   # Luecke zwischen Erzeugung und Last
+    "Day-Ahead",                      # Herkunft des Preises
 ]
 
 # Farbtokens des Tagesverlaufs. Sie sind mit dem Validierer der dataviz-Regeln
@@ -464,6 +466,56 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  f"({css.count(token + ':')} gefunden)")
 
     b.pruefe(len(verlauf) >= 100, f"Verlauf: {len(verlauf)} Monatsdateien")
+
+    # Grosshandelspreis. Die Reihe beginnt am 01.10.2018 -- dem Tag der Teilung
+    # der Gebotszone DE-AT-LU. Fuer frueher gibt es diesen Preis nicht, und ein
+    # aelterer Preis waere ein anderer Markt.
+    mitPreis = [m for m, d in verlauf.items() if d.get("preis_eur_mwh")]
+    b.pruefe(len(mitPreis) >= 90, f"Preis in {len(mitPreis)} Monatsdateien")
+    b.pruefe(all(m >= "2018-10" for m in mitPreis),
+             "kein Preis vor Oktober 2018 (Teilung der Gebotszone DE-AT-LU)")
+    alle_preise = [p for d in verlauf.values() for p in (d.get("preis_eur_mwh") or [])
+                   if p is not None]
+    b.pruefe(bool(alle_preise) and min(alle_preise) < 0,
+             f"negative Preise sind erhalten ({sum(1 for p in alle_preise if p < 0)} Stunden)")
+    b.pruefe(max(alle_preise) < 1000 and min(alle_preise) > -1000,
+             f"Preise im plausiblen Rahmen ({min(alle_preise):.0f} bis "
+             f"{max(alle_preise):.0f} EUR/MWh)")
+
+    # Gegenprobe: der Tagespreis ist das MITTEL der Stundenpreise, nicht ihre
+    # Summe. Geprueft am 24.08.2026: 143,18 gegen 143,18.
+    abw = []
+    for monat, d in sorted(verlauf.items()):
+        if not d.get("preis_eur_mwh"):
+            continue
+        jahr = int(monat[:4])
+        jd = jahre.get(jahr)
+        if not jd or not jd.get("preis_eur_mwh"):
+            continue
+        proTag: dict[str, list[float]] = {}
+        for i, marke in enumerate(d["stunden"]):
+            p = d["preis_eur_mwh"][i]
+            if p is not None:
+                proTag.setdefault(marke[:10], []).append(p)
+        for tag, werte in proTag.items():
+            if tag not in jd["tage"]:
+                continue
+            # Nur vollstaendige Tage vergleichen. Der laufende Tag hat in der
+            # Stundendatei erst ein paar Stunden, waehrend die Tagesdatei
+            # schon einen anderen Stand traegt -- der Vergleich waere dort
+            # kein Befund, sondern ein Zeitversatz. 23 und 25 Stunden gibt es
+            # an den Umstellungstagen.
+            if not (23 <= len(werte) <= 25):
+                continue
+            tagwert = jd["preis_eur_mwh"][jd["tage"].index(tag)]
+            if tagwert is None:
+                continue
+            mittel = sum(werte) / len(werte)
+            if abs(mittel - tagwert) > 0.05:
+                abw.append(f"{tag}: Mittel {mittel:.2f} gegen Tageswert {tagwert:.2f}")
+    b.pruefe(not abw,
+             "Tagespreis ist das Mittel der Stundenpreise"
+             + ("" if not abw else f" -- {len(abw)} Abweichungen, erste: {abw[0]}"))
 
     # Gegenprobe: Summe der Stundenwerte gegen den Tageswert. Zwei getrennt
     # abgerufene Reihen der Quelle muessen dasselbe ergeben.

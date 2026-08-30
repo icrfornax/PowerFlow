@@ -3,6 +3,8 @@
 Aufruf:  python scripts/fetch-verlauf.py             (alle Jahre ab 2015)
          python scripts/fetch-verlauf.py 2025 2026    (nur diese Jahre)
          python scripts/fetch-verlauf.py --wochen 4   (nur die letzten 4 Wochen)
+         python scripts/fetch-verlauf.py --preise     (nur die Grosshandelspreise
+                                                       nachtragen, rund 400 Abrufe)
 
 Ein voller Lauf sind rund 8.000 Abrufe -- das ist ein Selten-Skript. Fuer den
 taeglichen Job gibt es --wochen N: dann werden nur die letzten N Wochenbloecke
@@ -43,6 +45,13 @@ WURZEL = pathlib.Path(__file__).resolve().parent.parent
 ZIEL = WURZEL / "data" / "verlauf"
 
 ERSTES_JAHR = 2015
+
+# Grosshandelspreis Deutschland/Luxemburg, Day-Ahead, in Euro je MWh.
+# Die Reihe beginnt am 01.10.2018 -- dem Tag, an dem die gemeinsame Gebotszone
+# Deutschland-Oesterreich-Luxemburg geteilt wurde. Fuer frueher gibt es diesen
+# Preis nicht, und ein aelterer Preis waere ein anderer Markt.
+PREIS_FILTER = 4169
+PREIS_AB = "2018-10-01"
 
 
 def marke(ms: int) -> str:
@@ -140,7 +149,55 @@ def nachtragen(wochen: int) -> int:
     return 0
 
 
+def preise_nachtragen() -> int:
+    """Traegt die Grosshandelspreise in die vorhandenen Monatsdateien nach.
+
+    Eigener Lauf, weil die Preise spaeter dazugekommen sind und ein voller
+    Neulauf ueber alle Reihen rund 8.000 Abrufe waere. So sind es rund 400.
+    """
+    bloecke = smard.wochenbloecke(PREIS_FILTER, smard.REGION_DE, smard.STUNDE)
+    print(f"  {len(bloecke)} Wochenbloecke ab {marke(bloecke[0])[:10]}")
+    werte: dict[int, float] = {}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        for teil in pool.map(lambda b: hole_jahr(PREIS_FILTER, [b]), bloecke):
+            werte.update(teil)
+    print(f"  {len(werte):,} Stundenpreise geholt")
+
+    geaendert = 0
+    for pfad in sorted(ZIEL.glob("*.json")):
+        doc = json.loads(pfad.read_text(encoding="utf-8"))
+        # Ueber den Zeitstempel zuordnen waere sauberer, aber die Monatsdatei
+        # kennt nur die Marken. Die sind am Rueckstellungstag mehrdeutig --
+        # deshalb wird dort in der Reihenfolge zugeordnet, nicht ueber den
+        # Namen: die Preisreihe hat dieselbe Stundenfolge wie die Netzlast.
+        nach_marke: dict[str, list[float]] = {}
+        for ts in sorted(werte):
+            nach_marke.setdefault(marke(ts), []).append(werte[ts])
+        zaehler: dict[str, int] = {}
+        spalte_preis = []
+        for m in doc["stunden"]:
+            i = zaehler.get(m, 0)
+            zaehler[m] = i + 1
+            liste = nach_marke.get(m)
+            spalte_preis.append(liste[i] if liste and i < len(liste) else None)
+        if any(v is not None for v in spalte_preis):
+            doc["preis_eur_mwh"] = spalte_preis
+            doc["_preis_hinweis"] = (
+                "Grosshandelspreis Deutschland/Luxemburg, Day-Ahead, in Euro je "
+                "MWh. SMARD-Filter 4169. Die Reihe beginnt am 01.10.2018, dem Tag "
+                "der Teilung der Gebotszone DE-AT-LU; fuer frueher gibt es diesen "
+                "Preis nicht. Negative Werte sind echt und kein Fehler."
+            )
+            pfad.write_text(json.dumps(doc, ensure_ascii=False,
+                                       separators=(",", ":")) + "\n", encoding="utf-8")
+            geaendert += 1
+    print(f"  {geaendert} Monatsdateien um den Preis ergaenzt")
+    return 0
+
+
 def main(argv: list[str]) -> int:
+    if "--preise" in argv:
+        return preise_nachtragen()
     if "--wochen" in argv:
         i = argv.index("--wochen")
         return nachtragen(int(argv[i + 1]))

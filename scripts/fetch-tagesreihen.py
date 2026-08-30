@@ -35,6 +35,13 @@ ZIEL = WURZEL / "data" / "tage"
 
 ERSTES_JAHR = 2015
 
+# Grosshandelspreis Deutschland/Luxemburg, Day-Ahead. In der Tagesaufloesung
+# liefert SMARD das MITTEL der 24 Stundenpreise, nicht ihre Summe -- geprueft
+# am 24.08.2026: Tageswert 143,18, Mittel der Stunden 143,18, Summe 3.436,43.
+# Die Reihe beginnt am 01.10.2018, dem Tag der Teilung der Gebotszone
+# Deutschland-Oesterreich-Luxemburg.
+PREIS_FILTER = 4169
+
 
 def jahresbloecke() -> dict[int, int]:
     """Jahr -> Zeitstempel des Jahresblocks, aus dem Index der Netzlast."""
@@ -90,6 +97,12 @@ GRENZEN = {
     "traeger_de": (0.0, 1_600_000.0),
     # Derselbe Traeger innerhalb einer Regelzone.
     "traeger_zone": (0.0, 900_000.0),
+    # Tagesmittel des Grosshandelspreises. Negative Preise sind echt: der
+    # tiefste Stundenwert der Reihe liegt bei genau -500,00 Euro, dem frueheren
+    # Preisboden der Boerse. Eine Grenze bei -500 laege also GENAU auf einem
+    # echten Wert; deshalb -1000, der heutige Boden. Nach oben ebenso: der
+    # hoechste Stundenwert liegt bei 936 Euro.
+    "preis": (-1000.0, 1000.0),
 }
 
 
@@ -118,6 +131,8 @@ def spalte(werte: dict[str, float] | None, tage: list[str],
 
 
 def art_von(pfad: tuple) -> str:
+    if pfad[0] == "preis_eur_mwh":
+        return "preis"
     if pfad[0] == "aussenhandel":
         return "kuppelstelle"
     if pfad[0] == "residuallast":
@@ -137,6 +152,7 @@ def jahr_bauen(jahr: int, block: int) -> dict:
     auftraege.append((("netzlast",), smard.LAST_NETZLAST, smard.REGION_DE))
     auftraege.append((("residuallast",), smard.LAST_RESIDUAL, smard.REGION_DE))
     auftraege.append((("pumpspeicherverbrauch",), smard.LAST_PUMPSPEICHER, smard.REGION_DE))
+    auftraege.append((("preis_eur_mwh",), PREIS_FILTER, smard.REGION_DE))
     for fid, name in smard.ERZEUGUNG.items():
         auftraege.append((("erzeugung", name), fid, smard.REGION_DE))
     for zone in smard.REGELZONEN:
@@ -191,7 +207,37 @@ def jahr_bauen(jahr: int, block: int) -> dict:
     return doc
 
 
+def preise_nachtragen() -> int:
+    """Traegt nur den Tagespreis in die vorhandenen Jahresdateien nach.
+
+    Eigener Lauf, weil die Reihe spaeter dazugekommen ist: neun Abrufe statt
+    eines vollen Neulaufs ueber alle Reihen.
+    """
+    bloecke = jahresbloecke()
+    for jahr, block in sorted(bloecke.items()):
+        pfad = ZIEL / f"{jahr}.json"
+        if not pfad.is_file():
+            continue
+        doc = json.loads(pfad.read_text(encoding="utf-8"))
+        werte = hole(PREIS_FILTER, smard.REGION_DE, block)
+        if werte is None:
+            print(f"  {jahr}: kein Preis (HTTP 404)")
+            continue
+        auffaellig: list = []
+        doc["preis_eur_mwh"] = spalte(werte, doc["tage"], "preis",
+                                      ("preis_eur_mwh",), auffaellig)
+        doc["auffaellig"] = doc.get("auffaellig", []) + auffaellig
+        belegt = sum(1 for v in doc["preis_eur_mwh"] if v is not None)
+        pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
+                        encoding="utf-8")
+        print(f"  {jahr}: {belegt} Tagespreise" + (f", {len(auffaellig)} auffaellig"
+                                                   if auffaellig else ""))
+    return 0
+
+
 def main(argv: list[str]) -> int:
+    if "--preise" in argv:
+        return preise_nachtragen()
     bloecke = jahresbloecke()
     jahre = [int(a) for a in argv] if argv else sorted(j for j in bloecke if j >= ERSTES_JAHR)
     ZIEL.mkdir(parents=True, exist_ok=True)
