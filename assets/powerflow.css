@@ -494,6 +494,7 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 
 .pf-verlauf { background: var(--flaeche); border: 1px solid var(--linie);
   border-radius: var(--radius); padding: 14px 15px; position: relative; }
+.pf-diagramm { cursor: crosshair; }
 .pf-diagramm { display: block; width: 100%; height: auto; }
 .pf-diagramm:focus-visible { outline: 2px solid var(--fokus); outline-offset: 2px; }
 
@@ -503,28 +504,39 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-gitter text.pf-achsentitel { fill: var(--schrift-still); font-size: 10px;
   letter-spacing: 0.06em; }
 
-.pf-lastlinie { stroke: var(--schrift); stroke-width: 2; stroke-linejoin: round;
-  stroke-linecap: round; }
-.pf-kreuz { stroke: var(--schrift-still); stroke-width: 1; stroke-dasharray: 3 3; }
+/* non-scaling-stroke: die Linie bleibt duenn, egal wie stark das SVG
+   hochskaliert wird. Ohne das wurde aus 2 Einheiten ein fetter Balken. */
+.pf-lastlinie { stroke: var(--schrift); stroke-width: 1.6; stroke-linejoin: round;
+  stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.pf-gitter line { vector-effect: non-scaling-stroke; }
+.pf-preis-pos { stroke: var(--schrift-leise); stroke-width: 1.4; stroke-opacity: 0.75;
+  vector-effect: non-scaling-stroke; }
+.pf-preis-neg { stroke: var(--orange); stroke-width: 1.8;
+  vector-effect: non-scaling-stroke; }
+.pf-legende i.pf-preis { width: 16px; height: 2px; border-radius: 1px;
+  background: var(--schrift-leise); }
+
+/* Ablesung IM Bild, senkrecht am Fadenkreuz. */
+.pf-ablesung-svg { pointer-events: none; }
+.pf-ablesung-grund { fill: var(--flaeche-hoch); stroke: var(--linie);
+  fill-opacity: 0.96; vector-effect: non-scaling-stroke; }
+.pf-ablesung-kopf { fill: var(--schrift); font-size: 11px; font-weight: 600;
+  font-family: var(--schrift-zahl); }
+.pf-ablesung-label { fill: var(--schrift-leise); font-size: 11px; }
+.pf-ablesung-wert { fill: var(--schrift); font-size: 11px;
+  font-family: var(--schrift-zahl); }
+.pf-ablesung-text { position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; }
+.pf-kreuz { stroke: var(--schrift-still); stroke-width: 1; stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke; }
 /* Trennlinie um Mitternacht. Ohne sie verschwimmt eine Woche in Stundenwerten
    zu einer einzigen Kurve, und man sieht nicht mehr, wo ein Tag aufhoert. */
-.pf-tagestrenner { stroke: var(--linie); stroke-width: 1; }
+.pf-tagestrenner { stroke: var(--linie); stroke-width: 1;
+  vector-effect: non-scaling-stroke; }
 
-/* Die Ablesung wird abgesetzt, sonst sieht sie aus wie eine zweite Legende.
-   Sie zeigt den Wert unter dem Fadenkreuz, die Legende den Anteil am Zeitraum. */
-.pf-ablesung {
-  margin: 10px 0 0; font-size: 0.84rem; min-height: 3.4em;
-  background: var(--flaeche-hoch); border-radius: var(--radius);
-  padding: 9px 12px;
-}
-.pf-ablesung strong { color: var(--schrift); font-family: var(--schrift-zahl); }
-.pf-ablesung-liste { display: flex; flex-wrap: wrap; gap: 3px 16px; margin-top: 4px; }
-.pf-ablesung-zeile { display: inline-flex; align-items: center; gap: 6px;
-  color: var(--schrift-leise); font-variant-numeric: tabular-nums; }
-.pf-ablesung-zeile i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
 .pf-legende-traeger i { border-radius: 2px; }
 .pf-legende-titel { color: var(--schrift-still); }
-.pf-legende i.pf-last, .pf-ablesung-zeile i.pf-last {
+.pf-legende i.pf-last {
   width: 16px; height: 2px; border-radius: 1px; background: var(--schrift); }
 
 .pf-tabellenschalter {

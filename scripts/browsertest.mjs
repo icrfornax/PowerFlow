@@ -360,9 +360,35 @@ try {
     const r = svg.getBoundingClientRect();
     svg.dispatchEvent(new MouseEvent("mousemove", {
       bubbles: true, clientX: r.left + r.width * 0.4, clientY: r.top + r.height / 2 }));
-    return document.querySelector(".pf-ablesung").textContent.trim().length;
+    const g = document.querySelector(".pf-ablesung-svg");
+    return { zeilen: g.querySelectorAll("text").length,
+             kasten: g.querySelectorAll("rect.pf-ablesung-grund").length,
+             text: (document.querySelector(".pf-ablesung-text") || {}).textContent || "" };
   })()`);
-  pruefe(ablesung > 20, "Fadenkreuz fuellt die Ablesung", `nur ${ablesung} Zeichen`);
+  pruefe(ablesung.zeilen >= 8 && ablesung.kasten === 1,
+    `Ablesung steht IM Bild (${ablesung.zeilen} Textzeilen)`);
+  pruefe(/Netzlast/.test(ablesung.text) && /deckung/.test(ablesung.text),
+    "Ablesung nennt Netzlast und Ueber-/Unterdeckung", ablesung.text.slice(0, 80));
+
+  // Muster statt Umrandung, Preisstreifen
+  const feinheit = await js(`(function () {
+    const flaechen = [...document.querySelectorAll(".pf-flaechen path")];
+    return {
+      muster: flaechen.filter((p) => (p.getAttribute("fill") || "").indexOf("#pf-muster-") > 0).length,
+      flaechen: flaechen.length,
+      umrandet: flaechen.filter((p) => p.getAttribute("stroke")).length,
+      musterdefs: document.querySelectorAll("pattern[id^=pf-muster-]").length,
+      preis: document.querySelectorAll(".pf-preis-pos, .pf-preis-neg").length,
+      deckung: document.querySelectorAll(".pf-deckung path").length
+    };
+  })()`);
+  pruefe(feinheit.muster === feinheit.flaechen,
+    `alle ${feinheit.flaechen} Flaechen sind schraffiert oder gepunktet`);
+  pruefe(feinheit.umrandet === 0, "keine Flaeche traegt mehr eine Umrandung",
+    `${feinheit.umrandet} umrandet`);
+  pruefe(feinheit.musterdefs === 8, `${feinheit.musterdefs} Muster definiert`);
+  pruefe(feinheit.preis >= 1, "Preisstreifen vorhanden");
+  pruefe(feinheit.deckung >= 1, "Ueber-/Unterdeckung ist getoent");
 
   await js(`document.querySelector(".pf-tabellenschalter").click()`);
   await schlafen(500);

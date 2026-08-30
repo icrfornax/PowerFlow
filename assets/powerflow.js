@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260831-kartenfarben";
+  var VERSION = "20260831-verlauf2";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -1021,7 +1021,7 @@
   /* Stundenwerte eines Zeitraums, gruppiert. Laeuft ueber alle beruehrten
      Monatsdateien; eine Woche liegt oft in zweien. */
   function reiheStuendlich(von, bis) {
-    var marken = [], netzlast = [], rohe = {}, tage = [];
+    var marken = [], netzlast = [], preis = [], rohe = {}, tage = [];
     TRAEGERGRUPPEN.forEach(function (g) { rohe[g.name] = []; });
     var gefunden = false;
     monateImZeitraum(von, bis).forEach(function (m) {
@@ -1034,6 +1034,7 @@
         marken.push(d.stunden[i].slice(11, 13));
         tage.push(tag);
         netzlast.push(d.netzlast[i]);
+        preis.push(d.preis_eur_mwh ? d.preis_eur_mwh[i] : null);
         TRAEGERGRUPPEN.forEach(function (g) {
           var summe = 0;
           g.quellen.forEach(function (q) {
@@ -1052,6 +1053,7 @@
       marken: marken,
       tage: tage,
       netzlast: netzlast,
+      preis: preis,
       reihen: TRAEGERGRUPPEN.map(function (g) {
         return { name: g.name, token: g.token, werte: rohe[g.name],
                  summe: rohe[g.name].reduce(function (a, b) { return a + b; }, 0) };
@@ -1069,6 +1071,7 @@
       marken: tage.map(function (t) { return t.slice(8) + "." + t.slice(5, 7) + "."; }),
       tage: tage,
       netzlast: tage.map(function (t) { return zeileImJahr(t, ["netzlast"]); }),
+      preis: tage.map(function (t) { return zeileImJahr(t, ["preis_eur_mwh"]); }),
       reihen: TRAEGERGRUPPEN.map(function (g) {
         var werte = tage.map(function (t) {
           var summe = 0;
@@ -1092,6 +1095,68 @@
     return reiheTaeglich(von, bis);
   }
 
+  /* Musterfuellungen. Zwei Gruende, nicht nur Schoenheit:
+
+     1. Die 2-px-Fuge zwischen den Baendern wurde beim Skalieren zu einem
+        dicken Rahmen um jede Flaeche -- die Kurve sah platt und laut aus. Eine
+        Schraffur in der Flaechenfarbe des Untergrunds trennt dieselben Baender,
+        ohne sie einzurahmen.
+     2. Sie ist die zweite Codierung neben der Farbe. Der schwaechste
+        Farbabstand liegt bei Farbsehschwaeche im Grenzband und ist dort NUR
+        mit zweiter Codierung zulaessig. Ein Muster ist eine, die auch auf
+        einem Ausdruck und in einem Bildschirmfoto traegt -- anders als ein
+        Hervorheben beim Ueberfahren.
+
+     Das Motiv wird in var(--flaeche) gezeichnet, also in der Farbe des
+     Untergrunds. Damit stimmt es in beiden Schemata von selbst. */
+  var MUSTER = {
+    "--tr-kern": "punkte-dicht",
+    "--tr-braun": "schraffur-45",
+    "--tr-stein": "schraffur-135",
+    "--tr-gas": "senkrecht",
+    "--tr-sonst": "kreuz",
+    "--tr-bio": "waagerecht",
+    "--tr-wind": "punkte-weit",
+    "--tr-pv": "schraffur-45-weit"
+  };
+
+  function musterDefs() {
+    var defs = s("defs");
+    Object.keys(MUSTER).forEach(function (token) {
+      var name = MUSTER[token];
+      var p = s("pattern", {
+        id: "pf-muster-" + name, width: 6, height: 6,
+        patternUnits: "userSpaceOnUse"
+      });
+      p.appendChild(s("rect", { width: 6, height: 6, fill: "var(" + token + ")" }));
+      var m = s("g", { stroke: "var(--flaeche)", "stroke-width": 1.1,
+                       fill: "var(--flaeche)", "stroke-opacity": 0.55,
+                       "fill-opacity": 0.55 });
+      if (name === "schraffur-45") {
+        m.appendChild(s("path", { d: "M0 6 L6 0 M-1 1 L1 -1 M5 7 L7 5", fill: "none" }));
+      } else if (name === "schraffur-135") {
+        m.appendChild(s("path", { d: "M0 0 L6 6 M-1 5 L1 7 M5 -1 L7 1", fill: "none" }));
+      } else if (name === "schraffur-45-weit") {
+        m.appendChild(s("path", { d: "M0 6 L6 0", fill: "none", "stroke-width": 0.9 }));
+      } else if (name === "senkrecht") {
+        m.appendChild(s("path", { d: "M3 0 L3 6", fill: "none" }));
+      } else if (name === "waagerecht") {
+        m.appendChild(s("path", { d: "M0 3 L6 3", fill: "none" }));
+      } else if (name === "kreuz") {
+        m.appendChild(s("path", { d: "M3 0 L3 6 M0 3 L6 3", fill: "none",
+                                  "stroke-width": 0.8 }));
+      } else if (name === "punkte-dicht") {
+        m.appendChild(s("circle", { cx: 1.5, cy: 1.5, r: 1, stroke: "none" }));
+        m.appendChild(s("circle", { cx: 4.5, cy: 4.5, r: 1, stroke: "none" }));
+      } else {
+        m.appendChild(s("circle", { cx: 3, cy: 3, r: 1.1, stroke: "none" }));
+      }
+      p.appendChild(m);
+      defs.appendChild(p);
+    });
+    return defs;
+  }
+
   function zeitreihenDiagramm(von, bis) {
     var v = zeitreihe(von, bis);
     var huelle = el("div", { "class": "pf-verlauf" });
@@ -1101,11 +1166,14 @@
       return huelle;
     }
 
-    // oben 30 statt 16: darunter passt die Einheit ueber die oberste
-    // Achsenbeschriftung, ohne sie zu ueberdecken.
-    var B = 900, H = 340, links = 52, rechts = 12, oben = 30, unten = 30;
+    var hatPreis = v.preis && v.preis.some(function (x) { return x !== null; });
+    var B = 900, links = 54, rechts = 14, oben = 30;
+    var hoeheOben = 268, luecke = 16, hoehePreis = hatPreis ? 92 : 0;
+    var yPreis = oben + hoeheOben + luecke;
+    var achsenY = yPreis + hoehePreis + 20;
+    var H = achsenY + 12;
     var n = v.marken.length;
-    var innenB = B - links - rechts, innenH = H - oben - unten;
+    var innenB = B - links - rechts;
 
     var stapel = [], laufend = [], maxWert = 0, i;
     for (i = 0; i < n; i++) { laufend.push(0); }
@@ -1114,43 +1182,47 @@
       laufend = laufend.map(function (x, k) { return x + r.werte[k]; });
       stapel.push({ reihe: r, unten: unterkante, oben: laufend.slice() });
     });
-    laufend.forEach(function (x) { if (x > maxWert) { maxWert = x; } });
+    var stapelOben = laufend;
+    stapelOben.forEach(function (x) { if (x > maxWert) { maxWert = x; } });
     v.netzlast.forEach(function (x) { if (x !== null && x > maxWert) { maxWert = x; } });
-    /* Runde Achsenwerte. Ein Viertel der Achse soll auf einer glatten Stufe
-       liegen -- 0/20/40/60/80 statt 0/23/45/68/90. */
-    var roh = maxWert / v.teiler;
-    var stufe = 1;
-    var kandidaten = [1, 2, 2.5, 5, 10];
-    for (var z = -3; z <= 9 && stufe * 4 < roh; z++) {
-      for (var y2 = 0; y2 < kandidaten.length; y2++) {
-        stufe = kandidaten[y2] * Math.pow(10, z);
-        if (stufe * 4 >= roh) { break; }
+
+    function stufeFuer(roh) {
+      var kand = [1, 2, 2.5, 5, 10], st = 1;
+      for (var z = -3; z <= 9; z++) {
+        for (var y = 0; y < kand.length; y++) {
+          st = kand[y] * Math.pow(10, z);
+          if (st * 4 >= roh) { return st; }
+        }
       }
+      return st;
     }
-    var achse = stufe * 4;
+    var stufe = stufeFuer(maxWert / v.teiler), achse = stufe * 4;
 
     function X(k) { return links + (n === 1 ? innenB / 2 : k / (n - 1) * innenB); }
-    function Y(mwh) { return oben + innenH - (mwh / v.teiler) / achse * innenH; }
+    function Y(mwh) { return oben + hoeheOben - (mwh / v.teiler) / achse * hoeheOben; }
 
     var svg = s("svg", {
       "class": "pf-diagramm", viewBox: "0 0 " + B + " " + H, role: "img",
       tabindex: "0",
       "aria-label": "Erzeugung nach Energieträger, " + zeitraumLang(von, bis)
         + ", gestapelt in " + v.einheit + ", dazu die Netzlast als Linie"
+        + (hatPreis ? " und der Großhandelspreis" : "")
     });
+    svg.appendChild(musterDefs());
 
     var gitter = s("g", { "class": "pf-gitter" });
     for (var g = 0; g <= achse + 1e-9; g += stufe) {
       var y = Y(g * v.teiler);
       gitter.appendChild(s("line", { x1: links, x2: B - rechts, y1: y, y2: y }));
-      var tx = s("text", { x: links - 6, y: y + 3.5, "text-anchor": "end" });
+      var tx = s("text", { x: links - 8, y: y + 3.5, "text-anchor": "end" });
       tx.textContent = stufe < 1 ? nf1.format(g) : nf0.format(g);
       gitter.appendChild(tx);
     }
-    /* Beschriftung der Zeitachse. Bei mehreren Tagen in Stundenaufloesung
-       zaehlen die TAGESGRENZEN, nicht die Stundenzahlen -- 168 Zahlen von 00
-       bis 23 waeren nur Kammputz. Dann eine senkrechte Trennlinie um
-       Mitternacht und das Datum mittig darunter. */
+    var einheit = s("text", { x: links - 8, y: oben - 12, "text-anchor": "end",
+      "class": "pf-achsentitel" });
+    einheit.textContent = v.einheit;
+    gitter.appendChild(einheit);
+
     var wechsel = [];
     if (v.tage) {
       for (var w = 0; w < n; w++) {
@@ -1158,36 +1230,31 @@
       }
     }
     if (v.stuendlich && wechsel.length > 1) {
-      wechsel.forEach(function (anfang, i) {
-        if (i > 0) {
+      wechsel.forEach(function (anfang, idx) {
+        if (idx > 0) {
           gitter.appendChild(s("line", { "class": "pf-tagestrenner",
-            x1: X(anfang), x2: X(anfang), y1: oben, y2: H - unten }));
+            x1: X(anfang), x2: X(anfang), y1: oben, y2: yPreis + hoehePreis }));
         }
-        var ende = (i + 1 < wechsel.length) ? wechsel[i + 1] : n;
+        var ende = (idx + 1 < wechsel.length) ? wechsel[idx + 1] : n;
         var mitte = (X(anfang) + X(Math.max(anfang, ende - 1))) / 2;
-        var beschriftung = s("text", { x: mitte, y: H - 8, "text-anchor": "middle" });
-        var d = ausIso(v.tage[anfang]);
-        beschriftung.textContent = (wechsel.length > 9
-          ? d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
-          : d.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }));
-        gitter.appendChild(beschriftung);
+        var b2 = s("text", { x: mitte, y: achsenY, "text-anchor": "middle" });
+        var dd = ausIso(v.tage[anfang]);
+        b2.textContent = (wechsel.length > 9
+          ? dd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
+          : dd.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }));
+        gitter.appendChild(b2);
       });
     } else {
       var jeder = Math.max(1, Math.ceil(n / 12));
       for (var h = 0; h < n; h += jeder) {
-        var t2 = s("text", { x: X(h), y: H - 8, "text-anchor": "middle" });
-        t2.textContent = v.marken[h] + (v.stuendlich ? "" : "");
+        var t2 = s("text", { x: X(h), y: achsenY, "text-anchor": "middle" });
+        t2.textContent = v.marken[h];
         gitter.appendChild(t2);
       }
     }
-    var einheit = s("text", { x: links - 6, y: oben - 12, "text-anchor": "end",
-      "class": "pf-achsentitel" });
-    einheit.textContent = v.einheit;
-    gitter.appendChild(einheit);
     svg.appendChild(gitter);
 
-    /* Gestapelte Flaechen mit 2 px Fuge in der Flaechenfarbe des Untergrunds,
-       damit die Grenze zwischen zwei Baendern sichtbar bleibt. */
+    /* Gestapelte Flaechen. Keine Umrandung mehr -- die Schraffur trennt. */
     var gFl = s("g", { "class": "pf-flaechen" });
     stapel.forEach(function (b) {
       if (b.reihe.summe <= 0) { return; }
@@ -1195,14 +1262,54 @@
       for (k = 0; k < n; k++) { d += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1); }
       for (k = n - 1; k >= 0; k--) { d += "L" + X(k).toFixed(1) + " " + Y(b.unten[k]).toFixed(1); }
       gFl.appendChild(s("path", {
-        d: d + "Z", fill: "var(" + b.reihe.token + ")",
-        stroke: "var(--flaeche)", "stroke-width": "2", "stroke-linejoin": "round"
+        d: d + "Z", fill: "url(#pf-muster-" + MUSTER[b.reihe.token] + ")"
       }));
     });
     svg.appendChild(gFl);
 
-    /* Netzlast als 2-px-Linie in Textfarbe. Sie ist kein Energietraeger und
-       bekommt deshalb keinen Traegerfarbton. */
+    /* UNTERDECKUNG: die Luecke zwischen Stapelspitze und Netzlast, wenn die
+       Erzeugung nicht reicht. Sie wird orange getoent -- das ist leere
+       Flaeche, dort verfaelscht eine Toenung nichts.
+
+       Die UEBERDECKUNG bleibt ungetoent. Sie liegt ueber der Netzlastlinie und
+       damit MITTEN in den Traegerflaechen; eine Toenung darueber machte aus
+       dem Gold der Photovoltaik ein Olivbraun und log ueber den Energietraeger.
+       Dass die Erzeugung die Last uebersteigt, sieht man ohnehin: der Stapel
+       ragt ueber die Linie. Der Zahlenwert steht in der Ablesung.
+
+       An den Kreuzungen wird geteilt, sonst faerbte ein Segment falsch. */
+    var gDeck = s("g", { "class": "pf-deckung" });
+    var deckPfade = { ueber: "", unter: "" };
+    for (i = 0; i < n - 1; i++) {
+      var la = v.netzlast[i], lb = v.netzlast[i + 1];
+      if (la === null || lb === null) { continue; }
+      var ea = stapelOben[i], eb = stapelOben[i + 1];
+      var da = ea - la, db = eb - lb;
+      function quad(xa, yEa, yLa, xb, yEb, yLb, positiv) {
+        var d = "M" + xa.toFixed(1) + " " + yEa.toFixed(1)
+              + "L" + xb.toFixed(1) + " " + yEb.toFixed(1)
+              + "L" + xb.toFixed(1) + " " + yLb.toFixed(1)
+              + "L" + xa.toFixed(1) + " " + yLa.toFixed(1) + "Z";
+        deckPfade[positiv ? "ueber" : "unter"] += d;
+      }
+      if ((da >= 0) === (db >= 0)) {
+        quad(X(i), Y(ea), Y(la), X(i + 1), Y(eb), Y(lb), da >= 0);
+      } else {
+        var t = da / (da - db);
+        var xm = X(i) + (X(i + 1) - X(i)) * t;
+        var ym = Y(ea + (eb - ea) * t);
+        quad(X(i), Y(ea), Y(la), xm, ym, ym, da >= 0);
+        quad(xm, ym, ym, X(i + 1), Y(eb), Y(lb), db >= 0);
+      }
+    }
+    if (deckPfade.unter) {
+      gDeck.appendChild(s("path", { d: deckPfade.unter, fill: "var(--orange)",
+        "fill-opacity": 0.30 }));
+    }
+    svg.appendChild(gDeck);
+
+    /* Netzlast als duenne Linie in Textfarbe. non-scaling-stroke, damit sie
+       beim Skalieren duenn bleibt und nicht zum Balken wird. */
     var dl = "";
     v.netzlast.forEach(function (x, k) {
       if (x === null) { return; }
@@ -1210,45 +1317,117 @@
     });
     if (dl) { svg.appendChild(s("path", { d: dl, "class": "pf-lastlinie", fill: "none" })); }
 
-    var kreuz = s("line", { "class": "pf-kreuz", y1: oben, y2: H - unten, x1: "-99", x2: "-99" });
+    /* Preisstreifen. EIGENE Achse in einem EIGENEN Feld -- niemals eine zweite
+       y-Achse im selben Bild. Euro je MWh und Gigawatt haben nichts
+       miteinander zu tun. */
+    var Yp = null;
+    if (hatPreis) {
+      var pw = v.preis.filter(function (x) { return x !== null; });
+      var pMin = Math.min.apply(null, pw), pMax = Math.max.apply(null, pw);
+      var pUnten = Math.min(0, Math.floor(pMin / 50) * 50);
+      var pOben = Math.max(50, Math.ceil(pMax / 50) * 50);
+      Yp = function (e) {
+        return yPreis + hoehePreis - (e - pUnten) / (pOben - pUnten) * hoehePreis;
+      };
+      var gp = s("g", { "class": "pf-gitter" });
+      [pUnten, 0, pOben].forEach(function (e) {
+        if (e < pUnten || e > pOben) { return; }
+        var yy = Yp(e);
+        gp.appendChild(s("line", { x1: links, x2: B - rechts, y1: yy, y2: yy,
+          "stroke-dasharray": e === 0 ? "" : "2 3" }));
+        var tt = s("text", { x: links - 8, y: yy + 3.5, "text-anchor": "end" });
+        tt.textContent = nf0.format(e);
+        gp.appendChild(tt);
+      });
+      // Links neben der Achse sitzt schon die Null des oberen Feldes. Die
+      // Einheit des Preisstreifens steht deshalb IM Feld, linksbuendig.
+      var pe = s("text", { x: links + 4, y: yPreis + 10, "text-anchor": "start",
+        "class": "pf-achsentitel" });
+      pe.textContent = "€/MWh";
+      gp.appendChild(pe);
+      svg.appendChild(gp);
+
+      // Negative Stunden bekommen einen eigenen Ton -- sie sind der
+      // interessante Fall und kein Fehler.
+      var dNeg = "", dPos = "";
+      v.preis.forEach(function (e, k) {
+        if (e === null) { return; }
+        var xx = X(k), y0 = Yp(0), y1 = Yp(e);
+        var seg = "M" + xx.toFixed(1) + " " + y0.toFixed(1) + "L" + xx.toFixed(1)
+          + " " + y1.toFixed(1);
+        if (e < 0) { dNeg += seg; } else { dPos += seg; }
+      });
+      if (dPos) { svg.appendChild(s("path", { d: dPos, "class": "pf-preis-pos" })); }
+      if (dNeg) { svg.appendChild(s("path", { d: dNeg, "class": "pf-preis-neg" })); }
+    }
+
+    var kreuz = s("line", { "class": "pf-kreuz", y1: oben, y2: yPreis + hoehePreis,
+      x1: "-99", x2: "-99" });
     svg.appendChild(kreuz);
+
+    /* Ablesung IM Bild, senkrecht am Fadenkreuz. Sie kippt auf die andere
+       Seite, sobald sie sonst ueber den Rand liefe. */
+    var gAb = s("g", { "class": "pf-ablesung-svg" });
+    svg.appendChild(gAb);
     huelle.appendChild(svg);
 
-    /* Die Ablesung steht in einem festen Kasten unter dem Bild, nicht in einem
-       schwebenden Tooltip: der ist auf dem Handy nicht zu treffen und
-       verschwindet, sobald man ihn lesen will. */
-    var ablesung = el("div", { "class": "pf-ablesung", role: "status" });
-    huelle.appendChild(ablesung);
-
     var stelle = Math.min(Math.floor(n / 2), n - 1);
+    var texte = el("p", { "class": "pf-ablesung-text", role: "status" });
 
     function zeige(k) {
       stelle = k;
       kreuz.setAttribute("x1", X(k));
       kreuz.setAttribute("x2", X(k));
-      ablesung.textContent = "";
-      ablesung.appendChild(el("strong", {
-        text: v.stuendlich
-          ? datumLang(v.tage[k]) + ", " + v.marken[k] + ":00 Uhr"
-          : datumLang(v.tage[k])
-      }));
-      var liste = el("div", { "class": "pf-ablesung-liste" });
+      gAb.textContent = "";
+
+      var zeilen = [];
+      zeilen.push({ label: v.stuendlich
+        ? ausIso(v.tage[k]).toLocaleDateString("de-DE",
+            { weekday: "short", day: "2-digit", month: "2-digit" }) + ", " + v.marken[k] + ":00"
+        : datumLang(v.tage[k]), wert: "", kopf: true });
       if (v.netzlast[k] !== null) {
-        var zl = el("span", { "class": "pf-ablesung-zeile" });
-        zl.appendChild(el("i", { "class": "pf-strich pf-last" }));
-        zl.appendChild(document.createTextNode(
-          " Netzlast " + nf1.format(v.netzlast[k] / v.teiler) + " " + v.einheit));
-        liste.appendChild(zl);
+        zeilen.push({ label: "Netzlast", wert: nf1.format(v.netzlast[k] / v.teiler),
+          farbe: "var(--schrift)" });
+        var deck = (stapelOben[k] - v.netzlast[k]) / v.teiler;
+        zeilen.push({ label: deck >= 0 ? "Überdeckung" : "Unterdeckung",
+          wert: (deck >= 0 ? "+" : "−") + nf1.format(Math.abs(deck)),
+          farbe: deck >= 0 ? "var(--teal)" : "var(--orange)" });
+      }
+      if (hatPreis && v.preis[k] !== null) {
+        zeilen.push({ label: "Preis", wert: nf2.format(v.preis[k]) + " €/MWh",
+          farbe: v.preis[k] < 0 ? "var(--orange)" : "var(--schrift-leise)" });
       }
       v.reihen.slice().reverse().forEach(function (r) {
         if (!r.werte[k]) { return; }
-        var z = el("span", { "class": "pf-ablesung-zeile" });
-        z.appendChild(el("i", { style: "background:var(" + r.token + ");" }));
-        z.appendChild(document.createTextNode(
-          " " + r.name + " " + nf1.format(r.werte[k] / v.teiler)));
-        liste.appendChild(z);
+        zeilen.push({ label: r.name, wert: nf1.format(r.werte[k] / v.teiler),
+          farbe: "var(" + r.token + ")" });
       });
-      ablesung.appendChild(liste);
+
+      var zh = 14, breite = 186, hoehe = zeilen.length * zh + 12;
+      var rechtsRum = X(k) < links + innenB * 0.6;
+      var bx = rechtsRum ? X(k) + 12 : X(k) - 12 - breite;
+      var by = Math.max(oben + 4, Math.min(oben + hoeheOben - hoehe - 4, oben + 12));
+      gAb.appendChild(s("rect", { x: bx, y: by, width: breite, height: hoehe,
+        rx: 8, "class": "pf-ablesung-grund" }));
+      zeilen.forEach(function (z, idx) {
+        var yy = by + 16 + idx * zh;
+        if (!z.kopf) {
+          gAb.appendChild(s("rect", { x: bx + 10, y: yy - 7, width: 7, height: 7,
+            rx: 1.5, fill: z.farbe }));
+        }
+        var tl = s("text", { x: bx + (z.kopf ? 10 : 22), y: yy,
+          "class": z.kopf ? "pf-ablesung-kopf" : "pf-ablesung-label" });
+        tl.textContent = z.label;
+        gAb.appendChild(tl);
+        if (z.wert) {
+          var tw = s("text", { x: bx + breite - 10, y: yy, "text-anchor": "end",
+            "class": "pf-ablesung-wert" });
+          tw.textContent = z.wert;
+          gAb.appendChild(tw);
+        }
+      });
+      texte.textContent = zeilen.map(function (z) {
+        return z.kopf ? z.label : z.label + " " + z.wert; }).join(", ");
     }
 
     function ausPosition(punkt) {
@@ -1268,9 +1447,8 @@
       e.preventDefault();
     });
     zeige(stelle);
+    huelle.appendChild(texte);
 
-    /* Legende. Bei acht Baendern Pflicht; der Anteil steht dabei, damit die
-       Identitaet nicht allein an der Farbe haengt. */
     var gesamt = v.reihen.reduce(function (a, r) { return a + r.summe; }, 0) || 1;
     var legende = el("div", { "class": "pf-legende pf-legende-traeger" });
     legende.appendChild(el("span", { "class": "pf-legende-titel",
@@ -1287,11 +1465,18 @@
     spl.appendChild(el("i", { "class": "pf-strich pf-last" }));
     spl.appendChild(document.createTextNode("Netzlast"));
     legende.appendChild(spl);
+    var spd = el("span");
+    spd.appendChild(el("i", { style: "background:var(--orange);opacity:0.45;" }));
+    spd.appendChild(document.createTextNode("Unterdeckung: Erzeugung unter der Last"));
+    legende.appendChild(spd);
+    if (hatPreis) {
+      var spp = el("span");
+      spp.appendChild(el("i", { "class": "pf-strich pf-preis" }));
+      spp.appendChild(document.createTextNode("Großhandelspreis Day-Ahead"));
+      legende.appendChild(spp);
+    }
     huelle.appendChild(legende);
 
-    /* Tabellenansicht. Pflicht, damit die Zahlen auch ohne Farbe lesbar sind --
-       und weil der Goldton der Photovoltaik den Kontrastwert 3:1 gegen die
-       helle Flaeche nicht erreicht. */
     var schalter = el("button", { "class": "pf-tabellenschalter", type: "button",
       "aria-expanded": "false", text: "Als Tabelle anzeigen" });
     var tabHuelle = el("div", { "class": "pf-tabellen-rollbereich" });
@@ -1309,6 +1494,8 @@
           if (r.summe) { kopfz.appendChild(el("th", { text: r.name, scope: "col" })); }
         });
         kopfz.appendChild(el("th", { text: "Netzlast", scope: "col" }));
+        kopfz.appendChild(el("th", { text: "Über-/Unterdeckung", scope: "col" }));
+        if (hatPreis) { kopfz.appendChild(el("th", { text: "€/MWh", scope: "col" })); }
         var kopf = el("thead"); kopf.appendChild(kopfz); tab.appendChild(kopf);
         var koerper = el("tbody");
         v.marken.forEach(function (mk, k) {
@@ -1320,6 +1507,12 @@
           });
           tr.appendChild(el("td", { text: v.netzlast[k] === null ? "—"
             : nf1.format(v.netzlast[k] / v.teiler) }));
+          tr.appendChild(el("td", { text: v.netzlast[k] === null ? "—"
+            : nf1.format((stapelOben[k] - v.netzlast[k]) / v.teiler) }));
+          if (hatPreis) {
+            tr.appendChild(el("td", { text: v.preis[k] === null ? "—"
+              : nf2.format(v.preis[k]) }));
+          }
           koerper.appendChild(tr);
         });
         tab.appendChild(koerper);
