@@ -213,6 +213,26 @@ try {
     };
   })()`);
   pruefe(bausteine.kacheln >= 6, `${bausteine.kacheln} Kennzahlen-Kacheln`);
+
+  /* Der Anteil der Erneuerbaren. Geprueft wird nicht nur, DASS die Kachel da
+     ist, sondern dass sie mit der Legende des Verlaufs zusammenpasst -- beide
+     rechnen dieselben Reihen, nur gegen verschiedene Nenner. */
+  const ee = await js(`(function () {
+    const k = [...document.querySelectorAll(".pf-kachel")].find(
+      (x) => x.querySelector(".pf-titel").textContent === "Erneuerbare");
+    if (!k) { return null; }
+    const roh = k.querySelector(".pf-wert").firstChild.textContent;
+    return { wert: parseFloat(roh.replace(",", ".")),
+             einheit: k.querySelector(".pf-einheit").textContent,
+             bezug: k.querySelector(".pf-bezug").textContent };
+  })()`);
+  pruefe(ee !== null, "Kachel 'Erneuerbare' vorhanden");
+  pruefe(ee && ee.wert > 0 && ee.wert < 200,
+    `Anteil Erneuerbare ${ee && ee.wert} ${ee && ee.einheit} liegt im moeglichen Bereich`,
+    JSON.stringify(ee));
+  pruefe(ee && /Prozentpunkte|kein Vergleichswert/.test(ee.bezug),
+    "Vergleich in Prozentpunkten, nicht in Prozent vom Prozent", ee && ee.bezug);
+
   pruefe(bausteine.infos >= 7, `${bausteine.infos} Info-Knoepfe`);
   pruefe(bausteine.datumsfelder === 2, `${bausteine.datumsfelder} Datumsfelder (genau zwei)`);
   pruefe(bausteine.schnell >= 6, `${bausteine.schnell} Schnellwahl-Knoepfe`);
@@ -370,25 +390,84 @@ try {
   pruefe(/Netzlast/.test(ablesung.text) && /deckung/.test(ablesung.text),
     "Ablesung nennt Netzlast und Ueber-/Unterdeckung", ablesung.text.slice(0, 80));
 
-  // Muster statt Umrandung, Preisstreifen
+  /* Gedaempfte Flaechen, Oberkante statt Umrandung, Preisstreifen.
+     Die frueheren Pruefungen verlangten hier eine Schraffur auf jeder Flaeche.
+     Diese Gestaltung ist zurueckgenommen -- dauerhafte Textur ist selbst eine
+     Stoerung. Geprueft wird jetzt das Gegenteil: KEIN Muster, gedaempfte
+     Fuellung, und die Trennung ueber eine haarduenne Oberkante. */
   const feinheit = await js(`(function () {
     const flaechen = [...document.querySelectorAll(".pf-flaechen path")];
+    const deck = (p) => parseFloat(getComputedStyle(p).fillOpacity);
     return {
-      muster: flaechen.filter((p) => (p.getAttribute("fill") || "").indexOf("#pf-muster-") > 0).length,
       flaechen: flaechen.length,
+      gemustert: flaechen.filter((p) => (p.getAttribute("fill") || "").indexOf("url(") === 0).length,
+      gedaempft: flaechen.filter((p) => deck(p) > 0 && deck(p) <= 0.4).length,
       umrandet: flaechen.filter((p) => p.getAttribute("stroke")).length,
       musterdefs: document.querySelectorAll("pattern[id^=pf-muster-]").length,
+      kanten: document.querySelectorAll(".pf-kanten path.pf-kante").length,
       preis: document.querySelectorAll(".pf-preis-pos, .pf-preis-neg").length,
+      preiskante: document.querySelectorAll(".pf-preis-kante").length,
       deckung: document.querySelectorAll(".pf-deckung path").length
     };
   })()`);
-  pruefe(feinheit.muster === feinheit.flaechen,
-    `alle ${feinheit.flaechen} Flaechen sind schraffiert oder gepunktet`);
+  pruefe(feinheit.gemustert === 0, "keine Flaeche traegt mehr eine Musterfuellung",
+    `${feinheit.gemustert} gemustert`);
+  pruefe(feinheit.musterdefs === 0, "keine Musterdefinition mehr im Dokument",
+    `${feinheit.musterdefs} uebrig`);
+  pruefe(feinheit.gedaempft === feinheit.flaechen,
+    `alle ${feinheit.flaechen} Flaechen sind gedaempft (fill-opacity <= 0,4)`,
+    `${feinheit.gedaempft} von ${feinheit.flaechen}`);
   pruefe(feinheit.umrandet === 0, "keine Flaeche traegt mehr eine Umrandung",
     `${feinheit.umrandet} umrandet`);
-  pruefe(feinheit.musterdefs === 8, `${feinheit.musterdefs} Muster definiert`);
+  pruefe(feinheit.kanten === feinheit.flaechen,
+    `jedes Band hat eine Oberkante (${feinheit.kanten})`);
   pruefe(feinheit.preis >= 1, "Preisstreifen vorhanden");
+  pruefe(feinheit.preiskante === 1, "Preis als durchgezogene Treppe");
   pruefe(feinheit.deckung >= 1, "Ueber-/Unterdeckung ist getoent");
+
+  // Netzlast in eigener Farbe -- nicht in der Textfarbe, nicht in Windblau.
+  const lastfarbe = await js(`(function () {
+    const w = getComputedStyle(document.documentElement);
+    const l = getComputedStyle(document.querySelector(".pf-lastlinie")).stroke;
+    return { linie: l, wind: w.getPropertyValue("--tr-wind").trim(),
+             schrift: w.getPropertyValue("--schrift").trim(),
+             token: w.getPropertyValue("--last-linie").trim() };
+  })()`);
+  pruefe(lastfarbe.token !== "" && lastfarbe.token !== lastfarbe.wind,
+    `Netzlast hat eine eigene Farbe (${lastfarbe.token}), nicht die von Wind`,
+    JSON.stringify(lastfarbe));
+
+  /* Das Band unter dem Zeiger wird angehoben -- genau eines, nie mehrere.
+     Gefahren wird mitten durch das Bild, dorthin wo sicher ein Band liegt. */
+  const anheben = await js(`(function () {
+    const svg = document.querySelector(".pf-diagramm");
+    const r = svg.getBoundingClientRect();
+    const schick = (x, y) => svg.dispatchEvent(new MouseEvent("mousemove",
+      { clientX: x, clientY: y, bubbles: true }));
+    schick(r.left + r.width * 0.5, r.top + r.height * 0.55);
+    const hell = document.querySelectorAll(".pf-band.pf-band-hell").length;
+    const aktiv = document.querySelectorAll(".pf-ablesung-aktiv").length;
+    svg.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    const nachher = document.querySelectorAll(".pf-band.pf-band-hell").length;
+    return { hell: hell, aktiv: aktiv, nachher: nachher };
+  })()`);
+  pruefe(anheben.hell === 1, "genau ein Band wird beim Ueberfahren angehoben",
+    `${anheben.hell} angehoben`);
+  pruefe(anheben.aktiv >= 1, "die Ablesung markiert denselben Traeger",
+    `${anheben.aktiv} markiert`);
+  pruefe(anheben.nachher === 0, "das Anheben endet, wenn der Zeiger das Bild verlaesst",
+    `${anheben.nachher} bleiben hell`);
+
+  // Preisachse: fester Rahmen -100 bis 400, aber nie ein Wert abgeschnitten.
+  const preisachse = await js(`(function () {
+    const t = [...document.querySelectorAll(".pf-verlauf .pf-gitter text")]
+      .map((e) => e.textContent.replace("−", "-").split(".").join(""));
+    const zahlen = t.map(Number).filter((x) => !isNaN(x));
+    return { unten: Math.min(...zahlen), oben: Math.max(...zahlen), marken: t };
+  })()`);
+  pruefe(preisachse.unten <= -100 && preisachse.oben >= 400,
+    `Preisachse deckt mindestens -100 bis 400 EUR/MWh ab`,
+    JSON.stringify(preisachse.marken));
 
   await js(`document.querySelector(".pf-tabellenschalter").click()`);
   await schlafen(500);

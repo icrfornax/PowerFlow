@@ -203,6 +203,33 @@
     return gefunden ? summe : null;
   }
 
+  /* Die sechs erneuerbaren Reihen von SMARD. Pumpspeicher steht bewusst NICHT
+     darin: das ist ein Speicher, kein Erzeuger, und der Strom darin wurde
+     vorher schon einmal gezaehlt. "Wasserkraft" ist bei SMARD das Laufwasser
+     und damit von der Pumpspeicherreihe getrennt. */
+  var EE_REIHEN = ["Wind Onshore", "Wind Offshore", "Photovoltaik",
+                   "Wasserkraft", "Biomasse", "Sonstige Erneuerbare"];
+
+  /* Wie summeGruppe, aber nur ueber benannte Reihen. Fehlt eine Reihe im
+     Zeitraum ganz, faellt sie heraus -- das ist der Fall der Kernenergie ab
+     2023 und darf die Summe nicht auf null ziehen. */
+  function summeReihen(von, bis, gruppe, schluessel) {
+    var summe = 0, gefunden = false;
+    tageImZeitraum(von, bis).forEach(function (t) {
+      var d = Z.jahre[Number(t.slice(0, 4))];
+      if (!d) { return; }
+      var i = d.tage.indexOf(t);
+      if (i < 0) { return; }
+      schluessel.forEach(function (k) {
+        var reihe = d[gruppe][k];
+        if (reihe && reihe[i] !== null && reihe[i] !== undefined) {
+          summe += reihe[i]; gefunden = true;
+        }
+      });
+    });
+    return gefunden ? summe : null;
+  }
+
   /* Alle Kennzahlen eines Zeitraums an einer Stelle. Wird fuer den gewaehlten
      Zeitraum und fuer denselben Zeitraum im Vorjahr mit derselben Funktion
      gerechnet -- damit kann der Vergleich nicht auseinanderlaufen. */
@@ -224,6 +251,7 @@
       exp: exp,
       saldo: saldo,
       rest: (erzeugung === null || saldo === null) ? null : erzeugung + saldo - netz.wert,
+      ee: summeReihen(von, bis, "erzeugung", EE_REIHEN),
       // Mittlere Leistung ueber die belegten Tage, nicht ueber den Kalender:
       // eine Luecke soll den Schnitt nicht nach unten ziehen.
       leistung: netz.belegt ? netz.wert / (netz.belegt * 24) : null
@@ -1096,67 +1124,29 @@
     return reiheTaeglich(von, bis);
   }
 
-  /* Musterfuellungen. Zwei Gruende, nicht nur Schoenheit:
+  /* ZURUECKGENOMMEN: die flaechendeckende Schraffur.
 
-     1. Die 2-px-Fuge zwischen den Baendern wurde beim Skalieren zu einem
-        dicken Rahmen um jede Flaeche -- die Kurve sah platt und laut aus. Eine
-        Schraffur in der Flaechenfarbe des Untergrunds trennt dieselben Baender,
-        ohne sie einzurahmen.
-     2. Sie ist die zweite Codierung neben der Farbe. Der schwaechste
-        Farbabstand liegt bei Farbsehschwaeche im Grenzband und ist dort NUR
-        mit zweiter Codierung zulaessig. Ein Muster ist eine, die auch auf
-        einem Ausdruck und in einem Bildschirmfoto traegt -- anders als ein
-        Hervorheben beim Ueberfahren.
+     Frueher wurde jedes Band mit einem eigenen Muster gefuellt -- mit zwei
+     Begruendungen, von denen eine falsch war und die andere zu teuer bezahlt
+     wurde.
 
-     Das Motiv wird in var(--flaeche) gezeichnet, also in der Farbe des
-     Untergrunds. Damit stimmt es in beiden Schemata von selbst. */
-  var MUSTER = {
-    "--tr-kern": "punkte-dicht",
-    "--tr-braun": "schraffur-45",
-    "--tr-stein": "schraffur-135",
-    "--tr-gas": "senkrecht",
-    "--tr-sonst": "kreuz",
-    "--tr-bio": "waagerecht",
-    "--tr-wind": "punkte-weit",
-    "--tr-pv": "schraffur-45-weit"
-  };
+     Richtig war: eine 2-px-Fuge zwischen den Baendern wird beim Skalieren zu
+     einem dicken Rahmen, die Kurve sieht platt aus. Das bleibt wahr; geloest
+     wird es jetzt durch eine haarduenne Oberkante in der Traegerfarbe
+     (.pf-kante, non-scaling-stroke) statt durch eine Fuellung.
 
-  function musterDefs() {
-    var defs = s("defs");
-    Object.keys(MUSTER).forEach(function (token) {
-      var name = MUSTER[token];
-      var p = s("pattern", {
-        id: "pf-muster-" + name, width: 6, height: 6,
-        patternUnits: "userSpaceOnUse"
-      });
-      p.appendChild(s("rect", { width: 6, height: 6, fill: "var(" + token + ")" }));
-      var m = s("g", { stroke: "var(--flaeche)", "stroke-width": 1.1,
-                       fill: "var(--flaeche)", "stroke-opacity": 0.55,
-                       "fill-opacity": 0.55 });
-      if (name === "schraffur-45") {
-        m.appendChild(s("path", { d: "M0 6 L6 0 M-1 1 L1 -1 M5 7 L7 5", fill: "none" }));
-      } else if (name === "schraffur-135") {
-        m.appendChild(s("path", { d: "M0 0 L6 6 M-1 5 L1 7 M5 -1 L7 1", fill: "none" }));
-      } else if (name === "schraffur-45-weit") {
-        m.appendChild(s("path", { d: "M0 6 L6 0", fill: "none", "stroke-width": 0.9 }));
-      } else if (name === "senkrecht") {
-        m.appendChild(s("path", { d: "M3 0 L3 6", fill: "none" }));
-      } else if (name === "waagerecht") {
-        m.appendChild(s("path", { d: "M0 3 L6 3", fill: "none" }));
-      } else if (name === "kreuz") {
-        m.appendChild(s("path", { d: "M3 0 L3 6 M0 3 L6 3", fill: "none",
-                                  "stroke-width": 0.8 }));
-      } else if (name === "punkte-dicht") {
-        m.appendChild(s("circle", { cx: 1.5, cy: 1.5, r: 1, stroke: "none" }));
-        m.appendChild(s("circle", { cx: 4.5, cy: 4.5, r: 1, stroke: "none" }));
-      } else {
-        m.appendChild(s("circle", { cx: 3, cy: 3, r: 1.1, stroke: "none" }));
-      }
-      p.appendChild(m);
-      defs.appendChild(p);
-    });
-    return defs;
-  }
+     Falsch war: die Schraffur sei als zweite Codierung noetig und deshalb
+     dauerhaft einzuschalten. Textur ist ein ZUSCHALTMERKMAL -- fuer Ausdruck,
+     Farbsehschwaeche, erzwungene Farben. Dauerhaft eingeschaltet ist sie
+     selbst eine Stoerung, und acht dichte Motive uebereinander ergeben einen
+     Rauschteppich. Genau so sah es aus. Der Fehler war meiner, nicht der der
+     Daten.
+
+     Was stattdessen gilt: gesaettigte Fuellung gehoert an kleine Marken --
+     Legende, Fadenkreuz, Ablesung. Grosse Flaechen tragen denselben Farbton
+     stark gedaempft (.pf-band, fill-opacity 0.34). Die Identitaet einer Reihe
+     haengt damit nie an der Flaeche allein: Legende und Ablesung nennen jeden
+     Traeger im Klartext, und das Band unter dem Zeiger wird angehoben. */
 
   function zeitreihenDiagramm(von, bis) {
     var v = zeitreihe(von, bis);
@@ -1169,7 +1159,7 @@
 
     var hatPreis = v.preis && v.preis.some(function (x) { return x !== null; });
     var B = 900, links = 54, rechts = 14, oben = 30;
-    var hoeheOben = 268, luecke = 16, hoehePreis = hatPreis ? 92 : 0;
+    var hoeheOben = 268, luecke = 16, hoehePreis = hatPreis ? 120 : 0;
     var yPreis = oben + hoeheOben + luecke;
     var achsenY = yPreis + hoehePreis + 20;
     var H = achsenY + 12;
@@ -1209,7 +1199,6 @@
         + ", gestapelt in " + v.einheit + ", dazu die Netzlast als Linie"
         + (hatPreis ? " und der Großhandelspreis" : "")
     });
-    svg.appendChild(musterDefs());
 
     var gitter = s("g", { "class": "pf-gitter" });
     for (var g = 0; g <= achse + 1e-9; g += stufe) {
@@ -1255,18 +1244,55 @@
     }
     svg.appendChild(gitter);
 
-    /* Gestapelte Flaechen. Keine Umrandung mehr -- die Schraffur trennt. */
+    /* Gestapelte Flaechen, gedaempft. Getrennt werden zwei Baender durch die
+       haarduenne Oberkante darueber, nicht durch eine Umrandung ringsum. */
     var gFl = s("g", { "class": "pf-flaechen" });
+    var gKa = s("g", { "class": "pf-kanten" });
     stapel.forEach(function (b) {
       if (b.reihe.summe <= 0) { return; }
       var d = "M" + X(0).toFixed(1) + " " + Y(b.unten[0]).toFixed(1), k;
       for (k = 0; k < n; k++) { d += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1); }
       for (k = n - 1; k >= 0; k--) { d += "L" + X(k).toFixed(1) + " " + Y(b.unten[k]).toFixed(1); }
-      gFl.appendChild(s("path", {
-        d: d + "Z", fill: "url(#pf-muster-" + MUSTER[b.reihe.token] + ")"
-      }));
+      b.flaeche = s("path", { d: d + "Z", "class": "pf-band",
+        fill: "var(" + b.reihe.token + ")" });
+      gFl.appendChild(b.flaeche);
+      var ok = "M" + X(0).toFixed(1) + " " + Y(b.oben[0]).toFixed(1);
+      for (k = 1; k < n; k++) { ok += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1); }
+      b.kante = s("path", { d: ok, "class": "pf-kante",
+        stroke: "var(" + b.reihe.token + ")" });
+      gKa.appendChild(b.kante);
     });
     svg.appendChild(gFl);
+    svg.appendChild(gKa);
+
+    /* Das Band unter dem Zeiger wird angehoben -- leicht, nicht grell. Es ist
+       eine Lesehilfe, keine zweite Codierung: die Ablesung nennt denselben
+       Traeger im Klartext, damit die Auskunft auch ohne Zeiger vollstaendig
+       ist (Tastatur, Bildschirmfoto, Vorlesesoftware). */
+    var hell = null;
+    function hebeAn(b) {
+      if (hell === b) { return; }
+      if (hell) {
+        hell.flaeche.classList.remove("pf-band-hell");
+        hell.kante.classList.remove("pf-kante-hell");
+      }
+      hell = b;
+      if (hell) {
+        hell.flaeche.classList.add("pf-band-hell");
+        hell.kante.classList.add("pf-kante-hell");
+      }
+    }
+    /* Welches Band liegt an dieser Stelle unter dem Zeiger? Gesucht wird ueber
+       den WERT, nicht ueber die Pixelreihenfolge -- ein Band der Hoehe null
+       faellt damit von selbst heraus. */
+    function bandBei(k, mwh) {
+      for (var i2 = 0; i2 < stapel.length; i2++) {
+        var b = stapel[i2];
+        if (!b.flaeche) { continue; }
+        if (mwh >= b.unten[k] && mwh < b.oben[k]) { return b; }
+      }
+      return null;
+    }
 
     /* UNTERDECKUNG: die Luecke zwischen Stapelspitze und Netzlast, wenn die
        Erzeugung nicht reicht. Sie wird orange getoent -- das ist leere
@@ -1321,18 +1347,29 @@
     /* Preisstreifen. EIGENE Achse in einem EIGENEN Feld -- niemals eine zweite
        y-Achse im selben Bild. Euro je MWh und Gigawatt haben nichts
        miteinander zu tun. */
-    var Yp = null;
+    var Yp = null, preisRahmen = null;
     if (hatPreis) {
       var pw = v.preis.filter(function (x) { return x !== null; });
       var pMin = Math.min.apply(null, pw), pMax = Math.max.apply(null, pw);
-      var pUnten = Math.min(0, Math.floor(pMin / 50) * 50);
-      var pOben = Math.max(50, Math.ceil(pMax / 50) * 50);
+      /* Fester Rahmen von -100 bis 400 Euro je MWh. Ein fester Rahmen macht
+         zwei Zeitraeume vergleichbar; eine mitwandernde Achse laesst jede
+         Woche gleich dramatisch aussehen.
+
+         ABER er wird geweitet, sobald der Zeitraum darueber hinausgeht. Die
+         Quelle kennt beides: -500,00 Euro am 02.07.2023 um 14 Uhr und
+         +936,28 Euro am 12.12.2024 um 17 Uhr. Einen gemessenen Wert am
+         Bildrand abzuschneiden waere eine stillschweigende Korrektur -- die
+         gibt es hier nicht. Die Achsenbeschriftung nennt dann den echten
+         Rand, und die Legende sagt, dass geweitet wurde. */
+      var pUnten = Math.min(-100, Math.floor(pMin / 100) * 100);
+      var pOben = Math.max(400, Math.ceil(pMax / 100) * 100);
+      preisRahmen = { unten: pUnten, oben: pOben,
+                      geweitet: pUnten < -100 || pOben > 400 };
       Yp = function (e) {
         return yPreis + hoehePreis - (e - pUnten) / (pOben - pUnten) * hoehePreis;
       };
       var gp = s("g", { "class": "pf-gitter" });
       [pUnten, 0, pOben].forEach(function (e) {
-        if (e < pUnten || e > pOben) { return; }
         var yy = Yp(e);
         gp.appendChild(s("line", { x1: links, x2: B - rechts, y1: yy, y2: yy,
           "stroke-dasharray": e === 0 ? "" : "2 3" }));
@@ -1348,18 +1385,29 @@
       gp.appendChild(pe);
       svg.appendChild(gp);
 
-      // Negative Stunden bekommen einen eigenen Ton -- sie sind der
-      // interessante Fall und kein Fehler.
-      var dNeg = "", dPos = "";
+      /* Stufenflaeche statt Staebchen: ein Preis gilt seine Stunde (bzw. seinen
+         Tag) ueber konstant. Jeder Wert bekommt deshalb ein Kaestchen um seine
+         Marke, nicht einen Strich auf ihr. Negative Stunden behalten ihren
+         eigenen Ton -- sie sind der interessante Fall und kein Fehler. */
+      var halb = n > 1 ? innenB / (n - 1) / 2 : innenB / 2;
+      var dNeg = "", dPos = "", dKante = "", yNull = Yp(0);
       v.preis.forEach(function (e, k) {
         if (e === null) { return; }
-        var xx = X(k), y0 = Yp(0), y1 = Yp(e);
-        var seg = "M" + xx.toFixed(1) + " " + y0.toFixed(1) + "L" + xx.toFixed(1)
-          + " " + y1.toFixed(1);
-        if (e < 0) { dNeg += seg; } else { dPos += seg; }
+        var xa = Math.max(links, X(k) - halb), xb = Math.min(B - rechts, X(k) + halb);
+        var yw = Yp(e);
+        var kasten = "M" + xa.toFixed(1) + " " + yNull.toFixed(1)
+          + "L" + xa.toFixed(1) + " " + yw.toFixed(1)
+          + "L" + xb.toFixed(1) + " " + yw.toFixed(1)
+          + "L" + xb.toFixed(1) + " " + yNull.toFixed(1) + "Z";
+        if (e < 0) { dNeg += kasten; } else { dPos += kasten; }
+        // Durchgezogene Treppe mit Steigern, nicht einzelne Striche: sonst
+        // sieht die Oberkante aus wie eine gestrichelte Linie.
+        dKante += (dKante ? "L" : "M") + xa.toFixed(1) + " " + yw.toFixed(1)
+          + "L" + xb.toFixed(1) + " " + yw.toFixed(1);
       });
       if (dPos) { svg.appendChild(s("path", { d: dPos, "class": "pf-preis-pos" })); }
       if (dNeg) { svg.appendChild(s("path", { d: dNeg, "class": "pf-preis-neg" })); }
+      if (dKante) { svg.appendChild(s("path", { d: dKante, "class": "pf-preis-kante" })); }
     }
 
     var kreuz = s("line", { "class": "pf-kreuz", y1: oben, y2: yPreis + hoehePreis,
@@ -1375,8 +1423,9 @@
     var stelle = Math.min(Math.floor(n / 2), n - 1);
     var texte = el("p", { "class": "pf-ablesung-text", role: "status" });
 
-    function zeige(k) {
+    function zeige(k, band) {
       stelle = k;
+      hebeAn(band || null);
       kreuz.setAttribute("x1", X(k));
       kreuz.setAttribute("x2", X(k));
       gAb.textContent = "";
@@ -1388,7 +1437,7 @@
         : datumLang(v.tage[k]), wert: "", kopf: true });
       if (v.netzlast[k] !== null) {
         zeilen.push({ label: "Netzlast", wert: nf1.format(v.netzlast[k] / v.teiler),
-          farbe: "var(--schrift)" });
+          farbe: "var(--last-linie)" });
         var deck = (stapelOben[k] - v.netzlast[k]) / v.teiler;
         zeilen.push({ label: deck >= 0 ? "Überdeckung" : "Unterdeckung",
           wert: (deck >= 0 ? "+" : "−") + nf1.format(Math.abs(deck)),
@@ -1396,12 +1445,13 @@
       }
       if (hatPreis && v.preis[k] !== null) {
         zeilen.push({ label: "Preis", wert: nf2.format(v.preis[k]) + " €/MWh",
-          farbe: v.preis[k] < 0 ? "var(--orange)" : "var(--schrift-leise)" });
+          farbe: v.preis[k] < 0 ? "var(--orange)" : "var(--preis-linie)" });
       }
       v.reihen.slice().reverse().forEach(function (r) {
         if (!r.werte[k]) { return; }
         zeilen.push({ label: r.name, wert: nf1.format(r.werte[k] / v.teiler),
-          farbe: "var(" + r.token + ")" });
+          farbe: "var(" + r.token + ")",
+          aktiv: !!(band && band.reihe === r) });
       });
 
       var zh = 14, breite = 186, hoehe = zeilen.length * zh + 12;
@@ -1417,12 +1467,13 @@
             rx: 1.5, fill: z.farbe }));
         }
         var tl = s("text", { x: bx + (z.kopf ? 10 : 22), y: yy,
-          "class": z.kopf ? "pf-ablesung-kopf" : "pf-ablesung-label" });
+          "class": (z.kopf ? "pf-ablesung-kopf" : "pf-ablesung-label")
+            + (z.aktiv ? " pf-ablesung-aktiv" : "") });
         tl.textContent = z.label;
         gAb.appendChild(tl);
         if (z.wert) {
           var tw = s("text", { x: bx + breite - 10, y: yy, "text-anchor": "end",
-            "class": "pf-ablesung-wert" });
+            "class": "pf-ablesung-wert" + (z.aktiv ? " pf-ablesung-aktiv" : "") });
           tw.textContent = z.wert;
           gAb.appendChild(tw);
         }
@@ -1434,19 +1485,27 @@
     function ausPosition(punkt) {
       var kasten = svg.getBoundingClientRect();
       var px = (punkt.clientX - kasten.left) / kasten.width * B;
-      var k = Math.round((px - links) / innenB * (n - 1));
-      zeige(Math.max(0, Math.min(n - 1, k)));
+      var py = (punkt.clientY - kasten.top) / kasten.height * H;
+      var k = Math.max(0, Math.min(n - 1,
+        Math.round((px - links) / innenB * (n - 1))));
+      // Aus der Hoehe zurueck in Megawattstunden -- die Umkehrung von Y().
+      var mwh = (oben + hoeheOben - py) / hoeheOben * achse * v.teiler;
+      var imFeld = py >= oben && py <= oben + hoeheOben;
+      zeige(k, imFeld ? bandBei(k, mwh) : null);
     }
     svg.addEventListener("mousemove", ausPosition);
     svg.addEventListener("touchmove", function (e) {
       if (e.touches.length) { ausPosition(e.touches[0]); }
     }, { passive: true });
     svg.addEventListener("keydown", function (e) {
-      if (e.key === "ArrowRight") { zeige(Math.min(n - 1, stelle + 1)); }
-      else if (e.key === "ArrowLeft") { zeige(Math.max(0, stelle - 1)); }
+      // Ohne Zeiger gibt es keine Hoehe; das hervorgehobene Band bleibt, was
+      // es war. Die Ablesung ist ohnehin vollstaendig.
+      if (e.key === "ArrowRight") { zeige(Math.min(n - 1, stelle + 1), hell); }
+      else if (e.key === "ArrowLeft") { zeige(Math.max(0, stelle - 1), hell); }
       else { return; }
       e.preventDefault();
     });
+    svg.addEventListener("mouseleave", function () { zeige(stelle, null); });
     zeige(stelle);
     huelle.appendChild(texte);
 
@@ -1473,7 +1532,12 @@
     if (hatPreis) {
       var spp = el("span");
       spp.appendChild(el("i", { "class": "pf-strich pf-preis" }));
-      spp.appendChild(document.createTextNode("Großhandelspreis Day-Ahead"));
+      spp.appendChild(document.createTextNode(
+        "Großhandelspreis Day-Ahead, Achse " + nf0.format(preisRahmen.unten)
+        + " bis " + nf0.format(preisRahmen.oben) + " €/MWh"
+        + (preisRahmen.geweitet
+            ? " — geweitet, der Zeitraum geht über −100 bis 400 hinaus"
+            : "")));
       legende.appendChild(spp);
     }
     huelle.appendChild(legende);
@@ -1901,6 +1965,45 @@
         grenzen: "Die Reihe für Kernenergie (Filter 1224) endet am 15.04.2023 um 23:45 Uhr. "
           + "Für spätere Zeiträume liefert SMARD HTTP 404, nicht den Wert Null.",
         quellen: QUELLE_SMARD, messung: "Messung. Keine Annahme."
+      }
+    }));
+
+    /* Anteil der Erneuerbaren. Bezugsgroesse ist die NETZLAST, nicht die
+       Erzeugung und nicht der Bruttostromverbrauch. Das ist eine Wahl, und sie
+       wird benannt: die amtliche Quote von AGEB und UBA rechnet gegen den
+       Bruttostromverbrauch und kommt deshalb auf andere Zahlen. Wer beides
+       vergleicht, vergleicht zwei verschiedene Groessen. */
+    var eeAnteil = (k.ee === null || !k.netzlast) ? null : k.ee / k.netzlast * 100;
+    var eeVorher = (v.ee === null || v.ee === undefined || !v.netzlast)
+      ? null : v.ee / v.netzlast * 100;
+    kacheln.appendChild(kachel({
+      titel: "Erneuerbare", akzent: "gruen",
+      wert: eeAnteil === null ? "—" : nf1.format(eeAnteil), einheit: "% der Netzlast",
+      bezug: (k.ee === null ? "—" : gwh(k.ee, 1) + " GWh") + " · "
+        + (eeVorher === null
+            ? "kein Vergleichswert für " + zeitraumKurz(vv, vb) + " vorhanden"
+            : nf1.format(eeVorher) + " % im Vorjahreszeitraum · "
+              + (eeAnteil >= eeVorher ? "+" : "−")
+              + nf1.format(Math.abs(eeAnteil - eeVorher)) + " Prozentpunkte"),
+      info: {
+        wert: "Summe der sechs erneuerbaren SMARD-Reihen — Wind Onshore, Wind "
+          + "Offshore, Photovoltaik, Wasserkraft, Biomasse, Sonstige Erneuerbare — "
+          + "geteilt durch die Netzlast desselben Zeitraums, mal 100.",
+        grenzenTitel: "Warum diese Zahl nicht die amtliche Quote ist",
+        grenzen: "Der Nenner ist hier die Netzlast. Die amtliche Quote von AGEB und "
+          + "Umweltbundesamt rechnet gegen den Bruttostromverbrauch und liegt deshalb "
+          + "anders. Beide Zahlen sind richtig, sie beantworten verschiedene Fragen. "
+          + "Pumpspeicher ist nicht enthalten: das ist ein Speicher, kein Erzeuger, "
+          + "und der Strom darin wurde vorher schon einmal gezählt. Werte über 100 % "
+          + "sind möglich und kein Fehler — dann wurde mehr erneuerbar erzeugt, als "
+          + "im Netz verbraucht wurde, und der Rest ging in den Export.",
+        quellen: QUELLE_SMARD,
+        messung: "Selbst gerechnet aus gemessenen Größen. Die Formel steht oben; die "
+          + "Wahl des Nenners ist eine benannte Festlegung, keine Messung. "
+          + "Größenordnungsprobe: dieselbe Formel über ganze Kalenderjahre "
+          + "gerechnet ergibt 54,9 % (2023), 55,0 % (2024) und 55,3 % (2025). Ein Abgleich "
+          + "gegen die amtliche Quote von AGEE-Stat steht aus — sie rechnet gegen den "
+          + "Bruttostromverbrauch und ist deshalb keine Gegenprobe, sondern eine andere Frage."
       }
     }));
 

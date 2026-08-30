@@ -164,6 +164,21 @@ die Regelzonenbilanz.
   inklusive gerundeter Reglerstellungen.
 - Popover schliessen beim Wegbewegen des Zeigers, aber nicht beim Scrollen,
   solange ihr Knopf sichtbar bleibt. Klick heftet an, Escape schliesst.
+- **Gesaettigte Fuellung gehoert an kleine Marken, nie an grosse Flaechen.**
+  Die Baender des Verlaufs tragen ihren Traegerton stark gedaempft; die
+  Saettigung sitzt in Legende, Oberkante und Ablesung. Getrennt werden zwei
+  Baender durch eine haarduenne Oberkante, nicht durch eine Umrandung ringsum.
+  Textur ist ein Zuschaltmerkmal fuer Ausdruck und Farbsehschwaeche, kein
+  Grundzustand -- eine frueher gelieferte Fassung mit dauerhafter Schraffur auf
+  jedem Band ist zurueckgenommen, sie war selbst die Stoerung.
+- **Netzlast und Preis sind keine Energietraeger.** Sie haben eigene Tokens
+  (`--last-linie`, `--preis-linie`) ausserhalb der Traegerfamilie, damit die
+  Netzlast nicht als Wind und der Preis nicht als Photovoltaik gelesen wird.
+- **Die Preisachse steht fest bei -100 bis 400 Euro je MWh** -- ein fester
+  Rahmen macht zwei Zeitraeume vergleichbar. Sie weitet sich, sobald der
+  Zeitraum darueber hinausgeht; die Quelle kennt -500,00 Euro (02.07.2023,
+  14 Uhr) und +936,28 Euro (12.12.2024, 17 Uhr). Ein gemessener Wert wird nie
+  am Bildrand abgeschnitten.
 - Beschriftungen nennen Einheit und Bezug.
 - Zugaenglichkeit: sichtbarer Fokus, aria-Beschriftungen an Knoepfen ohne Text,
   `prefers-reduced-motion` beachten, Tabellen und Grafiken mit eigenem
@@ -198,6 +213,11 @@ gemessene Flussrichtung an den Kuppelstellen.
 Ausserdem erledigt: Zeitraumwahl mit Schnellwahl, Karte fuellt ihren Rahmen,
 drei GitHub-Actions-Workflows (taeglicher SMARD-Abruf, monatliche Stammdaten,
 Tuersteher bei jeder Aenderung).
+
+Ausserdem erledigt (31.08.2026): der Verlauf ist ruhig gestellt -- gedaempfte
+Flaechen statt Schraffur, Netzlast in eigenem Blau, Preis als Stufenflaeche in
+gedaempftem Gelb mit fester Achse. Achte Kennzahl: Anteil der Erneuerbaren an
+der Netzlast.
 
 Noch offen: Methodik-PDF; Regelzonen als Flaeche auf
 der Karte; Import und Export im Verlauf; Anlagen aus dem

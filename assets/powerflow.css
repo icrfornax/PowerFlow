@@ -42,6 +42,12 @@
   --tr-bio: #46a06b;
   --tr-wind: #5f92dd;
   --tr-pv: #a8881a;
+  /* Netzlast und Preis sind KEINE Energietraeger. Sie stehen bewusst
+     ausserhalb der Traegerfamilie -- deshalb eigene Tokens. Die Netzlast
+     liegt heller und kuehler als --tr-wind, der Preis blasser als --tr-pv,
+     damit beide nicht mit dem Band darunter verwechselt werden. */
+  --last-linie: #86c8ff;
+  --preis-linie: #e0cd8a;
   --fokus: #6cc7ff;
   --radius: 10px;
   --schrift-familie: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -82,6 +88,8 @@
     --tr-bio: #17806b;
     --tr-wind: #4a7fd6;
     --tr-pv: #c08a10;
+  --last-linie: #0a5ca8;
+  --preis-linie: #8f7519;
     --fokus: #0b6bb5;
   }
 }
@@ -103,6 +111,8 @@
   --tr-bio: #17806b;
   --tr-wind: #4a7fd6;
   --tr-pv: #c08a10;
+  --last-linie: #0a5ca8;
+  --preis-linie: #8f7519;
   --grund: #f6f8fa;
   --flaeche: #ffffff;
   --flaeche-hoch: #eef2f5;
@@ -137,6 +147,12 @@
   --tr-bio: #46a06b;
   --tr-wind: #5f92dd;
   --tr-pv: #a8881a;
+  /* Netzlast und Preis sind KEINE Energietraeger. Sie stehen bewusst
+     ausserhalb der Traegerfamilie -- deshalb eigene Tokens. Die Netzlast
+     liegt heller und kuehler als --tr-wind, der Preis blasser als --tr-pv,
+     damit beide nicht mit dem Band darunter verwechselt werden. */
+  --last-linie: #86c8ff;
+  --preis-linie: #e0cd8a;
   --grund: #0e1418;
   --flaeche: #151d23;
   --flaeche-hoch: #1c262e;
@@ -230,6 +246,7 @@ body {
 .pf-kachel[data-akzent="teal"] .pf-wert { color: var(--teal); }
 .pf-kachel[data-akzent="orange"] .pf-wert { color: var(--orange); }
 .pf-kachel[data-akzent="violett"] .pf-wert { color: var(--violett); }
+.pf-kachel[data-akzent="gruen"] .pf-wert { color: var(--gruen); }
 
 /* ---------- Info-Knopf und Popover ---------- */
 
@@ -509,17 +526,35 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-gitter text.pf-achsentitel { fill: var(--schrift-still); font-size: 10px;
   letter-spacing: 0.06em; }
 
+/* Gedaempfte Flaechen statt gesaettigter Bloecke. Die Saettigung sitzt in der
+   Legende, in der Oberkante und im Fadenkreuz -- nicht in der Flaeche selbst.
+   Grosse Flaechen in voller Saettigung lesen sich laut; kleine Marken vertragen
+   sie. Das Band unter dem Zeiger wird leicht angehoben, mehr nicht. */
+.pf-band { fill-opacity: 0.34; transition: fill-opacity 120ms ease; }
+.pf-band.pf-band-hell { fill-opacity: 0.58; }
+/* Die Oberkante ersetzt die frueher gezogene Umrandung: sie trennt zwei
+   Baender, ohne die Flaeche einzurahmen. */
+.pf-kante { fill: none; stroke-width: 1; stroke-opacity: 0.85;
+  vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.pf-kante.pf-kante-hell { stroke-opacity: 1; stroke-width: 1.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-band { transition: none; }
+}
+
 /* non-scaling-stroke: die Linie bleibt duenn, egal wie stark das SVG
    hochskaliert wird. Ohne das wurde aus 2 Einheiten ein fetter Balken. */
-.pf-lastlinie { stroke: var(--schrift); stroke-width: 1.6; stroke-linejoin: round;
+.pf-lastlinie { stroke: var(--last-linie); stroke-width: 1.6; stroke-linejoin: round;
   stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .pf-gitter line { vector-effect: non-scaling-stroke; }
-.pf-preis-pos { stroke: var(--schrift-leise); stroke-width: 1.4; stroke-opacity: 0.75;
-  vector-effect: non-scaling-stroke; }
-.pf-preis-neg { stroke: var(--orange); stroke-width: 1.8;
-  vector-effect: non-scaling-stroke; }
+/* Preis als Stufenflaeche: ein Stundenpreis gilt die Stunde ueber konstant.
+   Eine Treppe ist damit nicht nur ruhiger als Staebchen, sondern richtiger. */
+.pf-preis-pos { fill: var(--preis-linie); fill-opacity: 0.22; stroke: none; }
+.pf-preis-neg { fill: var(--orange); fill-opacity: 0.34; stroke: none; }
+.pf-preis-kante { fill: none; stroke: var(--preis-linie); stroke-width: 1.2;
+  stroke-opacity: 0.9; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .pf-legende i.pf-preis { width: 16px; height: 2px; border-radius: 1px;
-  background: var(--schrift-leise); }
+  background: var(--preis-linie); }
 
 /* Ablesung IM Bild, senkrecht am Fadenkreuz. */
 .pf-ablesung-svg { pointer-events: none; }
@@ -528,6 +563,8 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-ablesung-kopf { fill: var(--schrift); font-size: 11px; font-weight: 600;
   font-family: var(--schrift-zahl); }
 .pf-ablesung-label { fill: var(--schrift-leise); font-size: 11px; }
+.pf-ablesung-label.pf-ablesung-aktiv, .pf-ablesung-wert.pf-ablesung-aktiv {
+  fill: var(--schrift); font-weight: 600; }
 .pf-ablesung-wert { fill: var(--schrift); font-size: 11px;
   font-family: var(--schrift-zahl); }
 .pf-ablesung-text { position: absolute; width: 1px; height: 1px; overflow: hidden;
@@ -542,7 +579,7 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-legende-traeger i { border-radius: 2px; }
 .pf-legende-titel { color: var(--schrift-still); }
 .pf-legende i.pf-last {
-  width: 16px; height: 2px; border-radius: 1px; background: var(--schrift); }
+  width: 16px; height: 2px; border-radius: 1px; background: var(--last-linie); }
 
 .pf-tabellenschalter {
   margin-top: 10px; background: transparent; color: var(--schrift-leise);
