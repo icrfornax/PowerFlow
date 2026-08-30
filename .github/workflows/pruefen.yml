@@ -45,6 +45,12 @@ jobs:
       - name: Pruefungen
         run: python scripts/validate.py
 
+      - name: Quellenverzeichnis und sein Waechter
+        run: |
+          python scripts/quellen.py
+          python scripts/quellen.py --negativtest
+          git diff --exit-code -- data/quellen.json
+
       - name: Negativtests
         # Eine Pruefung, die nie hat fehlschlagen sehen, ist keine Pruefung.
         run: python scripts/validate.py --negativtests

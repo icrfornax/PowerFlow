@@ -1,0 +1,194 @@
+{
+ "_hinweis": "Quellenverzeichnis der Seite. Aus den tatsaechlich vorhandenen Dateien erzeugt, nicht von Hand gepflegt. Jede Datei unter data/ ist einer Quelle zugeordnet; scripts/quellen.py bricht ab, wenn eine ohne Zuordnung auftaucht. Es werden ausschliesslich gemessene oder als Stammdatum veroeffentlichte Werte gefuehrt -- nichts modelliert, nichts geschaetzt, nichts erfunden.",
+ "erzeugt": "2026-08-30T17:37:58+02:00",
+ "quellen": {
+  "smard": {
+   "name": "SMARD, Bundesnetzagentur",
+   "url": "https://www.smard.de/",
+   "lizenz": "CC BY 4.0",
+   "lizenz_url": "https://creativecommons.org/licenses/by/4.0/deed.de",
+   "namensnennung": "Bundesnetzagentur | SMARD.de",
+   "erhebung": "ENTSO-E, geprueft von der Bundesnetzagentur"
+  },
+  "naturalearth": {
+   "name": "Natural Earth",
+   "url": "https://www.naturalearthdata.com/",
+   "lizenz": "gemeinfrei (public domain)",
+   "lizenz_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+   "namensnennung": "keine gefordert; wird trotzdem genannt",
+   "erhebung": "Kartografie, Gemeinschaftsprojekt"
+  },
+  "osm": {
+   "name": "OpenStreetMap",
+   "url": "https://www.openstreetmap.org/",
+   "lizenz": "ODbL 1.0 (Share-alike)",
+   "lizenz_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "namensnennung": "© OpenStreetMap contributors",
+   "erhebung": "Gemeinschaftserhebung, keine amtliche Quelle"
+  },
+  "powerflow": {
+   "name": "PowerFlow selbst",
+   "url": "https://github.com/icrfornax/PowerFlow",
+   "lizenz": "MIT (Code); die Inhalte verweisen auf die Quellen darunter",
+   "lizenz_url": "https://github.com/icrfornax/PowerFlow/blob/main/LICENSE",
+   "namensnennung": "keine gefordert",
+   "erhebung": "aus den Dateien dieses Repositorys erzeugt, keine eigene Messung"
+  },
+  "netztransparenz": {
+   "name": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
+   "url": "https://www.netztransparenz.de/",
+   "lizenz": "siehe LIZENZ-DATEN.md -- Kette ueber ENTSO-E, eine Stelle ungeprueft",
+   "lizenz_url": "https://github.com/icrfornax/PowerFlow/blob/main/LIZENZ-DATEN.md",
+   "namensnennung": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
+   "erhebung": "die vier Uebertragungsnetzbetreiber"
+  }
+ },
+ "datensaetze": [
+  {
+   "titel": "Verzeichnis der Tagesreihen",
+   "inhalt": "Welche Jahresdatei welchen Zeitraum abdeckt.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-tagesreihen.md",
+   "dateien": 1,
+   "bytes": 2611,
+   "zeitraum": null,
+   "muster": "data/tage-verzeichnis.json",
+   "abzug": "data/tage-verzeichnis.json",
+   "alle": null
+  },
+  {
+   "titel": "Tageswerte je Jahr",
+   "inhalt": "Netzlast, Residuallast, Pumpspeicherverbrauch, Erzeugung nach zwoelf Energietraegern, dasselbe je Regelzone, Aussenhandel je Nachbarland, Grosshandelspreis. Ein Wert je Tag, in MWh.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-smard.md",
+   "dateien": 12,
+   "bytes": 3125991,
+   "zeitraum": "2015-01-01 bis 2026-08-29",
+   "muster": "data/tage/*.json",
+   "abzug": "data/tage-verzeichnis.json",
+   "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/tage"
+  },
+  {
+   "titel": "Verzeichnis der Stundenreihen",
+   "inhalt": "Welche Monatsdatei wie viele Stunden enthaelt.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-verlauf.md",
+   "dateien": 1,
+   "bytes": 13620,
+   "zeitraum": null,
+   "muster": "data/verlauf-verzeichnis.json",
+   "abzug": "data/verlauf-verzeichnis.json",
+   "alle": null
+  },
+  {
+   "titel": "Stundenwerte je Monat",
+   "inhalt": "Netzlast, Erzeugung nach Energietraeger und Grosshandelspreis, ein Wert je Stunde, in MWh bzw. Euro je MWh.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-verlauf.md",
+   "dateien": 140,
+   "bytes": 12074900,
+   "zeitraum": "2015-01-01 bis 2026-08-30",
+   "muster": "data/verlauf/*.json",
+   "abzug": "data/verlauf-verzeichnis.json",
+   "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
+  },
+  {
+   "titel": "Kraftwerksstandorte",
+   "inhalt": "Stammdaten mit Koordinaten, Betreiber, Energietraeger, Nettoleistung und Bloecken. Aus einem UNDOKUMENTIERTEN Endpunkt.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-kraftwerksdaten.md",
+   "dateien": 1,
+   "bytes": 571317,
+   "zeitraum": null,
+   "muster": "data/kraftwerke.json",
+   "abzug": "data/kraftwerke.json",
+   "alle": null
+  },
+  {
+   "titel": "Grundkarte",
+   "inhalt": "Umrisse der 16 Bundeslaender und neun Nachbarstaaten, vereinfacht.",
+   "quelle": "naturalearth",
+   "beleg": "docs/beleg-grundkarte.md",
+   "dateien": 1,
+   "bytes": 68519,
+   "zeitraum": null,
+   "muster": "data/grundkarte.json",
+   "abzug": "data/grundkarte.json",
+   "alle": null
+  },
+  {
+   "titel": "Leitungen 220 kV und darueber",
+   "inhalt": "Verlauf, Spannungsebene und Betreiber. KEIN Lastfluss.",
+   "quelle": "osm",
+   "beleg": "docs/beleg-netzgeometrie.md",
+   "dateien": 1,
+   "bytes": 1763156,
+   "zeitraum": null,
+   "muster": "data/netz-hoechstspannung.json",
+   "abzug": "data/netz-hoechstspannung.json",
+   "alle": null
+  },
+  {
+   "titel": "Leitungen 110 kV",
+   "inhalt": "Verlauf und Spannungsebene. KEIN Lastfluss.",
+   "quelle": "osm",
+   "beleg": "docs/beleg-netzgeometrie.md",
+   "dateien": 1,
+   "bytes": 5943846,
+   "zeitraum": null,
+   "muster": "data/netz-hochspannung.json",
+   "abzug": "data/netz-hochspannung.json",
+   "alle": null
+  },
+  {
+   "titel": "Umspannwerke ab 110 kV",
+   "inhalt": "Lage, Spannungsebene, Betreiber, Name.",
+   "quelle": "osm",
+   "beleg": "docs/beleg-netzgeometrie.md",
+   "dateien": 1,
+   "bytes": 389018,
+   "zeitraum": null,
+   "muster": "data/netz-umspannwerke.json",
+   "abzug": "data/netz-umspannwerke.json",
+   "alle": null
+  },
+  {
+   "titel": "Verzeichnis des Redispatch",
+   "inhalt": "Welche Jahresdatei welchen Zeitraum abdeckt.",
+   "quelle": "netztransparenz",
+   "beleg": "docs/beleg-redispatch.md",
+   "dateien": 1,
+   "bytes": 1270,
+   "zeitraum": null,
+   "muster": "data/redispatch-verzeichnis.json",
+   "abzug": "data/redispatch-verzeichnis.json",
+   "alle": null
+  },
+  {
+   "titel": "Redispatch je Jahr",
+   "inhalt": "Tagesaggregate: Arbeit nach Richtung, anweisendem Netzbetreiber und Primaerenergieart, in MWh.",
+   "quelle": "netztransparenz",
+   "beleg": "docs/beleg-redispatch.md",
+   "dateien": 6,
+   "bytes": 526487,
+   "zeitraum": "2021-01-01 bis 2026-08-30",
+   "muster": "data/redispatch/*.json",
+   "abzug": "data/redispatch-verzeichnis.json",
+   "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
+  },
+  {
+   "titel": "Dieses Verzeichnis",
+   "inhalt": "Welcher Datensatz aus welcher Quelle stammt. Aus den vorhandenen Dateien erzeugt, keine eigene Messung.",
+   "quelle": "powerflow",
+   "beleg": null,
+   "dateien": 1,
+   "bytes": 7059,
+   "zeitraum": null,
+   "muster": "data/quellen.json",
+   "abzug": "data/quellen.json",
+   "alle": null
+  }
+ ],
+ "dateien_gesamt": 167,
+ "bytes_gesamt": 24487794
+}

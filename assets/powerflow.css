@@ -372,9 +372,13 @@ table.pf-tabelle th, table.pf-tabelle td {
   text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--linie);
   font-variant-numeric: tabular-nums;
 }
-table.pf-tabelle th:first-child, table.pf-tabelle td:first-child {
+table.pf-tabelle th:first-child, table.pf-tabelle td:first-child,
+table.pf-tabelle td.pf-links {
   text-align: left; font-variant-numeric: normal;
 }
+/* Textspalten linksbuendig. Rechtsbuendig gehoeren nur Zahlen -- sonst muss
+   das Auge fuer jede Zeile neu den Anfang suchen. */
+table.pf-tabelle td.pf-links { hyphens: auto; }
 table.pf-tabelle th {
   color: var(--schrift-still); font-weight: 600; font-size: 0.76rem;
   letter-spacing: 0.05em; text-transform: uppercase;
@@ -392,6 +396,7 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 }
 .pf-kasten[data-art="offen"] { border-left-color: var(--violett); }
 .pf-kasten h3 { margin: 0 0 8px; font-size: 0.92rem; color: var(--schrift); }
+.pf-kasten-vor { margin: 0 0 9px; font-size: 0.84rem; color: var(--schrift-still); }
 .pf-kasten ul { margin: 0; padding-left: 18px; }
 .pf-kasten li { margin-bottom: 5px; }
 .pf-kasten li:last-child { margin-bottom: 0; }
@@ -457,7 +462,7 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 
 /* ---------- Downloads ---------- */
 
-.pf-abzuege { display: flex; flex-wrap: wrap; gap: 9px; }
+.pf-abzuege { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
 .pf-abzug {
   background: var(--flaeche); border: 1px solid var(--linie);
   border-radius: var(--radius); padding: 9px 13px; font-size: 0.85rem;

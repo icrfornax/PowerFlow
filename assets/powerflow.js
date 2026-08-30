@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260831-verlauf2";
+  var VERSION = "20260831-quellen";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -82,7 +82,8 @@
     jahre: {},          // Jahr -> geladene Jahresdatei mit Tageswerten
     verlauf: {},
     redispatch: {},
-    rdVerzeichnis: null,        // Monat -> geladene Monatsdatei mit Stundenwerten
+    rdVerzeichnis: null,
+    quellen: null,        // Monat -> geladene Monatsdatei mit Stundenwerten
     von: null,          // erster Tag des Zeitraums
     bis: null,          // letzter Tag des Zeitraums, einschliesslich
     startVon: null,     // fuer den Zuruecksetzen-Knopf
@@ -2286,59 +2287,194 @@
       "Physikalischer Stromfluss je Kuppelstelle (positiv = Zufluss nach Deutschland)",
       tabRoll));
 
-    // --- Grenzen ---
+    // --- Grenzen der Quellenlage ---
     var nicht = el("div", { "class": "pf-kasten" });
     nicht.appendChild(el("h3", { text: "Was diese Seite nicht zeigt" }));
+    nicht.appendChild(el("p", { "class": "pf-kasten-vor",
+      text: "Nicht, weil es fehlt, sondern weil es nicht veröffentlicht wird oder "
+        + "nicht erhoben ist. Kein Modell füllt diese Lücken." }));
     var ul = el("ul");
     [
-      "Flüsse zwischen den vier Regelzonen. Deutschland und Luxemburg bilden EINE Gebotszone; "
-        + "die EU-Verordnung 543/2013 verlangt die Veröffentlichung physikalischer Flüsse nur "
-        + "zwischen Gebotszonen. Der Zonensaldo ist kein Ersatz.",
-      "Flüsse auf einzelnen Hoch- und Höchstspannungsleitungen. Nach § 23c Abs. 2 EnWG werden "
-        + "grenzüberschreitende Lastflüsse nur zusammengefasst je Kuppelstelle veröffentlicht. "
-        + "Öffentliche Leitungsauslastungen sind Modellrechnungen.",
-      "Lastflüsse auf den gezeichneten Leitungen. Die Karte zeigt ihren Verlauf und ihre "
-        + "Spannungsebene, mehr gibt die Quellenlage nicht her.",
-      "Redispatch auf der Karte. Das Feld BETROFFENE_ANLAGE nennt teilweise "
-        + "Blocknamen; eine Zuordnung zu den Kraftwerkskoordinaten steht noch aus."
+      "Flüsse zwischen den vier Regelzonen. Deutschland und Luxemburg bilden EINE "
+        + "Gebotszone; die EU-Verordnung 543/2013 verlangt physikalische Flüsse nur "
+        + "zwischen Gebotszonen. Der Zonensaldo ist kein Ersatz — er mischt den "
+        + "Austausch mit den anderen Zonen und mit dem Ausland.",
+      "Lastfluss und Auslastung einzelner Hoch- und Höchstspannungsleitungen. Nach "
+        + "§ 23c Abs. 2 EnWG werden grenzüberschreitende Lastflüsse nur zusammengefasst "
+        + "je Kuppelstelle veröffentlicht. Öffentlich sichtbare Leitungsauslastungen "
+        + "sind Modellrechnungen.",
+      "Wind- und Solarparks als einzelne Anlagen. Die SMARD-Kraftwerksstammdaten "
+        + "führen 596 überwiegend konventionelle Anlagen und Speicher; Wind und "
+        + "Photovoltaik stehen dort nicht einzeln. Auf der Karte fehlen sie deshalb, "
+        + "im Verlauf sind sie vollständig enthalten.",
+      "Mittelspannung. In OpenStreetMap kaum erfasst.",
+      "Der Betreiber von 45,5 % der Höchstspannungsabschnitte. OpenStreetMap kennt "
+        + "ihn dort nicht; diese Leitungen bleiben grau statt geraten.",
+      "Die Regelzonen als Fläche. Sie folgen nicht den Bundeslandgrenzen, und eine "
+        + "belegbare Geometrie dafür gibt es nicht. Die Zone erscheint als Farbe der "
+        + "Leitungen und über das Hervorheben in der Legende."
     ].forEach(function (t) { ul.appendChild(el("li", { text: t })); });
     nicht.appendChild(ul);
     neu.appendChild(abschnitt("Grenzen", nicht));
 
+    // --- Ab wann welche Reihe beginnt ---
+    var beginn = el("div", { "class": "pf-kasten", "data-art": "offen" });
+    beginn.appendChild(el("h3", { text: "Ab wann welche Reihe beginnt" }));
+    beginn.appendChild(el("p", { "class": "pf-kasten-vor",
+      text: "Der Zeitraumregler reicht bis 2015 zurück — aber nicht jede Reihe ist so "
+        + "alt. Wer weiter zurückgeht, sieht weniger, und die Seite sagt es dann auch "
+        + "an der Stelle." }));
+    var brt = el("div", { "class": "pf-tabellen-rollbereich" });
+    var btab = el("table", { "class": "pf-tabelle" });
+    var bth = el("thead"), bhz = el("tr");
+    ["Reihe", "beginnt", "Grund"].forEach(function (h) {
+      bhz.appendChild(el("th", { text: h, scope: "col" }));
+    });
+    bth.appendChild(bhz); btab.appendChild(bth);
+    var btb = el("tbody");
+    [
+      ["Netzlast, Erzeugung, Außenhandel", "01.01.2015", "Beginn der SMARD-Reihen"],
+      ["Regelzonen belastbar", "01.01.2019", "davor fehlen bis zu 3,4 % der Last je Tag"],
+      ["Großhandelspreis", "01.10.2018", "Teilung der Gebotszone Deutschland-Österreich"],
+      ["Redispatch", "01.01.2021", "davor antwortet die Quelle mit HTTP 400"],
+      ["Kernenergie", "endet 15.04.2023", "Abschaltung der letzten Kraftwerke"],
+      ["Norwegen, Belgien", "2020 bzw. 2021", "NordLink und ALEGrO gingen erst dann ans Netz"]
+    ].forEach(function (z) {
+      var tr = el("tr");
+      tr.appendChild(el("td", { text: z[0] }));
+      tr.appendChild(el("td", { text: z[1] }));
+      tr.appendChild(el("td", { "class": "pf-hinweis pf-links", text: z[2] }));
+      btb.appendChild(tr);
+    });
+    btab.appendChild(btb); brt.appendChild(btab);
+    beginn.appendChild(brt);
+    neu.appendChild(abschnitt("Zeitliche Reichweite", beginn));
+
+    // --- Bekannte Maengel der Daten ---
+    var maengel = el("div", { "class": "pf-kasten" });
+    maengel.appendChild(el("h3", { text: "Bekannte Mängel der Daten" }));
+    maengel.appendChild(el("p", { "class": "pf-kasten-vor",
+      text: "Gemessen, benannt und nicht weggeglättet. Wer eine dieser Zahlen "
+        + "weiterverwendet, sollte sie kennen." }));
+    var ul3 = el("ul");
+    [
+      "Die Bilanz geht nicht auf null auf. Erzeugung + Import − Export − Netzlast "
+        + "liegt über 4.258 Tage zwischen −18,8 % und +12,0 %, im Median bei −2,6 %. "
+        + "Darin stecken Netzverluste, unterschiedliche Auflösungen und — vor 2018 "
+        + "deutlich — Erfassungslücken der Quelle. Die Ursache der frühen Lücke ist "
+        + "nicht geklärt.",
+      "Ein Wert der Quelle ist falsch: der Schweiz-Import am 09.02.2015 steht mit "
+        + "25.009.206 MWh in den Rohdaten — 25 TWh an einem Tag. Er wird als fehlend "
+        + "geführt, nicht korrigiert; der Originalwert bleibt in den Dateien sichtbar.",
+      "Beim Redispatch ist das Hochfahren in jedem Jahr größer als das "
+        + "Herunterfahren, um 3,6 bis 25,4 %. Kein Fehler: bei grenzüberschreitenden "
+        + "Maßnahmen wird nur der deutsche Teil veröffentlicht.",
+      "Eine Redispatch-Maßnahme zählt zum Tag ihres Beginns. Im August 2026 lagen "
+        + "22,2 % der Arbeit in Maßnahmen über Mitternacht. Das ist eine Annahme, "
+        + "keine Messung.",
+      "Die Pfeile an den Kuppelstellen sitzen schematisch. Gemessen sind Richtung "
+        + "und Menge, nicht der Ort des Übergangs.",
+      "OpenStreetMap ist eine Gemeinschaftserhebung. Die Netzgeometrie kann "
+        + "unvollständig oder veraltet sein, besonders auf der 110-kV-Ebene.",
+      "Der SMARD-Endpunkt für die Kraftwerksstammdaten ist in keiner Dokumentation "
+        + "beschrieben. Er wurde aus dem Frontend rekonstruiert und kann sich ohne "
+        + "Ankündigung ändern."
+    ].forEach(function (t) { ul3.appendChild(el("li", { text: t })); });
+    maengel.appendChild(ul3);
+    neu.appendChild(abschnitt("Datenqualität", maengel));
+
+    // --- Was noch fehlt ---
     var offen = el("div", { "class": "pf-kasten", "data-art": "offen" });
-    offen.appendChild(el("h3", { text: "Offene Punkte" }));
+    offen.appendChild(el("h3", { text: "Was noch fehlt" }));
+    offen.appendChild(el("p", { "class": "pf-kasten-vor",
+      text: "Nicht Grenzen der Quellenlage, sondern Arbeit, die noch aussteht." }));
     var ul2 = el("ul");
     [
-      "Regelzonen als Fläche auf der Karte — dafür fehlt eine belegbare Geometrie.",
-      "Richtung des Stromflusses innerhalb Deutschlands. Gezeigt wird sie nur an den "
-        + "Kuppelstellen, weil sie nur dort gemessen ist.",
-      "Import und Export im Verlauf — bisher nur als Summe des Zeitraums.",
-      "Anlagen aus dem Marktstammdatenregister: Wind- und Solarparks fehlen auf der Karte, "
-        + "weil die SMARD-Stammdaten sie nicht einzeln führen.",
-      "Methodik-PDF und der Gesamtlauf über alle Referenzjahre fehlen noch.",
-      "Der Kraftwerks-Endpunkt von SMARD ist undokumentiert und kann sich ohne Ankündigung "
-        + "ändern."
+      "Methodik-PDF, das sich beim Bau selbst aus den Dateien neu rechnet.",
+      "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar wird, wie "
+        + "stark das Ergebnis am gewählten Zeitraum hängt.",
+      "Import und Export im Verlauf — bisher nur als Summe des Zeitraums, nicht "
+        + "Stunde für Stunde.",
+      "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie viermal so groß.",
+      "Anlagen aus dem Marktstammdatenregister, damit Wind- und Solarparks auf die "
+        + "Karte kommen.",
+      "Redispatch auf der Karte. Das Feld BETROFFENE_ANLAGE nennt teilweise "
+        + "Blocknamen; die Zuordnung zu den Kraftwerkskoordinaten steht aus.",
+      "Zugang zur ENTSO-E Transparency Platform ist beantragt. Damit ließe sich die "
+        + "Lizenzkette des Redispatch von einer Argumentation zu einer Zusage machen.",
+      "Ob Redispatch auf der Liste frei weiterverwendbarer ENTSO-E-Daten steht, ist "
+        + "nicht geprüft — die Seite mit der Liste antwortet mit HTTP 403."
     ].forEach(function (t) { ul2.appendChild(el("li", { text: t })); });
     offen.appendChild(ul2);
-    neu.appendChild(abschnitt("Was noch fehlt", offen));
+    neu.appendChild(abschnitt("Offene Punkte", offen));
 
-    // --- Downloads ---
+    // --- Quellen und Downloads ---
+    var qhuelle = el("div", { "class": "pf-verlauf" });
+    if (Z.quellen) {
+      qhuelle.appendChild(el("p", { "class": "pf-kasten-vor",
+        text: "Jede Zahl auf dieser Seite stammt aus einer der folgenden Dateien. Es "
+          + "werden ausschließlich gemessene oder als Stammdatum veröffentlichte Werte "
+          + "geführt — nichts modelliert, nichts geschätzt, nichts erfunden. "
+          + "scripts/quellen.py bricht ab, sobald eine Datei ohne Quellenangabe unter "
+          + "data/ auftaucht." }));
+      var qroll = el("div", { "class": "pf-tabellen-rollbereich" });
+      var qtab = el("table", { "class": "pf-tabelle" });
+      var qth = el("thead"), qhz = el("tr");
+      ["Datensatz", "Inhalt", "Zeitraum", "Quelle", "Lizenz", "Umfang", "Abzug"]
+        .forEach(function (h) { qhz.appendChild(el("th", { text: h, scope: "col" })); });
+      qth.appendChild(qhz); qtab.appendChild(qth);
+      var qtb = el("tbody");
+      Z.quellen.datensaetze.forEach(function (d) {
+        var q = Z.quellen.quellen[d.quelle];
+        var tr = el("tr");
+        tr.appendChild(el("td", { text: d.titel }));
+        var tdi = el("td", { "class": "pf-hinweis pf-links" });
+        tdi.appendChild(document.createTextNode(d.inhalt));
+        if (d.beleg) {
+          tdi.appendChild(document.createTextNode(" "));
+          tdi.appendChild(el("a", { href: "https://github.com/icrfornax/PowerFlow/blob/main/"
+            + d.beleg, target: "_blank", rel: "noopener", text: "Beleg" }));
+        }
+        tr.appendChild(tdi);
+        tr.appendChild(el("td", { "class": "pf-hinweis", text: d.zeitraum || "—" }));
+        var tdq = el("td", { "class": "pf-links" });
+        tdq.appendChild(el("a", { href: q.url, target: "_blank", rel: "noopener",
+          text: q.name }));
+        tr.appendChild(tdq);
+        var tdl = el("td", { "class": "pf-hinweis pf-links" });
+        tdl.appendChild(el("a", { href: q.lizenz_url, target: "_blank", rel: "noopener",
+          text: q.lizenz }));
+        tr.appendChild(tdl);
+        tr.appendChild(el("td", { "class": "pf-hinweis",
+          text: (d.dateien > 1 ? d.dateien + " Dateien · " : "")
+            + (d.bytes < 1048576 ? nf0.format(d.bytes / 1024) + " kB"
+                                 : nf1.format(d.bytes / 1048576) + " MB") }));
+        var tda = el("td");
+        tda.appendChild(el("a", { "class": "pf-abzug", href: d.abzug, download: "",
+          text: d.dateien > 1 ? "Verzeichnis" : "JSON" }));
+        if (d.alle) {
+          tda.appendChild(el("a", { "class": "pf-abzug", href: d.alle, target: "_blank",
+            rel: "noopener", text: "alle" }));
+        }
+        tr.appendChild(tda);
+        qtb.appendChild(tr);
+      });
+      qtab.appendChild(qtb); qroll.appendChild(qtab);
+      qhuelle.appendChild(qroll);
+      qhuelle.appendChild(el("p", { "class": "pf-bezug",
+        text: Z.quellen.dateien_gesamt + " Dateien, "
+          + nf1.format(Z.quellen.bytes_gesamt / 1048576) + " MB insgesamt. "
+          + "Namensnennung: " + Object.keys(Z.quellen.quellen).map(function (k) {
+              return Z.quellen.quellen[k].namensnennung; }).join(" · ") }));
+    }
     var abzuege = el("div", { "class": "pf-abzuege" });
     var csvKnopf = el("button", { "class": "pf-abzug", type: "button",
-      text: "Bilanz " + zeitraumKurz(von, bis) });
+      text: "Bilanz des gewählten Zeitraums " + zeitraumKurz(von, bis) });
     csvKnopf.appendChild(el("span", { text: "CSV" }));
     csvKnopf.addEventListener("click", function () { csvHerunterladen(von, bis); });
     abzuege.appendChild(csvKnopf);
-    [
-      { d: "data/tage/" + von.slice(0, 4) + ".json", t: "Tagesreihen " + von.slice(0, 4), e: "JSON" },
-      { d: "data/kraftwerke.json", t: "Kraftwerksstandorte", e: "JSON" },
-      { d: "data/grundkarte.json", t: "Grundkarte", e: "JSON" }
-    ].forEach(function (a) {
-      var link = el("a", { "class": "pf-abzug", href: a.d, download: "", text: a.t });
-      link.appendChild(el("span", { text: a.e }));
-      abzuege.appendChild(link);
-    });
-    neu.appendChild(abschnitt("Downloads", abzuege));
+    qhuelle.appendChild(abzuege);
+    neu.appendChild(abschnitt("Quellen und Downloads", qhuelle));
 
     // --- Fussnote ---
     var jahresdatei = Z.jahre[Number(von.slice(0, 4))];
@@ -2411,6 +2547,7 @@
       hole("data/grundkarte.json"),
       hole("data/kraftwerke.json"),
       hole("data/redispatch-verzeichnis.json"),
+      hole("data/quellen.json"),
       // Die beiden voreingestellten Netzebenen. Die 110-kV-Ebene wird erst
       // geladen, wenn jemand sie einschaltet -- sie ist 5,9 MB gross.
       netzLaden("hoechstspannung"),
@@ -2420,6 +2557,7 @@
       Z.grundkarte = teile[1];
       Z.kraftwerke = teile[2];
       Z.rdVerzeichnis = teile[3];
+      Z.quellen = teile[4];
       var jahre = Z.verzeichnis.jahre;
       Z.minTag = jahre[0].erster_tag;
       var letzte = jahre[jahre.length - 1];

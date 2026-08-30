@@ -487,6 +487,30 @@ try {
   })()`);
   pruefe(abzug > 500, `CSV-Abzug erzeugt ${abzug} Bytes`);
 
+  // Quellenverzeichnis und die vier Hinweiskaesten
+  const qu = await js(`(function () {
+    const kopf = [...document.querySelectorAll(".pf-abschnitt > h2")].map((h) => h.textContent);
+    const zeilen = [...document.querySelectorAll(".pf-abschnitt table.pf-tabelle tbody tr")];
+    const quellenTab = zeilen.filter((r) => r.cells.length === 7);
+    const quellenNamen = new Set(quellenTab.map((r) => r.cells[3].textContent));
+    const lizenzen = new Set(quellenTab.map((r) => r.cells[4].textContent));
+    return {
+      kaesten: kopf.filter((x) => /Grenzen|Reichweite|Datenqualit|Offene Punkte/.test(x)),
+      quellenAbschnitt: kopf.some((x) => /Quellen und Downloads/.test(x)),
+      datensaetze: quellenTab.length,
+      quellen: [...quellenNamen], lizenzen: [...lizenzen],
+      abzuege: document.querySelectorAll(".pf-abschnitt table.pf-tabelle .pf-abzug").length
+    };
+  })()`);
+  pruefe(qu.kaesten.length === 4,
+    `vier Hinweiskaesten: ${qu.kaesten.join(" | ")}`);
+  pruefe(qu.quellenAbschnitt, "Abschnitt Quellen und Downloads vorhanden");
+  pruefe(qu.datensaetze >= 10, `${qu.datensaetze} Datensaetze im Quellenverzeichnis`);
+  pruefe(qu.quellen.length === 5, `fuenf Quellen genannt: ${qu.quellen.join(" | ")}`);
+  pruefe(qu.lizenzen.length >= 3, `${qu.lizenzen.length} verschiedene Lizenzen genannt`);
+  pruefe(qu.abzuege >= 12, `${qu.abzuege} Abzugsknoepfe im Verzeichnis`);
+  await foto("quellen", ".pf-abschnitt:last-of-type");
+
   // --- Konsole ---
   await schlafen(800);
   const echte = fehlermeldungen.filter((m) => !/favicon/i.test(m));
