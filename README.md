@@ -41,6 +41,7 @@ Belege
     docs/beleg-netzgeometrie.md     Leitungen und Umspannwerke aus OpenStreetMap
     docs/beleg-verlauf.md           Stundenwerte, Gegenprobe und Diagrammfarben
     docs/beleg-browsertest.md       Browsertest ueber das DevTools-Protokoll
+    docs/beleg-redispatch.md        Zugang zur netztransparenz-API, Anleitung
     LIZENZ-DATEN.md                 die drei Datenlizenzen und ihre Folgen
 
 Prüfen
