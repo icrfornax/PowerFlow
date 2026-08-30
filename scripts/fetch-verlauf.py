@@ -2,8 +2,12 @@
 
 Aufruf:  python scripts/fetch-verlauf.py             (alle Jahre ab 2015)
          python scripts/fetch-verlauf.py 2025 2026    (nur diese Jahre)
+         python scripts/fetch-verlauf.py --wochen 4   (nur die letzten 4 Wochen)
 
-Das ist ein SELTEN-SKRIPT. Ein voller Lauf sind rund 8.000 Abrufe.
+Ein voller Lauf sind rund 8.000 Abrufe -- das ist ein Selten-Skript. Fuer den
+taeglichen Job gibt es --wochen N: dann werden nur die letzten N Wochenbloecke
+geholt und in die vorhandenen Monatsdateien eingearbeitet. Bei N=4 sind das
+rund 50 Abrufe statt 8.000.
 
 Warum Stunden und nicht Viertelstunden
 --------------------------------------
@@ -68,7 +72,78 @@ def hole_jahr(filter_id: int, bloecke: list[int]) -> dict[int, float]:
     return werte
 
 
+def nachtragen(wochen: int) -> int:
+    """Holt nur die letzten N Wochenbloecke und arbeitet sie ein.
+
+    Bestehende Monatsdateien werden gelesen, die geholten Stunden darin
+    aktualisiert oder ergaenzt und die Datei neu geschrieben. Was ausserhalb
+    der geholten Bloecke liegt, bleibt unangetastet -- ein Nachtrag darf keine
+    Geschichte loeschen.
+    """
+    alle = smard.wochenbloecke(smard.LAST_NETZLAST, smard.REGION_DE, smard.STUNDE)
+    bloecke = alle[-wochen:]
+    reihen = [("netzlast", smard.LAST_NETZLAST)]
+    reihen += [(name, fid) for fid, name in smard.ERZEUGUNG.items()]
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        ergebnisse = list(pool.map(lambda r: hole_jahr(r[1], bloecke), reihen))
+    daten = dict(zip((r[0] for r in reihen), ergebnisse))
+
+    monate: dict[str, list[int]] = {}
+    for ts in sorted(daten["netzlast"]):
+        monate.setdefault(marke(ts)[:7], []).append(ts)
+
+    ZIEL.mkdir(parents=True, exist_ok=True)
+    for monat, neue in sorted(monate.items()):
+        pfad = ZIEL / f"{monat}.json"
+        if pfad.is_file():
+            doc = json.loads(pfad.read_text(encoding="utf-8"))
+        else:
+            doc = {"monat": monat, "stunden": [], "netzlast": [], "erzeugung": {}}
+        # Vorhandene Stunden ueber ihre Stelle ansprechen. Die Marke ist am Tag
+        # der Rueckstellung nicht eindeutig -- deshalb wird ueber die Reihenfolge
+        # gearbeitet und nur angehaengt, was noch fehlt.
+        vorhanden = len(doc["stunden"])
+        neue_marken = [marke(ts) for ts in neue]
+        # Alles ab der ersten geholten Marke wird ersetzt.
+        schnitt = vorhanden
+        if neue_marken and neue_marken[0] in doc["stunden"]:
+            schnitt = doc["stunden"].index(neue_marken[0])
+        doc["stunden"] = doc["stunden"][:schnitt] + neue_marken
+        doc["netzlast"] = doc["netzlast"][:schnitt] + [daten["netzlast"].get(ts) for ts in neue]
+        for _, name in sorted(smard.ERZEUGUNG.items()):
+            spalte_neu = [daten[name].get(ts) for ts in neue]
+            if not any(v is not None for v in spalte_neu) and name not in doc["erzeugung"]:
+                continue
+            alt = doc["erzeugung"].get(name, [])
+            doc["erzeugung"][name] = alt[:schnitt] + spalte_neu
+        doc.setdefault("_quelle", "SMARD, Bundesnetzagentur -- https://www.smard.de/")
+        doc.setdefault("_lizenz", "CC BY 4.0")
+        doc.setdefault("_namensnennung", "Bundesnetzagentur | SMARD.de")
+        doc["abgerufen"] = dt.datetime.now(smard.TZ).isoformat(timespec="seconds")
+        pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
+                        encoding="utf-8")
+        print(f"  {monat}: {len(neue)} Stunden nachgetragen ab Stelle {schnitt}, "
+              f"jetzt {len(doc['stunden'])} Stunden")
+
+    verzeichnis = []
+    for pfad in sorted(ZIEL.glob("*.json")):
+        mm = json.loads(pfad.read_text(encoding="utf-8"))
+        verzeichnis.append({"monat": mm["monat"], "datei": f"data/verlauf/{mm['monat']}.json",
+                            "stunden": len(mm["stunden"])})
+    (WURZEL / "data" / "verlauf-verzeichnis.json").write_text(json.dumps({
+        "abgerufen": dt.datetime.now(smard.TZ).isoformat(timespec="seconds"),
+        "hinweis": ("Verzeichnis der Monatsdateien mit Stundenwerten. Die Seite "
+                    "laedt den Monat des gewaehlten Tages."),
+        "monate": verzeichnis,
+    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"  Verzeichnis mit {len(verzeichnis)} Monaten geschrieben")
+    return 0
+
+
 def main(argv: list[str]) -> int:
+    if "--wochen" in argv:
+        i = argv.index("--wochen")
+        return nachtragen(int(argv[i + 1]))
     alle_bloecke = smard.wochenbloecke(smard.LAST_NETZLAST, smard.REGION_DE, smard.STUNDE)
     jahre = ([int(a) for a in argv] if argv
              else sorted({dt.datetime.fromtimestamp(b / 1000, smard.TZ).year

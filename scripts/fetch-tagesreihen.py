@@ -221,7 +221,22 @@ def main(argv: list[str]) -> int:
             "auffaellige_tage": sorted({a["tag"] for a in doc["auffaellig"]}),
         })
 
-    if not argv:
+    # Das Verzeichnis wird IMMER neu gebaut, auch wenn nur einzelne Jahre
+    # geholt wurden -- es enthaelt den letzten belegten Tag, und der aendert
+    # sich taeglich. Gebaut wird es aus den Dateien auf der Platte, nicht aus
+    # dem Lauf, damit ein Teillauf die uebrigen Jahre nicht verliert.
+    verzeichnis = []
+    for pfad in sorted(ZIEL.glob("*.json")):
+        doc = json.loads(pfad.read_text(encoding="utf-8"))
+        verzeichnis.append({
+            "jahr": doc["jahr"], "datei": f"data/tage/{doc['jahr']}.json",
+            "erster_tag": doc["tage"][0], "letzter_tag": doc["tage"][-1],
+            "letzter_belegter_tag": max(
+                (d for d, v in zip(doc["tage"], doc["netzlast"]) if v is not None),
+                default=None),
+            "auffaellige_tage": sorted({a["tag"] for a in doc.get("auffaellig", [])}),
+        })
+    if True:
         (WURZEL / "data" / "tage-verzeichnis.json").write_text(
             json.dumps({
                 "abgerufen": dt.datetime.now(smard.TZ).isoformat(timespec="seconds"),

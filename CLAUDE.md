@@ -32,15 +32,23 @@ EU-Verordnung 543/2013 Art. 12.1(g) verlangt physikalische Fluesse nur zwischen
 Gebotszonen). Ein Pfeil "50Hertz nach TransnetBW: X GW" waere eine
 Modellrechnung und ist damit ausgeschlossen. Beleg: `docs/beleg-smard.md`.
 
-## Freie Variable — entschieden am 30.08.2026
+## Freie Variable — entschieden am 30.08.2026, erweitert am 31.08.2026
 
-**Der Kalendertag.** Genau ein Regler auf der Seite, sonst keiner. Waehlbar ist
-jeder Tag ab 01.01.2015; `scripts/validate.py` prueft, dass es kein zweites
-Bedienelement gibt.
+**Der dargestellte Zeitraum.** Ein einzelner Tag ist der Sonderfall von = bis.
+Genau ein Regler auf der Seite, sonst keiner. Er besteht aus zwei Datumsfeldern
+und bleibt trotzdem eine einzige freie Variable; `scripts/validate.py` prueft,
+dass es genau zwei sind und kein Schieberegler dazukommt. Die Schnellwahl
+(Letzte 7 Tage, Voriger Monat, ...) setzt denselben Regler und ist keine
+zweite Variable.
 
-Der **Bezugswert ist damit fest**: der reale Messwert desselben Kalendertags im
-Vorjahr. Kein Monatsmittel, keine geglaettete Kurve. Fehlt der Vorjahrestag
-(29. Februar), wird das angezeigt und nicht ersetzt.
+Waehlbar ist jeder Zeitraum ab 01.01.2015.
+
+Der **Bezugswert ist damit fest**: derselbe Zeitraum ein Jahr frueher, reale
+Messwerte. Kein Monatsmittel, keine geglaettete Kurve.
+
+**Darstellungstiefe folgt der Laenge:** ein einzelner Tag wird stuendlich
+gezeigt (`data/verlauf/`), ein laengerer Zeitraum tageweise (`data/tage/`).
+Ueber Wochen hinweg waeren Stunden weder lesbar noch noetig.
 
 ## Umfang
 
@@ -176,8 +184,13 @@ Ausserdem erledigt: Tagesverlauf als gestapeltes Flaechendiagramm mit geprueften
 Farben, zoom- und verschiebbare Karte mit Klickauswahl statt Mouseover,
 gemessene Flussrichtung an den Kuppelstellen.
 
-Noch offen: Redispatch; Browsertest; Workflows; Methodik-PDF; Regelzonen als
-Flaeche auf der Karte; Import und Export im Tagesverlauf.
+Ausserdem erledigt: Zeitraumwahl mit Schnellwahl, Karte fuellt ihren Rahmen,
+drei GitHub-Actions-Workflows (taeglicher SMARD-Abruf, monatliche Stammdaten,
+Tuersteher bei jeder Aenderung).
+
+Noch offen: Redispatch; Browsertest; Methodik-PDF; Regelzonen als Flaeche auf
+der Karte; Import und Export im Verlauf; Anlagen aus dem
+Marktstammdatenregister.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
@@ -189,11 +202,16 @@ stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
    von 0,5 % war auf einen einzelnen Tag geeicht und ist zurueckgenommen.
 2. **Vor 2019 ist die Regelzonenaufteilung unvollstaendig** - 2015 fehlen bis zu
    3,4 % der Last je Tag. Ursache nicht geklaert. Die Seite warnt sichtbar.
-3. **Der Tagesverlauf wird ueber den ZEITSTEMPEL geschluesselt, nie ueber die
+3. **Tages- und Stundenwerte muessen im SELBEN Lauf geholt werden.** SMARD
+   meldet zurueckliegende Werte nach: am 30.08.2026 stand der 28.08. zuerst bei
+   1.214.078,00 MWh und nach dem naechsten Abruf bei 1.213.793,75 MWh. Wer die
+   beiden Reihen zu verschiedenen Zeiten holt, bekommt zwei Staende, und die
+   Gegenprobe schlaegt zu Recht an.
+4. **Der Tagesverlauf wird ueber den ZEITSTEMPEL geschluesselt, nie ueber die
    lokale Stundenmarke.** Am Tag der Rueckstellung gibt es 02:00 zweimal; eine
    Marke als Schluessel verliert dort eine Stunde. Genau das ist einmal
    passiert, an elf Oktobertagen. Siehe `docs/beleg-verlauf.md`.
-4. **Ein Wert der Quelle ist falsch:** Schweiz-Import am 09.02.2015 mit
+5. **Ein Wert der Quelle ist falsch:** Schweiz-Import am 09.02.2015 mit
    25.009.206 MWh. Er wird als fehlend gefuehrt, nicht korrigiert; der
    Originalwert bleibt in der Liste `auffaellig` sichtbar.
 

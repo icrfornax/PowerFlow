@@ -1,0 +1,94 @@
+name: Daten Stammdaten
+
+# Kraftwerksstammdaten und Netzgeometrie. Eigener Workflow, weil sich beides
+# nicht taeglich aendert und weil die Quellen andere sind als bei den
+# Strommengen: faellt Overpass aus, soll der taegliche SMARD-Abruf davon nichts
+# merken.
+#
+# Der Kraftwerks-Endpunkt von SMARD ist UNDOKUMENTIERT (siehe
+# docs/beleg-kraftwerksdaten.md). Wenn er verschwindet, schlaegt der Tuersteher
+# an und dieser Lauf faellt rot aus -- genau so soll es sein.
+#
+# Die Netzgeometrie aus OpenStreetMap wird nur monatlich geholt: ein Lauf laedt
+# ueber 40 MB von einem gemeinnuetzig betriebenen Dienst.
+
+on:
+  schedule:
+    # Am 3. jedes Monats, 04:35 UTC.
+    - cron: "35 4 3 * *"
+  workflow_dispatch:
+    inputs:
+      netz:
+        description: "Netzgeometrie aus OpenStreetMap mitholen"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: daten-stammdaten
+  cancel-in-progress: false
+
+jobs:
+  abrufen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Kraftwerksstammdaten holen
+        run: python scripts/fetch-kraftwerke.py
+
+      - name: Netzgeometrie holen
+        if: github.event_name == 'schedule' || inputs.netz
+        run: python scripts/fetch-netz.py
+
+      - name: Tuersteher
+        run: |
+          python scripts/validate.py
+          python scripts/validate.py --negativtests
+
+      - name: Aenderungen feststellen
+        id: diff
+        run: |
+          if git diff --quiet -- data/; then
+            echo "geaendert=nein" >> "$GITHUB_OUTPUT"
+            echo "Keine Aenderung an data/ -- nichts zu tun."
+          else
+            echo "geaendert=ja" >> "$GITHUB_OUTPUT"
+            git diff --stat -- data/
+          fi
+
+      - name: Committen und pushen
+        if: steps.diff.outputs.geaendert == 'ja'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Daten: Stammdaten und Netzgeometrie $(date -u +%Y-%m-%d)"
+          for versuch in 1 2 3; do
+            if git push; then
+              echo "Push im Versuch $versuch gelungen."
+              exit 0
+            fi
+            echo "Push fehlgeschlagen, Versuch $versuch. Hole nach und rebase."
+            git fetch origin main || exit 1
+            git rebase origin/main || {
+              echo "Echter Konflikt beim Rebase. Abbruch ohne force."
+              git rebase --abort || true
+              exit 1
+            }
+          done
+          echo "Push auch nach drei Versuchen nicht moeglich."
+          exit 1
+
+      - name: Pages-Bau anstossen
+        if: steps.diff.outputs.geaendert == 'ja'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds"

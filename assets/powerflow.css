@@ -310,7 +310,9 @@ body {
   border-radius: var(--radius); padding: 14px 15px; position: relative;
 }
 .pf-karte-rollbereich { overflow-x: auto; }
-.pf-karte { display: block; width: 100%; height: auto; max-width: 640px; margin: 0 auto; }
+/* Die Karte fuellt ihren Rahmen. Kein max-width -- sonst bleibt links und
+   rechts leere Flaeche stehen. */
+.pf-karte { display: block; width: 100%; height: auto; }
 
 .pf-geo-nachbar path {
   fill: var(--karte-nachbar); stroke: none;
@@ -428,6 +430,20 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-zuruecksetzen:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .pf-regler-fuss { font-size: 0.8rem; color: var(--schrift-still); margin: 11px 0 0; }
+
+.pf-bis { color: var(--schrift-still); font-size: 0.85rem; }
+
+/* Schnellwahl. Sie setzt denselben Regler und ist keine zweite Variable. */
+.pf-schnellwahl { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.pf-schnell {
+  background: transparent; color: var(--schrift-leise);
+  border: 1px solid var(--linie); border-radius: 999px;
+  padding: 4px 11px; font-size: 0.8rem; cursor: pointer; font-family: inherit;
+}
+.pf-schnell:hover { color: var(--schrift); border-color: var(--schrift-still); }
+.pf-schnell[data-aktiv] { color: var(--schrift); border-color: var(--fokus);
+  background: var(--flaeche-hoch); }
+.pf-schnell:focus-visible { outline: 2px solid var(--fokus); outline-offset: 2px; }
 
 .pf-schritt:focus-visible, .pf-tagfeld:focus-visible, .pf-zuruecksetzen:focus-visible {
   outline: 2px solid var(--fokus); outline-offset: 2px;
