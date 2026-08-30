@@ -31,14 +31,15 @@
   --karte-land: #1a242c;
   --karte-grenze: #2f3f4a;
   --netz-380: #ffd479;
+  --netz-unbekannt: #55636e;
   --netz-220: #b9a7d6;
   --netz-110: #6f8592;
   --tr-kern: #9d76dd;
-  --tr-braun: #b8763a;
+  --tr-braun: #a04038;
   --tr-stein: #dd5f9e;
   --tr-gas: #d0722f;
   --tr-sonst: #7d8d99;
-  --tr-bio: #5fa64f;
+  --tr-bio: #46a06b;
   --tr-wind: #5f92dd;
   --tr-pv: #a8881a;
   --fokus: #6cc7ff;
@@ -70,14 +71,15 @@
     --karte-land: #ffffff;
     --karte-grenze: #c3ced7;
     --netz-380: #b06d00;
+  --netz-unbekannt: #9aa8b2;
     --netz-220: #6a55a0;
     --netz-110: #8496a3;
   --tr-kern: #8b5fd0;
-    --tr-braun: #a5652a;
+    --tr-braun: #93412f;
     --tr-stein: #c0508f;
     --tr-gas: #e0703a;
     --tr-sonst: #8b9aa6;
-    --tr-bio: #4f8f3f;
+    --tr-bio: #17806b;
     --tr-wind: #4a7fd6;
     --tr-pv: #c08a10;
     --fokus: #0b6bb5;
@@ -90,14 +92,15 @@
   --karte-land: #ffffff;
   --karte-grenze: #c3ced7;
   --netz-380: #b06d00;
+  --netz-unbekannt: #9aa8b2;
   --netz-220: #6a55a0;
   --netz-110: #8496a3;
   --tr-kern: #8b5fd0;
-  --tr-braun: #a5652a;
+  --tr-braun: #93412f;
   --tr-stein: #c0508f;
   --tr-gas: #e0703a;
   --tr-sonst: #8b9aa6;
-  --tr-bio: #4f8f3f;
+  --tr-bio: #17806b;
   --tr-wind: #4a7fd6;
   --tr-pv: #c08a10;
   --grund: #f6f8fa;
@@ -123,14 +126,15 @@
   --karte-land: #1a242c;
   --karte-grenze: #2f3f4a;
   --netz-380: #ffd479;
+  --netz-unbekannt: #55636e;
   --netz-220: #b9a7d6;
   --netz-110: #6f8592;
   --tr-kern: #9d76dd;
-  --tr-braun: #b8763a;
+  --tr-braun: #a04038;
   --tr-stein: #dd5f9e;
   --tr-gas: #d0722f;
   --tr-sonst: #7d8d99;
-  --tr-bio: #5fa64f;
+  --tr-bio: #46a06b;
   --tr-wind: #5f92dd;
   --tr-pv: #a8881a;
   --grund: #0e1418;
@@ -609,3 +613,41 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .pf-rd-gruppe h4 { margin: 0 0 8px; font-size: 0.75rem; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--schrift-still); font-weight: 600; }
+
+/* ---------- Legende der Karte, Hervorheben einer Regelzone ---------- */
+.pf-legenden { margin: 12px 0 0; display: grid; gap: 4px; }
+.pf-legenden .pf-legende { margin: 0; }
+.pf-zonenknopf {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  background: transparent; border: 1px solid transparent; border-radius: 999px;
+  padding: 2px 9px; font: inherit; font-size: 0.8rem; color: var(--schrift-leise);
+}
+.pf-zonenknopf:hover { color: var(--schrift); }
+.pf-zonenknopf[data-aktiv] { color: var(--schrift); border-color: var(--fokus);
+  background: var(--flaeche-hoch); }
+.pf-zonenknopf:focus-visible { outline: 2px solid var(--fokus); outline-offset: 2px; }
+.pf-zonenknopf i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+/* Eine hervorgehobene Zone laesst den Rest zurueckteten. Vier Regeln statt
+   einer generischen -- CSS kann den Wert eines Attributs nicht vergleichen. */
+.pf-karte[data-hervor] [data-zone] { opacity: 0.08; transition: opacity 120ms ease; }
+.pf-karte[data-hervor="50Hertz"] [data-zone="50Hertz"],
+.pf-karte[data-hervor="TenneT"] [data-zone="TenneT"],
+.pf-karte[data-hervor="Amprion"] [data-zone="Amprion"],
+.pf-karte[data-hervor="TransnetBW"] [data-zone="TransnetBW"] { opacity: 1; }
+.pf-karte[data-hervor] .pf-netz-110,
+.pf-karte[data-hervor] .pf-netz-werk { opacity: 0.12; }
+.pf-karte[data-hervor] .pf-geo-anlage circle:not([data-zone]) { opacity: 0.08; }
+
+/* Hervorheben eines Energietraegers. Zweite Codierung neben der Farbe: der
+   schwaechste Farbabstand liegt im zulaessigen Grenzband, und ohne eine
+   zweite Codierung waere er dort nicht zulaessig. */
+.pf-karte[data-traeger-hervor] .pf-geo-anlage circle { opacity: 0.07; }
+.pf-karte[data-traeger-hervor="Braunkohle"] circle[data-traeger="Braunkohle"],
+.pf-karte[data-traeger-hervor="Steinkohle"] circle[data-traeger="Steinkohle"],
+.pf-karte[data-traeger-hervor="Erdgas"] circle[data-traeger="Erdgas"],
+.pf-karte[data-traeger-hervor="Wasser & Biomasse"] circle[data-traeger="Wasser & Biomasse"],
+.pf-karte[data-traeger-hervor="Sonstige"] circle[data-traeger="Sonstige"] { opacity: 1; }
+.pf-karte[data-traeger-hervor] .pf-netz-hoechst,
+.pf-karte[data-traeger-hervor] .pf-netz-110,
+.pf-karte[data-traeger-hervor] .pf-netz-werk { opacity: 0.15; }

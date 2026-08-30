@@ -200,6 +200,27 @@ je ÜNB und je Primärenergieart — keine Kopie der Messwertliste. Genannt werd
 beide Wege. `scripts/fetch-redispatch.py` schreibt weiterhin nur mit
 `--lizenz-geklaert`; der Riegel trägt die Begründung im Kopf.
 
+### Der sauberere Weg: direkt von ENTSO-E
+
+Weil die Lizenzkette ohnehin über die ENTSO-E Transparency Platform läuft, wäre
+es folgerichtig, die Daten **auch dort zu holen**. Dann stützt sich alles auf
+eine Quelle mit ausdrücklichen Nutzungsbedingungen, statt über eine zweite
+Plattform zu argumentieren.
+
+Geprüft am 31.08.2026: die API liegt unter `https://web-api.tp.entsoe.eu/api`
+und antwortet ohne Token mit **HTTP 401** und einem
+`Acknowledgement_MarketDocument`. Der Zugang:
+
+1. Konto auf <https://transparency.entsoe.eu/> anlegen.
+2. E-Mail an **transparency@entsoe.eu**, Betreff **„RESTful API access"**, im
+   Text die registrierte E-Mail-Adresse. Freischaltung binnen drei Werktagen.
+3. Nach der Freischaltung im Konto unter *My Account Settings* das Token
+   erzeugen.
+4. Übergabe als Parameter `securityToken` bei GET.
+
+Aufwand: eine E-Mail und ein paar Tage warten. Gewinn: die Lizenzfrage wird von
+einer Argumentation zu einer Zusage.
+
 ### Falls sich das ändern soll
 
 1. **Nachfragen.** Die ÜNB veröffentlichen Redispatch aufgrund einer

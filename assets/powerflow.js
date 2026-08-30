@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260831-redispatch";
+  var VERSION = "20260831-kartenfarben";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -437,6 +437,68 @@
     "TransnetBW": "var(--gruen)"
   };
 
+  /* Zwei Farbfamilien, zwei Bedeutungen -- nie gemischt:
+
+     ENERGIETRAEGER faerben die Kraftwerkspunkte, und zwar mit DENSELBEN Tokens
+     wie das Verlaufsdiagramm. Braunkohle ist auf der Karte dieselbe Farbe wie
+     im Diagramm, egal welchem Betreiber der Block gehoert. Vorher waren die
+     Punkte nach Regelzone gefaerbt -- damit hatten zwei Braunkohleblocke
+     verschiedene Farben, und die Karte widersprach dem Diagramm. Das war ein
+     Verstoss gegen "semantische Farbe nie dekorativ".
+
+     REGELZONEN faerben die Hoechstspannungsleitungen, dazu die Strichstaerke
+     nach Spannungsebene. Farbe sagt WER, Staerke sagt WELCHE SPANNUNG. */
+  var TRAEGERFARBE = {
+    "Braunkohle": "--tr-braun",
+    "Steinkohle": "--tr-stein",
+    "Erdgas": "--tr-gas",
+    "Kernenergie": "--tr-kern",
+    "Wasser": "--tr-bio",
+    "Biomasse": "--tr-bio",
+    "Pumpspeicher": "--tr-sonst",
+    "Abfall": "--tr-sonst",
+    "Wärme": "--tr-sonst",
+    "Mineralölprodukte": "--tr-sonst",
+    "Batteriespeicher": "--tr-sonst",
+    "Sonstige Energieträger (nicht erneuerbar)": "--tr-sonst"
+  };
+
+  /* Gruppierung wie im Diagramm, damit die Legende dieselben Namen nennt. */
+  var TRAEGERGRUPPE_ANZEIGE = {
+    "Braunkohle": "Braunkohle", "Steinkohle": "Steinkohle", "Erdgas": "Erdgas",
+    "Kernenergie": "Kernenergie", "Wasser": "Wasser & Biomasse",
+    "Biomasse": "Wasser & Biomasse", "Pumpspeicher": "Sonstige",
+    "Abfall": "Sonstige", "Wärme": "Sonstige", "Mineralölprodukte": "Sonstige",
+    "Batteriespeicher": "Sonstige",
+    "Sonstige Energieträger (nicht erneuerbar)": "Sonstige"
+  };
+
+  function traegerToken(art) {
+    return TRAEGERFARBE[art] || "--tr-sonst";
+  }
+
+  /* Betreibername aus OpenStreetMap auf einen der vier UeNB abbilden.
+     OSM schreibt denselben Betreiber verschieden ("TenneT", "TenneT TSO",
+     "TenneT TSO GmbH"). Wer nicht zuzuordnen ist, bleibt grau -- das sind
+     45,5 Prozent der Hoechstspannungsabschnitte, und das wird gesagt statt
+     geraten. */
+  function zoneAusBetreiber(b) {
+    if (!b) { return null; }
+    var x = b.toLowerCase();
+    if (x.indexOf("50hertz") >= 0) { return "50Hertz"; }
+    if (x.indexOf("amprion") >= 0) { return "Amprion"; }
+    if (x.indexOf("tennet") >= 0) { return "TenneT"; }
+    if (x.indexOf("transnetbw") >= 0 || x.indexOf("transnet bw") >= 0) { return "TransnetBW"; }
+    return null;
+  }
+
+  /* Die Zone eines Kraftwerks heisst in den SMARD-Stammdaten "TenneT", in den
+     OSM-Betreibernamen ebenfalls -- bis auf die Redispatch-Schreibweise
+     "TenneT DE". Hier wird auf eine Form gebracht. */
+  function zoneNormal(z) {
+    return z === "TenneT DE" ? "TenneT" : z;
+  }
+
   /* Spannungsebenen. Farbe und Staerke nach Ebene, nicht dekorativ:
      je hoeher die Spannung, desto heller und kraeftiger die Linie. */
   var EBENEN = [
@@ -548,32 +610,44 @@
 
     /* Leitungen. Bei knapp 40.000 Wegen waeren 40.000 SVG-Elemente zu langsam.
        Deshalb EIN Pfadelement je Spannungsebene mit vielen Teilzuegen. */
-    function leitungsgruppe(objekte, klasse) {
+    /* Ein Pfad je Kombination aus Betreiber und Spannungsebene. Farbe sagt
+       WER, Staerke sagt WELCHE SPANNUNG. Bei knapp 40.000 Wegen waeren
+       Einzelelemente zu langsam; so bleiben es hoechstens 15 Pfade. */
+    function leitungsgruppe(objekte, klasse, nachBetreiber) {
       var g = s("g", { "class": klasse });
-      EBENEN.forEach(function (e) {
-        var d = "";
-        objekte.forEach(function (o) {
-          if (ebeneVon(o.v) !== e) { return; }
-          var p = o.p;
-          for (var i = 0; i < p.length; i++) {
-            d += (i ? "L" : "M") + X(p[i][0]).toFixed(1) + " " + Y(p[i][1]).toFixed(1);
-          }
+      var zonen = nachBetreiber ? Object.keys(ZONENFARBE).concat([null]) : [null];
+      zonen.forEach(function (zone) {
+        EBENEN.forEach(function (e) {
+          var d = "";
+          objekte.forEach(function (o) {
+            if (ebeneVon(o.v) !== e) { return; }
+            if (nachBetreiber && zoneAusBetreiber(o.b) !== zone) { return; }
+            var p = o.p;
+            for (var i = 0; i < p.length; i++) {
+              d += (i ? "L" : "M") + X(p[i][0]).toFixed(1) + " " + Y(p[i][1]).toFixed(1);
+            }
+          });
+          if (!d) { return; }
+          var pfad = s("path", {
+            d: d, fill: "none",
+            stroke: (nachBetreiber && zone) ? ZONENFARBE[zone] : "var(--netz-unbekannt)",
+            "stroke-width": e.breite, "stroke-linecap": "round",
+            "stroke-linejoin": "round", "vector-effect": "non-scaling-stroke"
+          });
+          if (zone) { pfad.setAttribute("data-zone", zone); }
+          g.appendChild(pfad);
         });
-        if (!d) { return; }
-        g.appendChild(s("path", {
-          d: d, fill: "none", stroke: e.farbe, "stroke-width": e.breite,
-          "stroke-linecap": "round", "stroke-linejoin": "round",
-          "vector-effect": "non-scaling-stroke"
-        }));
       });
       return g;
     }
 
     if (Z.ebenen.hochspannung && Z.netz.hochspannung) {
-      svg.appendChild(leitungsgruppe(Z.netz.hochspannung.objekte, "pf-netz-110"));
+      // 110 kV traegt fast nur Verteilnetzbetreiber, keine UeNB -- deshalb
+      // hier keine Betreiberfarbe, sondern durchgehend neutral.
+      svg.appendChild(leitungsgruppe(Z.netz.hochspannung.objekte, "pf-netz-110", false));
     }
     if (Z.ebenen.hoechstspannung && Z.netz.hoechstspannung) {
-      svg.appendChild(leitungsgruppe(Z.netz.hoechstspannung.objekte, "pf-netz-hoechst"));
+      svg.appendChild(leitungsgruppe(Z.netz.hoechstspannung.objekte, "pf-netz-hoechst", true));
     }
 
     /* Auswaehlbare Punkte. Statt eines schwebenden Tooltips setzt ein Klick die
@@ -606,7 +680,7 @@
         var c = s("circle", {
           cx: X(w.lon).toFixed(1), cy: Y(w.lat).toFixed(1),
           r: (w.v >= 380000 ? 2.1 : w.v >= 220000 ? 1.6 : 1.0).toFixed(1),
-          fill: e.farbe
+          fill: "var(--netz-unbekannt)"
         });
         waehlbar(c, {
           art: "Umspannwerk", titel: w.n || "Umspannwerk",
@@ -627,11 +701,13 @@
         return (a.leistung_mw || 0) - (b.leistung_mw || 0);
       }).forEach(function (a) {
         var mw = a.leistung_mw || 0;
-        var farbe = ZONENFARBE[a.regelzone] || "var(--schrift-still)";
+        var farbe = "var(" + traegerToken(a.energietraeger) + ")";
         var c = s("circle", {
           cx: X(a.lon).toFixed(1), cy: Y(a.lat).toFixed(1),
           r: Math.max(1.6, Math.sqrt(mw) * 0.30).toFixed(1),
-          fill: farbe, stroke: farbe
+          fill: farbe, stroke: farbe,
+          "data-zone": zoneNormal(a.regelzone),
+          "data-traeger": TRAEGERGRUPPE_ANZEIGE[a.energietraeger] || "Sonstige"
         });
         var bloecke = (a.bloecke || []).filter(function (b) { return b.production_id; });
         waehlbar(c, {
@@ -1842,29 +1918,109 @@
     karteHuelle.appendChild(kbed);
     karteHuelle.appendChild(ebenenSchalter());
 
-    var legende = el("div", { "class": "pf-legende" });
+    /* Legende in drei Zeilen, weil die Karte drei Dinge codiert:
+       WER (Regelzone, Leitungsfarbe), WELCHE SPANNUNG (Strichstaerke) und
+       WAS FUER EIN KRAFTWERK (Punktfarbe, dieselben Farben wie im Diagramm). */
+    var legendeBox = el("div", { "class": "pf-legenden" });
+
+    function legendenzeile(titel) {
+      var z = el("div", { "class": "pf-legende" });
+      z.appendChild(el("span", { "class": "pf-legende-titel", text: titel }));
+      legendeBox.appendChild(z);
+      return z;
+    }
+
+    /* Regelzonen. Ueberfahren oder anklicken hebt eine Zone hervor und blendet
+       den Rest zurueck -- so wird sichtbar, wo ein Netzbetreiber liegt, ohne
+       dass dafuer Flaechen erfunden werden muessten. Eine belegbare Geometrie
+       der Regelzonen habe ich nicht; was hier leuchtet, sind die tatsaechlich
+       diesem Betreiber zugeschriebenen Leitungen und seine Kraftwerke. */
+    var zeileZone = legendenzeile("Regelzone:");
+    function hervorheben(zone) {
+      if (zone) { K.svg.setAttribute("data-hervor", zone); }
+      else { K.svg.removeAttribute("data-hervor"); }
+      zeileZone.querySelectorAll(".pf-zonenknopf").forEach(function (b) {
+        if (b.getAttribute("data-zone") === zone) { b.setAttribute("data-aktiv", "1"); }
+        else { b.removeAttribute("data-aktiv"); }
+      });
+    }
+    Object.keys(ZONENFARBE).forEach(function (z) {
+      var knopf = el("button", { "class": "pf-zonenknopf", type: "button",
+        "data-zone": z, "aria-label": "Regelzone " + z + " hervorheben" });
+      knopf.appendChild(el("i", { style: "background:" + ZONENFARBE[z] + ";" }));
+      knopf.appendChild(document.createTextNode(z));
+      knopf.addEventListener("mouseenter", function () { hervorheben(z); });
+      knopf.addEventListener("focus", function () { hervorheben(z); });
+      knopf.addEventListener("click", function () {
+        hervorheben(K.svg.getAttribute("data-hervor") === z ? null : z);
+      });
+      zeileZone.appendChild(knopf);
+    });
+    zeileZone.addEventListener("mouseleave", function () {
+      if (!zeileZone.querySelector("[data-aktiv]")) { hervorheben(null); }
+    });
+    var spU = el("span");
+    spU.appendChild(el("i", { style: "background:var(--netz-unbekannt);" }));
+    spU.appendChild(document.createTextNode("Betreiber in OpenStreetMap nicht angegeben"));
+    zeileZone.appendChild(spU);
+
+    var zeileSpannung = legendenzeile("Spannung:");
     EBENEN.forEach(function (e) {
       var sp = el("span");
-      sp.appendChild(el("i", { "class": "pf-strich", style: "background:" + e.farbe + ";" }));
+      sp.appendChild(el("i", { "class": "pf-strich",
+        style: "background:var(--netz-unbekannt);height:"
+          + Math.max(1, Math.round(e.breite * 2)) + "px;" }));
       sp.appendChild(document.createTextNode(e.name));
-      legende.appendChild(sp);
+      zeileSpannung.appendChild(sp);
     });
-    Object.keys(ZONENFARBE).forEach(function (z) {
-      var sp = el("span");
-      sp.appendChild(el("i", { style: "background:" + ZONENFARBE[z] + ";" }));
-      sp.appendChild(document.createTextNode(z));
-      legende.appendChild(sp);
+
+    /* Die Traegerlegende ist zugleich ein Filter. Das ist nicht nur bequem,
+       sondern noetig: vier gesaettigte Farbtoene in einem engen
+       Helligkeitsband lassen sich nicht so waehlen, dass JEDES Paar auch bei
+       Farbsehschwaeche sicher trennt. Der schwaechste Abstand liegt im
+       zulaessigen Grenzband; damit die Identitaet trotzdem ohne Farbe
+       auffindbar bleibt, hebt das Ueberfahren einen Traeger hervor, und der
+       Klick auf einen Punkt nennt ihn im Text. Siehe docs/beleg-verlauf.md. */
+    var zeileTraeger = legendenzeile("Kraftwerk:");
+    function traegerHervor(name) {
+      if (name) { K.svg.setAttribute("data-traeger-hervor", name); }
+      else { K.svg.removeAttribute("data-traeger-hervor"); }
+      zeileTraeger.querySelectorAll(".pf-zonenknopf").forEach(function (b) {
+        if (b.getAttribute("data-traeger") === name) { b.setAttribute("data-aktiv", "1"); }
+        else { b.removeAttribute("data-aktiv"); }
+      });
+    }
+    var gesehen = {};
+    Z.kraftwerke.anlagen.forEach(function (a) {
+      var name = TRAEGERGRUPPE_ANZEIGE[a.energietraeger] || "Sonstige";
+      if (gesehen[name]) { return; }
+      gesehen[name] = true;
+      var knopf = el("button", { "class": "pf-zonenknopf", type: "button",
+        "data-traeger": name, "aria-label": "Kraftwerke mit " + name + " hervorheben" });
+      knopf.appendChild(el("i", { style: "background:var(" + traegerToken(a.energietraeger) + ");" }));
+      knopf.appendChild(document.createTextNode(name));
+      knopf.addEventListener("mouseenter", function () { traegerHervor(name); });
+      knopf.addEventListener("focus", function () { traegerHervor(name); });
+      knopf.addEventListener("click", function () {
+        traegerHervor(K.svg.getAttribute("data-traeger-hervor") === name ? null : name);
+      });
+      zeileTraeger.appendChild(knopf);
     });
+    zeileTraeger.addEventListener("mouseleave", function () {
+      if (!zeileTraeger.querySelector("[data-aktiv]")) { traegerHervor(null); }
+    });
+    zeileTraeger.appendChild(el("span", { text: "Punktfläche ∝ Nettoleistung" }));
+
+    var zeilePfeil = legendenzeile("Kuppelstelle:");
     var spI = el("span");
     spI.appendChild(el("i", { style: "background:var(--teal);" }));
     spI.appendChild(document.createTextNode("Pfeil nach innen: Zufluss"));
-    legende.appendChild(spI);
+    zeilePfeil.appendChild(spI);
     var spE = el("span");
     spE.appendChild(el("i", { style: "background:var(--orange);" }));
     spE.appendChild(document.createTextNode("Pfeil nach außen: Abfluss"));
-    legende.appendChild(spE);
-    legende.appendChild(el("span", { text: "Punktfläche ∝ Nettoleistung" }));
-    karteHuelle.appendChild(legende);
+    zeilePfeil.appendChild(spE);
+    karteHuelle.appendChild(legendeBox);
 
     karteHuelle.appendChild(el("p", { "class": "pf-karte-warnung",
       text: "Die Leitungen zeigen Verlauf und Spannungsebene — keinen Lastfluss und keine "

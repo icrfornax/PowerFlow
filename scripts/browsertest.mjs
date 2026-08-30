@@ -403,6 +403,37 @@ try {
   await masse(1280, 1500);
   await schlafen(500);
   await foto("karte-auswahl", ".pf-karte");
+
+  // Farbgebung und Hervorheben
+  const farben = await js(`(function () {
+    const punkte = [...document.querySelectorAll(".pf-geo-anlage circle")];
+    const nachTraeger = {};
+    punkte.forEach((p) => {
+      const t = p.getAttribute("data-traeger");
+      (nachTraeger[t] = nachTraeger[t] || new Set()).add(p.getAttribute("fill"));
+    });
+    const mehrdeutig = Object.entries(nachTraeger)
+      .filter(([, s]) => s.size > 1).map(([t]) => t);
+    const zonen = new Set(punkte.map((p) => p.getAttribute("data-zone")));
+    return { traeger: Object.keys(nachTraeger), mehrdeutig, zonen: [...zonen],
+             leitungszonen: document.querySelectorAll(".pf-netz-hoechst path[data-zone]").length };
+  })()`);
+  pruefe(farben.mehrdeutig.length === 0,
+    `jeder Energietraeger hat genau EINE Farbe (${farben.traeger.join(", ")})`,
+    `mehrdeutig: ${farben.mehrdeutig.join(", ")}`);
+  pruefe(farben.leitungszonen >= 8,
+    `${farben.leitungszonen} Leitungspfade nach Betreiber gefaerbt`);
+
+  const hervor = await js(`(function () {
+    const b = [...document.querySelectorAll(".pf-zonenknopf[data-zone]")]
+      .find((x) => x.getAttribute("data-zone") === "Amprion");
+    b.click();
+    const svg = document.querySelector(".pf-karte");
+    return svg.getAttribute("data-hervor");
+  })()`);
+  pruefe(hervor === "Amprion", "Klick auf eine Regelzone hebt sie hervor", String(hervor));
+  await foto("karte-zone-amprion", ".pf-karte");
+  await js(`document.querySelector('.pf-zonenknopf[data-zone="Amprion"]').click()`);
   await masse(1280, 900);
 
   const ebene = await js(`(function () {
