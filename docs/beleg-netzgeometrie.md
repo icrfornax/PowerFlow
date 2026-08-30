@@ -107,8 +107,38 @@ Bei knapp 40.000 Wegen wären 40.000 SVG-Elemente zu langsam. Gezeichnet wird
 eigener Tooltip je Leitung. Das ist vertretbar — die Leitung trägt ohnehin keine
 Zahl, die man ablesen könnte.
 
-Farbe nach Spannung, nicht dekorativ: je höher die Spannung, desto heller und
-kräftiger die Linie. Umspannwerke als Punkte, Radius nach Spannungsebene.
+**Farbe sagt WER, Strichstärke sagt WELCHE SPANNUNG.** Die
+Höchstspannungsleitungen sind nach Betreiber gefärbt, die Stärke folgt der
+Spannungsebene. Damit sind die vier Regelzonen sichtbar, ohne dass dafür
+Flächen erfunden werden müssten — eine belegbare Geometrie der Zonen gibt es
+nicht.
+
+Das geht, weil OpenStreetMap bei **68 %** der Höchstspannungsabschnitte einen
+Betreiber führt. Nach Normalisierung der Schreibweisen (`TenneT`, `TenneT TSO`,
+`TenneT TSO GmbH`) entfallen:
+
+| | Abschnitte | Anteil |
+|---|---:|---:|
+| TenneT | 1.937 | 19,3 % |
+| 50Hertz | 1.589 | 15,9 % |
+| Amprion | 1.449 | 14,5 % |
+| TransnetBW | 489 | 4,9 % |
+| **kein ÜNB zuzuordnen** | **4.558** | **45,5 %** |
+
+Die 45,5 % bleiben **grau**, und die Legende sagt das. Darunter sind 3.205
+Abschnitte ganz ohne `operator` und 1.147 mit `RWE` — Letzteres ist kein ÜNB.
+Nicht geraten, sondern offengelassen.
+
+Die 110-kV-Ebene bekommt **keine** Betreiberfarbe: dort stehen fast nur
+Verteilnetzbetreiber (Westnetz, Avacon, E.DIS, DB Energie), keine ÜNB.
+
+**Zone hervorheben.** Weil 45,5 % grau bleiben, ist die Zone allein aus den
+Linien nicht überall abzulesen. Die Legende ist deshalb ein Filter: Überfahren
+oder Anklicken eines Netzbetreibers hebt seine Leitungen **und seine
+Kraftwerke** hervor und blendet den Rest zurück. Die Zonenzuordnung der
+Kraftwerke ist zu 100 % belegt — sie steht in den SMARD-Stammdaten.
+
+Umspannwerke sind neutral gefärbt; sie sind Struktur, nicht Aussage.
 
 Die Ebenen lassen sich einzeln zu- und abschalten. **Das ist kein Regler im
 Sinne der Datendisziplin**: der Schalter verändert keine Zahl, sondern nur, was

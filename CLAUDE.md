@@ -139,6 +139,12 @@ die Regelzonenbilanz.
 
 ## Gestaltung
 
+- **Zwei Farbfamilien, zwei Bedeutungen, nie gemischt.** Energietraeger faerben
+  die Kraftwerkspunkte auf der Karte UND die Baender im Verlaufsdiagramm --
+  mit denselben Tokens. Braunkohle ist ueberall dieselbe Farbe, unabhaengig vom
+  Betreiber. Regelzonen faerben die Hoechstspannungsleitungen; die
+  Strichstaerke folgt der Spannungsebene. Farbe sagt WER, Staerke sagt WELCHE
+  SPANNUNG.
 - Dunkles Grundschema mit hellem Gegenstueck, beide gleichwertig gepflegt.
   Akzent Teal fuer Zufluss/positiv, Orange fuer Warnung und Luecke, Gruen fuer
   den Zielpfad, gedaempftes Violett fuer den Bestand. Semantische Farbe nie

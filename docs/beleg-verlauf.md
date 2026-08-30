@@ -94,6 +94,41 @@ Tabellenansicht. Beides ist da: die Legende nennt jeden Träger mit seinem
 Tagesanteil, und der Knopf *Als Tabelle anzeigen* gibt alle Stundenwerte als
 Zahlen aus.
 
+### Dieselben Farben auf der Karte — und was das kostet
+
+Die Kraftwerkspunkte auf der Karte tragen **dieselben Tokens**. Braunkohle ist
+dort dieselbe Farbe wie im Diagramm, egal welchem Betreiber der Block gehört.
+Vorher waren die Punkte nach Regelzone gefärbt — damit hatten Boxberg und
+Bergheim verschiedene Farben, obwohl beides Braunkohle ist. Das war ein Verstoß
+gegen „semantische Farbe nie dekorativ".
+
+Das hat einen Preis, den ich benenne. Im **Diagramm** stehen die Bänder in einer
+festen Reihenfolge, und das graue *Sonstige* trennt das Orange des Erdgases vom
+Grün der Biomasse. Auf der **Karte** liegen alle Punkte nebeneinander — dort
+zählt jedes Paar. Vier gesättigte Töne in einem engen Helligkeitsband so zu
+wählen, dass *jedes* Paar auch bei Farbsehschwäche sicher trennt, ist nicht
+lösbar; Chroma-Untergrenze und CVD-Abstand stehen direkt gegeneinander.
+
+Gewählt wurde deshalb:
+
+| | hell | dunkel |
+|---|---|---|
+| Braunkohle | `#93412f` | `#a04038` |
+| Steinkohle | `#c0508f` | `#dd5f9e` |
+| Erdgas | `#e0703a` | `#d0722f` |
+| Wasser & Biomasse | `#17806b` | `#46a06b` |
+
+Der schwächste Abstand ist **Wasser & Biomasse gegen Steinkohle** bei
+Deuteranopie: ΔE 6,6 (hell) und 6,1 (dunkel). Das liegt im zulässigen
+Grenzband von 6 bis 8 — **zulässig aber nur mit zweiter Codierung**. Die ist
+da: die Legende ist zugleich ein Filter (Überfahren hebt einen Träger hervor
+und blendet den Rest zurück), und ein Klick auf einen Punkt nennt den
+Energieträger im Text. Zusätzlich weicht `#17806b` mit Chroma 0,096 knapp unter
+die Untergrenze von 0,100 ab; der Gegenwert ist der CVD-Abstand, und das
+einzige Grau auf der Karte ist die ausdrücklich neutrale Sammelposition.
+
+Das ist eine bewusste Abwägung, keine übersehene Warnung.
+
 `scripts/validate.py` prüft, dass jeder der acht Farbtöne in **allen vier**
 Themenblöcken der CSS-Datei definiert ist — hell und dunkel werden getrennt
 gepflegt, ein vergessener Ton fällt sofort auf.
