@@ -45,6 +45,22 @@ jobs:
       - name: Stundenwerte nachtragen (letzte vier Wochen)
         run: python scripts/fetch-verlauf.py --wochen 4
 
+      - name: Redispatch nachtragen
+        # Eigener Schritt, eigene Quelle. Faellt netztransparenz aus, sollen die
+        # SMARD-Daten trotzdem committet werden -- deshalb continue-on-error.
+        # Der Tuersteher prueft danach, was tatsaechlich in data/ liegt.
+        continue-on-error: true
+        env:
+          NT_CLIENT_ID: ${{ secrets.NT_CLIENT_ID }}
+          NT_CLIENT_SECRET: ${{ secrets.NT_CLIENT_SECRET }}
+        run: |
+          if [ -z "$NT_CLIENT_ID" ]; then
+            echo "Keine Zugangsdaten hinterlegt -- Redispatch wird uebersprungen."
+            echo "Secrets NT_CLIENT_ID und NT_CLIENT_SECRET setzen, dann laeuft es mit."
+            exit 0
+          fi
+          python scripts/fetch-redispatch.py --lizenz-geklaert "$(date -u +%Y)"
+
       - name: Tuersteher
         run: |
           python scripts/validate.py

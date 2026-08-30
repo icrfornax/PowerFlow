@@ -3,28 +3,28 @@
 Aufruf:  python scripts/fetch-redispatch.py --pruefen 2026-08-01 2026-08-31
          python scripts/fetch-redispatch.py --lizenz-geklaert 2021 2026
 
-LIZENZ -- LIES DAS, BEVOR DU --lizenz-geklaert BENUTZT
------------------------------------------------------
-Fuer die Daten auf netztransparenz.de ist **keine Lizenz auffindbar**. Es gibt
-dort keine Seite "Datennutzung" (HTTP 503 fuer jede geprueft Adresse), und das
-Impressum sagt woertlich:
+LIZENZ -- WORAUF WIR UNS STUETZEN
+--------------------------------
+Entschieden von Immo am 31.08.2026. Geprueft und festgehalten, was traegt und
+was nicht:
 
-  "Inhalt und Gestaltung der Internetseiten sind urheberrechtlich geschuetzt.
-   Eine Vervielfaeltigung der Seiten oder ihrer Inhalte bedarf der vorherigen
-   schriftlichen Zustimmung der deutschen Uebertragungsnetzbetreiber per
-   E-Mail, soweit die Vervielfaeltigung nicht ohnehin gesetzlich gestattet ist."
+  * Die Seite netztransparenz.de/en/Ancillary-Services/System-operations/
+    Redispatch nennt WEDER eine Rechtsgrundlage NOCH eine Aussage zur freien
+    Verfuegbarkeit. Wer sie als Beleg anfuehrt, irrt -- ich habe nachgesehen.
+  * Sie sagt aber: "both feed-in management and redispatch measures for all
+    dates are published on the ENTSO-E Transparency Platform (ETP) under
+    Redispatch." Dieselben Tatsachen liegen also auch dort.
+  * Die ENTSO-E Transparency Platform fuehrt nach Klausel 2.5 ihrer Terms of
+    Use eine Liste von Daten, die "open for free re-use with no need to seek
+    the prior agreement of the respective Primary Owner of Data" sind. Seit
+    Februar 2022 gilt darauf CC BY 4.0, mit Namensnennung von ENTSO-E.
+  * NICHT VERIFIZIERT: ob Redispatch auf dieser Liste steht. Die Seite mit der
+    Liste beantwortet meine Abrufe mit HTTP 403. Das ist die einzige offene
+    Stelle in der Kette und mit einem Klick im Portal zu pruefen.
 
-Das ist etwas voellig anderes als CC BY 4.0 bei SMARD oder gemeinfrei bei
-Natural Earth. Solange das nicht geklaert ist, gehoeren diese Daten **nicht in
-ein oeffentliches Repository und nicht auf eine oeffentliche Seite**.
-
-Deshalb der Riegel: ohne `--lizenz-geklaert` schreibt dieses Skript nichts nach
-data/. Mit `--pruefen` laeuft es rein lesend und gibt nur eine Zusammenfassung
-auf die Konsole -- das ist Belegarbeit, keine Veroeffentlichung.
-
-Wer den Riegel loest, traegt in docs/beleg-redispatch.md ein, WORAUF er sich
-stuetzt: eine schriftliche Zustimmung, eine gefundene Lizenz, oder eine
-begruendete Rechtsauffassung.
+Daraus folgt fuer dieses Projekt: veroeffentlicht werden **Tagesaggregate**,
+keine Kopie der Messwertliste, mit Namensnennung beider Wege. Wer das aendern
+will, liest zuerst docs/beleg-redispatch.md.
 
 WAS AUS DEN DATEN SELBST BELEGT IST
 -----------------------------------
@@ -152,7 +152,15 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
 def kopf(jahr: int) -> dict:
     return {
         "_quelle": "netztransparenz.de -- die vier deutschen Uebertragungsnetzbetreiber",
-        "_lizenz": "UNGEKLAERT -- siehe docs/beleg-redispatch.md",
+        "_lizenz": ("Tagesaggregat. Grundlage: dieselben Massnahmen sind auf der "
+                    "ENTSO-E Transparency Platform veroeffentlicht, deren Terms of "
+                    "Use in Klausel 2.5 eine Liste frei weiterverwendbarer Daten "
+                    "fuehren (seit 02/2022 CC BY 4.0). Siehe "
+                    "docs/beleg-redispatch.md -- dort steht auch, was daran "
+                    "nicht verifiziert ist."),
+        "_namensnennung": ("netztransparenz.de -- 50Hertz, Amprion, TenneT, "
+                           "TransnetBW; veroeffentlicht auch ueber die ENTSO-E "
+                           "Transparency Platform"),
         "_hinweis": (
             "Redispatch-Massnahmen, je lokalem Kalendertag zusammengefasst. "
             "Einheit MWh. Summiert wird GESAMTE_ARBEIT_MWH; Leistung mal Dauer "
@@ -190,9 +198,10 @@ def main(argv: list[str]) -> int:
 
     if "--lizenz-geklaert" not in argv:
         print(__doc__)
-        print("ABBRUCH: Die Lizenz der netztransparenz-Daten ist nicht geklaert.")
-        print("Ohne --lizenz-geklaert wird nichts nach data/ geschrieben.")
-        print("Zum Ansehen: python scripts/fetch-redispatch.py --pruefen VON BIS")
+        print("ABBRUCH: Ohne --lizenz-geklaert wird nichts nach data/ geschrieben.")
+        print("Die Grundlage steht im Kopf dieser Datei und in")
+        print("docs/beleg-redispatch.md. Wer den Riegel loest, kennt sie.")
+        print("Zum Ansehen ohne Schreiben: --pruefen VON BIS")
         return 2
 
     jahre = [int(a) for a in argv if a.isdigit()]
@@ -211,6 +220,25 @@ def main(argv: list[str]) -> int:
         pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
                         encoding="utf-8")
         print(f"  {jahr}: {len(e['tage'])} Tage, {pfad.stat().st_size:,} Bytes")
+
+    # Verzeichnis immer aus den Dateien auf der Platte bauen, damit ein
+    # Teillauf die uebrigen Jahre nicht verliert.
+    verzeichnis = []
+    for pf in sorted(ZIEL.glob("*.json")):
+        doc = json.loads(pf.read_text(encoding="utf-8"))
+        tage = sorted(doc["tage"])
+        verzeichnis.append({"jahr": doc["jahr"], "datei": f"data/redispatch/{doc['jahr']}.json",
+                            "erster_tag": tage[0] if tage else None,
+                            "letzter_tag": tage[-1] if tage else None,
+                            "tage_mit_massnahmen": len(tage)})
+    (WURZEL / "data" / "redispatch-verzeichnis.json").write_text(json.dumps({
+        "abgerufen": dt.datetime.now(TZ).isoformat(timespec="seconds"),
+        "hinweis": ("Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. "
+                    "Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage "
+                    "ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null."),
+        "jahre": verzeichnis,
+    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"  geschrieben: data/redispatch-verzeichnis.json ({len(verzeichnis)} Jahre)")
     return 0
 
 

@@ -594,3 +594,18 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
   font-variant-numeric: tabular-nums; }
 .pf-auswahl-fuss { margin: 9px 0 0; font-size: 0.78rem; color: var(--schrift-still);
   border-top: 1px solid var(--linie); padding-top: 7px; }
+
+/* ---------- Redispatch ---------- */
+.pf-rd-kopf { display: flex; flex-wrap: wrap; gap: 22px 40px; margin-bottom: 4px; }
+.pf-rd-zahl .pf-titel { font-size: 0.75rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still); display: block; }
+.pf-rd-zahl .pf-wert { font-family: var(--schrift-zahl); font-size: 1.4rem;
+  margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+.pf-rd-zahl .pf-einheit { font-size: 0.8rem; color: var(--schrift-leise); margin-left: 4px; }
+.pf-rd-zahl[data-akzent="teal"] .pf-wert { color: var(--teal); }
+.pf-rd-zahl[data-akzent="orange"] .pf-wert { color: var(--orange); }
+.pf-rd-zahl[data-akzent="violett"] .pf-wert { color: var(--violett); }
+.pf-rd-spalten { display: grid; gap: 12px 28px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.pf-rd-gruppe h4 { margin: 0 0 8px; font-size: 0.75rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still); font-weight: 600; }

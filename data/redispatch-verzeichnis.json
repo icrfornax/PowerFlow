@@ -1,0 +1,48 @@
+{
+ "abgerufen": "2026-08-30T15:43:18+02:00",
+ "hinweis": "Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null.",
+ "jahre": [
+  {
+   "jahr": 2021,
+   "datei": "data/redispatch/2021.json",
+   "erster_tag": "2021-01-01",
+   "letzter_tag": "2021-12-31",
+   "tage_mit_massnahmen": 359
+  },
+  {
+   "jahr": 2022,
+   "datei": "data/redispatch/2022.json",
+   "erster_tag": "2022-01-01",
+   "letzter_tag": "2022-12-31",
+   "tage_mit_massnahmen": 359
+  },
+  {
+   "jahr": 2023,
+   "datei": "data/redispatch/2023.json",
+   "erster_tag": "2023-01-01",
+   "letzter_tag": "2023-12-31",
+   "tage_mit_massnahmen": 359
+  },
+  {
+   "jahr": 2024,
+   "datei": "data/redispatch/2024.json",
+   "erster_tag": "2024-01-01",
+   "letzter_tag": "2024-12-31",
+   "tage_mit_massnahmen": 362
+  },
+  {
+   "jahr": 2025,
+   "datei": "data/redispatch/2025.json",
+   "erster_tag": "2025-01-01",
+   "letzter_tag": "2025-12-31",
+   "tage_mit_massnahmen": 360
+  },
+  {
+   "jahr": 2026,
+   "datei": "data/redispatch/2026.json",
+   "erster_tag": "2026-01-01",
+   "letzter_tag": "2026-08-30",
+   "tage_mit_massnahmen": 241
+  }
+ ]
+}

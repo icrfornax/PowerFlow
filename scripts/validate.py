@@ -30,6 +30,7 @@ PFLICHTDATEIEN = [
     "assets/powerflow.js",
     "data/tage-verzeichnis.json",
     "data/verlauf-verzeichnis.json",
+    "data/redispatch-verzeichnis.json",
     "data/kraftwerke.json",
     "data/grundkarte.json",
     "data/netz-hoechstspannung.json",
@@ -69,6 +70,8 @@ PFLICHT_IN_JS = [
     "schematisch",                    # Lage der Kuppelstellen-Pfeile
     "Als Tabelle anzeigen",           # Tabellenansicht des Diagramms
     "die einzige freie Variable",     # Kennzeichnung des Reglers
+    "netztransparenz.de",             # Namensnennung Redispatch
+    "Eingriff ins Netz",              # Redispatch ist kein Lastfluss
 ]
 
 # Farbtokens des Tagesverlaufs. Sie sind mit dem Validierer der dataviz-Regeln
@@ -123,6 +126,13 @@ GROESSTE_ZONENABWEICHUNG_MWH = 50_000.0
 
 # Bekannter Fehler der Quelle, der nicht stillschweigend verschwinden darf.
 BEKANNT_AUFFAELLIG = ("2015-02-09", "aussenhandel/Schweiz/import")
+
+# Redispatch: Hoch- und Herunterfahren gleichen sich nicht vollstaendig aus.
+# Gemessen 2021 bis 2026: 3,6 bis 25,4 Prozent, hoch stets groesser. Grund
+# laut Quelle: bei grenzueberschreitenden Massnahmen wird nur der deutsche
+# Teil veroeffentlicht. Die Grenze faengt grobe Fehler ab, nicht die bekannte
+# Asymmetrie.
+GRENZE_REDISPATCH_SCHIEF_PROZENT = 40.0
 
 # Plausibilitaetsrahmen fuer Kraftwerkskoordinaten: lat_min, lat_max, lon_min,
 # lon_max. Die Untergrenze liegt bei 46,5 und nicht bei 47,0, weil die Werke
@@ -523,9 +533,37 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  "die Vorlage .env.beispiel enthaelt keine Werte"
                  + (f" -- gefuellt: {[z.split('=')[0] for z in gefuellt]}" if gefuellt else ""))
 
+    # --- Redispatch ---
+    rdv = json.loads(lade("data/redispatch-verzeichnis.json"))
+    b.pruefe(len(rdv["jahre"]) >= 5, f"Redispatch: {len(rdv['jahre'])} Jahresdateien")
+    b.pruefe(rdv["jahre"][0]["jahr"] == 2021,
+             "Redispatch beginnt 2021 -- frueher liefert die Quelle HTTP 400")
+    for eintrag in rdv["jahre"]:
+        d = json.loads(lade(eintrag["datei"]))
+        b.pruefe("netztransparenz" in (d.get("_quelle") or "").lower(),
+                 f"{eintrag['datei']}: Quelle genannt")
+        b.pruefe("ENTSO-E" in (d.get("_lizenz") or ""),
+                 f"{eintrag['datei']}: Lizenzgrundlage genannt")
+        b.pruefe("arbeit_ueber_mitternacht_mwh" in d,
+                 f"{eintrag['datei']}: Groesse der Mitternachtsannahme ausgewiesen")
+        # Selbstkontrolle: Hoch- und Herunterfahren gleichen sich bei
+        # Redispatch weitgehend aus -- aber NICHT vollstaendig, und das hat
+        # einen belegten Grund: bei grenzueberschreitenden Massnahmen wird
+        # laut Quelle nur der deutsche Teil veroeffentlicht. Gemessen ueber
+        # 2021 bis 2026 liegt die Schieflage zwischen 3,6 und 25,4 Prozent,
+        # mit hoch stets groesser als runter. Die Grenze faengt grobe Fehler
+        # ab, nicht diese bekannte Asymmetrie.
+        hoch = sum(t["erhoehen_mwh"] for t in d["tage"].values())
+        runter = sum(t["reduzieren_mwh"] for t in d["tage"].values())
+        schief = abs(hoch - runter) / max(hoch + runter, 1) * 100
+        b.pruefe(schief < GRENZE_REDISPATCH_SCHIEF_PROZENT,
+                 f"{eintrag['jahr']}: hoch gegen runter {schief:.1f} % schief "
+                 f"(Budget {GRENZE_REDISPATCH_SCHIEF_PROZENT:.0f} %)")
+
     lizenztext = lade("LIZENZ-DATEN.md")
     for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",
-                    "© OpenStreetMap contributors", "23c"):
+                    "© OpenStreetMap contributors", "23c",
+                    "netztransparenz.de", "HTTP 403", "Klausel 2.5"):
         b.pruefe(pflicht in lizenztext, f"LIZENZ-DATEN.md nennt: {pflicht!r}")
 
     return b
