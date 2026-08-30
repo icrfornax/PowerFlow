@@ -235,6 +235,27 @@ try {
     `${vorgabe.trenner} Tagestrenner im Wochenverlauf`);
   await foto("verlauf-woche", ".pf-verlauf");
 
+  const rd = await js(`(function () {
+    const k = [...document.querySelectorAll(".pf-kachel .pf-titel")]
+      .map((x) => x.textContent);
+    const abschnitte = [...document.querySelectorAll(".pf-abschnitt > h2")]
+      .map((x) => x.textContent);
+    return {
+      kachel: k.includes("Redispatch"),
+      abschnitt: abschnitte.some((x) => /Redispatch/.test(x)),
+      zahlen: document.querySelectorAll(".pf-rd-zahl").length,
+      gruppen: document.querySelectorAll(".pf-rd-gruppe").length,
+      uenb: [...document.querySelectorAll(".pf-rd-gruppe .pf-name")].map((x) => x.textContent)
+    };
+  })()`);
+  pruefe(rd.kachel, "Redispatch-Kachel vorhanden");
+  pruefe(rd.abschnitt, "Redispatch-Abschnitt vorhanden");
+  pruefe(rd.zahlen === 3, `drei Redispatch-Kennzahlen (${rd.zahlen})`);
+  pruefe(rd.gruppen === 2, `zwei Balkengruppen (${rd.gruppen})`);
+  pruefe(rd.uenb.filter((x) => /50Hertz|Amprion|TenneT|TransnetBW/.test(x)).length === 4,
+    `alle vier UeNB im Redispatch (${rd.uenb.join(", ")})`);
+  await foto("redispatch", ".pf-rd-kopf");
+
   // --- Waagerechter Ueberlauf, drei Breiten ---
   for (const [name, breite, hoehe, mobil] of [
     ["gross", 1280, 900, false], ["schmal", 768, 900, false], ["mobil", 390, 844, true],

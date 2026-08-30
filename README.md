@@ -64,7 +64,7 @@ SMARD (Bundesnetzagentur) — Primärquelle für Last, Erzeugung nach Energietr�
 
 Energy-Charts (Fraunhofer ISE) — Zweitzugriff und Ausfallreserve, unter anderem für den grenzüberschreitenden Stromhandel. Zugriff ohne Registrierung und ohne Token, weitgehend CC BY 4.0; die Lizenz gilt je Endpunkt. https://api.energy-charts.info/
 
-netztransparenz.de — Redispatch-Daten der vier deutschen Übertragungsnetzbetreiber. https://www.netztransparenz.de/
+netztransparenz.de — Redispatch der vier Übertragungsnetzbetreiber, Tagesaggregate 2021 bis heute. Zugang über OAuth mit Client Credentials; die Lizenzkette ist in LIZENZ-DATEN.md aufgeschlüsselt und hat eine benannte offene Stelle. https://www.netztransparenz.de/
 
 Zur Unabhängigkeit der Quellen
 

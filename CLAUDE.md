@@ -193,23 +193,28 @@ Noch offen: Methodik-PDF; Regelzonen als Flaeche auf
 der Karte; Import und Export im Verlauf; Anlagen aus dem
 Marktstammdatenregister.
 
-## Redispatch — Zugang steht, Lizenz ungeklaert
+## Redispatch
 
-Die netztransparenz-API ist erschlossen und die Daten sind belegt
-(`docs/beleg-redispatch.md`). **Veroeffentlicht wird nichts**, solange die
-Lizenz nicht geklaert ist: es gibt dort keine Datennutzungsseite, und das
-Impressum verlangt fuer Vervielfaeltigung die vorherige schriftliche Zustimmung
-der vier UeNB. Das ist etwas anderes als CC BY 4.0 bei SMARD.
+Eingebunden: Tagesaggregate 2021 bis heute, Kachel und eigener Abschnitt.
+Beleg in `docs/beleg-redispatch.md`, Lizenzkette in `LIZENZ-DATEN.md`.
 
-`scripts/fetch-redispatch.py` schreibt ohne `--lizenz-geklaert` nichts nach
-`data/`. Wer den Riegel loest, traegt in den Beleg ein, worauf er sich stuetzt.
+**Die Lizenzkette hat eine offene Stelle.** netztransparenz.de nennt keine
+Lizenz; getragen wird die Veroeffentlichung davon, dass dieselben Massnahmen
+ueber die ENTSO-E Transparency Platform laufen, deren Terms of Use in Klausel
+2.5 eine Liste frei weiterverwendbarer Daten fuehren (CC BY 4.0 seit 02/2022).
+Ob Redispatch auf dieser Liste steht, ist NICHT geprueft -- die Seite antwortet
+mit HTTP 403. Veroeffentlicht werden deshalb nur Tagesaggregate, keine Kopie
+der Messwertliste. Wer daran etwas aendert, liest zuerst den Beleg.
 
-Zwei Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
+Drei Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
 - **Immer `GESAMTE_ARBEIT_MWH` summieren, nie Leistung mal Dauer.** Bei 253 von
   1.187 Saetzen des August 2026 ist die mittlere Leistung der Mittelwert ueber
   die tatsaechlich aktive Zeit, nicht ueber das genannte Fenster.
 - **Die Quelle liefert UTC.** Im Sommer zwei Stunden Unterschied. Das Feld
   ZEITZONE wird gelesen, nicht angenommen.
+- **Hoch ist stets groesser als runter**, 3,6 bis 25,4 Prozent ueber die Jahre.
+  Kein Fehler: bei grenzueberschreitenden Massnahmen wird laut Quelle nur der
+  deutsche Teil veroeffentlicht.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 

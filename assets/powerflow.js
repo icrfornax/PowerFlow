@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260831-woche";
+  var VERSION = "20260831-redispatch";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -80,7 +80,9 @@
     grundkarte: null,
     kraftwerke: null,
     jahre: {},          // Jahr -> geladene Jahresdatei mit Tageswerten
-    verlauf: {},        // Monat -> geladene Monatsdatei mit Stundenwerten
+    verlauf: {},
+    redispatch: {},
+    rdVerzeichnis: null,        // Monat -> geladene Monatsdatei mit Stundenwerten
     von: null,          // erster Tag des Zeitraums
     bis: null,          // letzter Tag des Zeitraums, einschliesslich
     startVon: null,     // fuer den Zuruecksetzen-Knopf
@@ -1253,6 +1255,152 @@
     return huelle;
   }
 
+  // ---- Redispatch ---------------------------------------------------------
+  /* Eingriffe der Uebertragungsnetzbetreiber ins Kraftwerkseinsatzprogramm.
+     Das ist die gemessene Antwort auf die Frage nach dem Netzengpass -- und
+     etwas anderes als ein Lastfluss auf einer Leitung. Den gibt es weiterhin
+     nicht.
+
+     Die Reihe beginnt 2021; fuer frueher liefert die Quelle HTTP 400. */
+  var REDISPATCH_AB = "2021-01-01";
+
+  function redispatchLaden(jahr) {
+    if (Object.prototype.hasOwnProperty.call(Z.redispatch, jahr)) {
+      return Promise.resolve(Z.redispatch[jahr]);
+    }
+    var eintrag = (Z.rdVerzeichnis && Z.rdVerzeichnis.jahre || []).filter(
+      function (j) { return j.jahr === jahr; })[0];
+    if (!eintrag) { Z.redispatch[jahr] = null; return Promise.resolve(null); }
+    return fetch(eintrag.datei + "?v=" + VERSION).then(function (r) {
+      if (!r.ok) { throw new Error(eintrag.datei); }
+      return r.json();
+    }).then(function (d) { Z.redispatch[jahr] = d; return d; })
+      .catch(function () { Z.redispatch[jahr] = null; return null; });
+  }
+
+  function redispatchLadenZeitraum(von, bis) {
+    return Promise.all(jahreImZeitraum(von, bis).map(redispatchLaden));
+  }
+
+  /* Summiert die Tagesaggregate ueber den Zeitraum. Tage ohne Massnahme fehlen
+     in der Quelle -- das ist kein Loch, sondern eine Null, und wird auch so
+     gezaehlt. */
+  function redispatch(von, bis) {
+    var gesamt = 0, hoch = 0, runter = 0, massnahmen = 0;
+    var jeUenb = {}, jeArt = {}, mitMassnahme = 0, belegteTage = 0, gefunden = false;
+    tageImZeitraum(von, bis).forEach(function (tag) {
+      if (tag < REDISPATCH_AB) { return; }
+      var d = Z.redispatch[Number(tag.slice(0, 4))];
+      if (!d) { return; }
+      belegteTage++;
+      var t = d.tage[tag];
+      if (!t) { return; }        // Tag ohne Massnahme: zaehlt als Null
+      gefunden = true;
+      mitMassnahme++;
+      gesamt += t.gesamt_mwh;
+      hoch += t.erhoehen_mwh;
+      runter += t.reduzieren_mwh;
+      massnahmen += t.massnahmen;
+      Object.keys(t.je_uenb).forEach(function (u) {
+        jeUenb[u] = (jeUenb[u] || 0) + t.je_uenb[u];
+      });
+      Object.keys(t.je_energieart).forEach(function (a) {
+        jeArt[a] = (jeArt[a] || 0) + t.je_energieart[a];
+      });
+    });
+    if (!gefunden) { return null; }
+    return { gesamt: gesamt, hoch: hoch, runter: runter, massnahmen: massnahmen,
+             jeUenb: jeUenb, jeArt: jeArt, tageMitMassnahme: mitMassnahme,
+             belegteTage: belegteTage };
+  }
+
+  var QUELLE_RD = [
+    { text: "netztransparenz.de — 50Hertz, Amprion, TenneT, TransnetBW",
+      url: "https://www.netztransparenz.de/de-de/Systemdienstleistungen/Betriebsfuehrung/Redispatch" },
+    { text: "ENTSO-E Transparency Platform", url: "https://transparency.entsoe.eu/" }
+  ];
+
+  function redispatchAbschnitt(von, bis, netzlast) {
+    var r = redispatch(von, bis);
+    var huelle = el("div", { "class": "pf-verlauf" });
+    if (!r) {
+      huelle.appendChild(el("p", { "class": "pf-laden",
+        text: von < REDISPATCH_AB
+          ? "Für Zeiträume vor 2021 liegen keine Redispatch-Daten vor — die Quelle "
+            + "beginnt am 01.01.2021."
+          : "Für diesen Zeitraum liegen keine Redispatch-Daten vor." }));
+      return huelle;
+    }
+
+    var kopfzeile = el("div", { "class": "pf-rd-kopf" });
+    [["Gesamt", gwh(r.gesamt, 1), "violett"],
+     ["Hochgefahren", gwh(r.hoch, 1), "teal"],
+     ["Heruntergefahren", gwh(r.runter, 1), "orange"]].forEach(function (k) {
+      var b = el("div", { "class": "pf-rd-zahl", "data-akzent": k[2] });
+      b.appendChild(el("span", { "class": "pf-titel", text: k[0] }));
+      var w = el("p", { "class": "pf-wert", text: k[1] });
+      w.appendChild(el("span", { "class": "pf-einheit", text: "GWh" }));
+      b.appendChild(w);
+      kopfzeile.appendChild(b);
+    });
+    huelle.appendChild(kopfzeile);
+
+    huelle.appendChild(el("p", { "class": "pf-bezug",
+      text: r.massnahmen.toLocaleString("de-DE") + " Maßnahmen an "
+        + r.tageMitMassnahme + " von " + r.belegteTage + " Tagen"
+        + (netzlast ? " · entspricht " + nf2.format(r.gesamt / netzlast * 100)
+            + " % der Netzlast im Zeitraum" : "") }));
+
+    function balken(titel, werte, farbe) {
+      var box = el("div", { "class": "pf-rd-gruppe" });
+      box.appendChild(el("h4", { text: titel }));
+      var namen = Object.keys(werte).sort(function (a, b) { return werte[b] - werte[a]; });
+      var max = werte[namen[0]] || 1;
+      namen.forEach(function (n) {
+        if (!werte[n]) { return; }
+        var h = el("div", { "class": "pf-balken" });
+        var z = el("div", { "class": "pf-zeile" });
+        z.appendChild(el("span", { "class": "pf-name", text: n }));
+        z.appendChild(el("span", { "class": "pf-zahl",
+          text: gwh(werte[n], 1) + " GWh · " + nf1.format(werte[n] / r.gesamt * 100) + " %" }));
+        h.appendChild(z);
+        var schiene = el("div", { "class": "pf-schiene" });
+        schiene.appendChild(el("div", { "class": "pf-fuellung",
+          style: "width:" + (werte[n] / max * 100).toFixed(1) + "%;background:" + farbe + ";" }));
+        h.appendChild(schiene);
+        box.appendChild(h);
+      });
+      return box;
+    }
+
+    var spalten = el("div", { "class": "pf-rd-spalten" });
+    spalten.appendChild(balken("Angewiesen von", r.jeUenb, "var(--violett)"));
+    spalten.appendChild(balken("Betroffene Erzeugung", r.jeArt, "var(--teal)"));
+    huelle.appendChild(spalten);
+
+    huelle.appendChild(el("p", { "class": "pf-karte-warnung",
+      text: "Redispatch heißt: ein Netzbetreiber greift in den Kraftwerkseinsatz ein, "
+        + "weil das Netz den geplanten Transport nicht trägt. Es sagt, WO das Netz an "
+        + "seine Grenze kommt — nicht, wie viel Strom über eine einzelne Leitung "
+        + "fließt. Das wird nach § 23c Abs. 2 EnWG nicht veröffentlicht." }));
+
+    infoKnopf(huelle, {
+      wert: "Summe der Tagesaggregate aus " + r.massnahmen.toLocaleString("de-DE")
+        + " einzelnen Maßnahmen. Summiert wird das Feld GESAMTE_ARBEIT_MWH.",
+      grenzenTitel: "Zwei Dinge, die man wissen muss",
+      grenzen: "Erstens: die mittlere Leistung einer Maßnahme ist der Mittelwert über "
+        + "die tatsächlich aktive Zeit, nicht über das genannte Fenster — die Quelle "
+        + "dokumentiert das selbst. Wer Leistung mal Dauer rechnet, überschätzt "
+        + "erheblich. Zweitens: eine Maßnahme zählt zum Tag ihres Beginns. Im August "
+        + "2026 lagen 22,2 % der Arbeit in Maßnahmen über Mitternacht. Die Quelle "
+        + "liefert UTC; hier ist auf Ortszeit umgerechnet. Die Reihe beginnt 2021.",
+      quellen: QUELLE_RD,
+      messung: "Messung. Die Zuordnung zum Kalendertag ist eine benannte Annahme, "
+        + "ihre Größe steht in data/redispatch/<jahr>.json."
+    }, "Redispatch");
+    return huelle;
+  }
+
   // ---- CSV-Export ---------------------------------------------------------
   // Wird aus dem gewaehlten Zeitraum erzeugt, damit der Abzug immer zu dem
   // passt, was auf der Seite steht.
@@ -1546,6 +1694,27 @@
           + "einzelnen günstigen Tag geeicht und ist zurückgenommen."
       }
     }));
+    var rd = redispatch(von, bis);
+    var rdV = redispatch(vorjahrstag(von), vorjahrstag(bis));
+    if (rd) {
+      kacheln.appendChild(kachel({
+        titel: "Redispatch", wert: gwh(rd.gesamt, 1), einheit: "GWh",
+        bezug: nf2.format(rd.gesamt / k.netzlast * 100) + " % der Netzlast · "
+          + bezugstext(rd.gesamt, rdV && rdV.gesamt, vv, vb),
+        marke: "Eingriff ins Netz — kein Lastfluss",
+        info: {
+          wert: "Summe der Redispatch-Arbeit aus " + rd.massnahmen.toLocaleString("de-DE")
+            + " Maßnahmen der vier Übertragungsnetzbetreiber.",
+          grenzenTitel: "Was die Zahl bedeutet",
+          grenzen: "Redispatch heißt: ein Netzbetreiber greift in den Kraftwerkseinsatz "
+            + "ein, weil das Netz den geplanten Transport nicht trägt. Die Zahl sagt, "
+            + "wie viel Energie dafür verschoben wurde — nicht, wie viel über eine "
+            + "einzelne Leitung floss. Die Reihe beginnt 2021.",
+          quellen: QUELLE_RD,
+          messung: "Messung. Die Zuordnung zum Kalendertag ist eine benannte Annahme."
+        }
+      }));
+    }
     neu.appendChild(abschnitt("Kennzahlen · " + zeitraumLang(von, bis), kacheln));
 
     // --- Warnungen zum Zeitraum ---
@@ -1631,6 +1800,10 @@
     fluss.appendChild(saeule("abfluss", "Abfluss · Export", gwh(k.exp, 1) + " GWh",
       balkenliste(ab, "var(--orange)", maxAb)));
     neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh im Zeitraum)", fluss));
+
+    // --- Redispatch ---
+    neu.appendChild(abschnitt("Redispatch · Eingriffe ins Netz",
+      redispatchAbschnitt(von, bis, k.netzlast)));
 
     // --- Karte ---
     var karteHuelle = el("div", { "class": "pf-karte-huelle" });
@@ -1777,7 +1950,8 @@
         + "Öffentliche Leitungsauslastungen sind Modellrechnungen.",
       "Lastflüsse auf den gezeichneten Leitungen. Die Karte zeigt ihren Verlauf und ihre "
         + "Spannungsebene, mehr gibt die Quellenlage nicht her.",
-      "Redispatch. Noch nicht eingebunden — braucht einen Zugang zur netztransparenz-API."
+      "Redispatch auf der Karte. Das Feld BETROFFENE_ANLAGE nennt teilweise "
+        + "Blocknamen; eine Zuordnung zu den Kraftwerkskoordinaten steht noch aus."
     ].forEach(function (t) { ul.appendChild(el("li", { text: t })); });
     nicht.appendChild(ul);
     neu.appendChild(abschnitt("Grenzen", nicht));
@@ -1858,6 +2032,8 @@
     if (anzahlTage(von, bis) <= STUNDEN_BIS_TAGE) {
       auftraege.push(verlaufLadenZeitraum(von, bis));
     }
+    auftraege.push(redispatchLadenZeitraum(von, bis));
+    auftraege.push(redispatchLadenZeitraum(vorjahrstag(von), vorjahrstag(bis)));
     Promise.all(auftraege).then(function () {
       Z.von = von; Z.bis = bis;
       zeichnen();
@@ -1885,6 +2061,7 @@
       hole("data/tage-verzeichnis.json"),
       hole("data/grundkarte.json"),
       hole("data/kraftwerke.json"),
+      hole("data/redispatch-verzeichnis.json"),
       // Die beiden voreingestellten Netzebenen. Die 110-kV-Ebene wird erst
       // geladen, wenn jemand sie einschaltet -- sie ist 5,9 MB gross.
       netzLaden("hoechstspannung"),
@@ -1893,6 +2070,7 @@
       Z.verzeichnis = teile[0];
       Z.grundkarte = teile[1];
       Z.kraftwerke = teile[2];
+      Z.rdVerzeichnis = teile[3];
       var jahre = Z.verzeichnis.jahre;
       Z.minTag = jahre[0].erster_tag;
       var letzte = jahre[jahre.length - 1];
@@ -1903,8 +2081,10 @@
       Z.startBis = Z.maxTag;
       var noetig = jahreImZeitraum(Z.startVon, Z.startBis).concat(
         jahreImZeitraum(vorjahrstag(Z.startVon), vorjahrstag(Z.startBis)));
-      return Promise.all(noetig.map(jahrLaden).concat(
-        [verlaufLadenZeitraum(Z.startVon, Z.startBis)]));
+      return Promise.all(noetig.map(jahrLaden).concat([
+        verlaufLadenZeitraum(Z.startVon, Z.startBis),
+        redispatchLadenZeitraum(Z.startVon, Z.startBis),
+        redispatchLadenZeitraum(vorjahrstag(Z.startVon), vorjahrstag(Z.startBis))]));
     }).then(function () {
       Z.von = Z.startVon;
       Z.bis = Z.startBis;

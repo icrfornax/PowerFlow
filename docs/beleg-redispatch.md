@@ -4,8 +4,9 @@ Stand: 31.08.2026. Zuständige Skills: `datenquellen-strom`, `pruefpflichten`.
 
 ## Stand in einem Satz
 
-**Der Zugang steht, die Daten sind verstanden — veröffentlicht wird nichts,
-solange die Lizenz nicht geklärt ist.**
+**Zugang steht, Daten belegt, Tagesaggregate 2021–2026 sind eingebunden.** Die
+Lizenzkette hat eine offene Stelle, die benannt ist — siehe unten und
+`LIZENZ-DATEN.md`.
 
 ## Zugang
 
@@ -141,29 +142,65 @@ ausgleichen, weil Redispatch die Bilanz nicht verändern soll. 444,6 gegen
 501,2 GWh sind 12 % Unterschied. Der Rest steckt in Countertrade und in der
 Zuordnung über Mitternacht.
 
-## Lizenz — ungeklärt, deshalb nichts veröffentlicht
+## Jahresmengen und eine zweite Größenordnungsprobe
 
-Für die Daten auf netztransparenz.de ist **keine Lizenz auffindbar**:
+| Jahr | hochgefahren | heruntergefahren | Schieflage |
+|---|---:|---:|---:|
+| 2021 | 6.752 GWh | 4.173 GWh | 23,6 % |
+| 2022 | 8.290 GWh | 7.234 GWh | 6,8 % |
+| 2023 | 11.154 GWh | 6.670 GWh | 25,2 % |
+| 2024 | 9.908 GWh | 6.391 GWh | 21,6 % |
+| 2025 | 9.277 GWh | 5.518 GWh | 25,4 % |
+| 2026 (bis 30.08.) | 4.649 GWh | 4.327 GWh | 3,6 % |
+
+Gesamtvolumen also 15 bis 18 TWh im Jahr — die Bundesnetzagentur nennt für
+Deutschland Größenordnungen im zweistelligen TWh-Bereich. Plausibel.
+
+**Hoch ist in jedem Jahr größer als runter**, und das ist keine Panne: die
+Quellenseite sagt, dass bei grenzüberschreitenden Redispatch- und
+Countertrade-Maßnahmen *„only the part relating to plants or exchange trading
+within Germany will be published"*. Der ausländische Gegenpart fehlt also
+systematisch. `scripts/validate.py` führt dafür ein Budget von 40 % statt einer
+stillen Toleranz — die gemessene Spanne liegt bei 3,6 bis 25,4 %.
+
+## Lizenz — die Kette, und wo sie offen ist
+
+Entschieden von Immo am 31.08.2026. Geprüft und festgehalten, was trägt und was
+nicht:
+
+**Was nicht trägt.** Für die Daten auf netztransparenz.de ist keine Lizenz
+auffindbar:
 
 - Es gibt dort **keine Seite „Datennutzung"** und keine
   „Nutzungsbedingungen" — jede geprüfte Adresse antwortet mit HTTP 503, auch
   nach mehreren Versuchen.
+- Die Seite *Ancillary Services → System operations → Redispatch* nennt
+  **weder eine Rechtsgrundlage noch eine Aussage zur freien Verfügbarkeit**. Ich
+  habe sie im Volltext durchsucht.
 - Das **Impressum** sagt wörtlich: *„Inhalt und Gestaltung der Internetseiten
   sind urheberrechtlich geschützt. Eine Vervielfältigung der Seiten oder ihrer
   Inhalte bedarf der vorherigen schriftlichen Zustimmung der deutschen
   Übertragungsnetzbetreiber per E-Mail, soweit die Vervielfältigung nicht
   ohnehin gesetzlich gestattet ist."*
 
-Das ist etwas völlig anderes als CC BY 4.0 bei SMARD oder gemeinfrei bei
-Natural Earth. **Solange das nicht geklärt ist, gehören diese Daten nicht in
-ein öffentliches Repository und nicht auf eine öffentliche Seite.**
+**Was trägt.** Dieselbe Seite sagt: *„both feed-in management and redispatch
+measures for all dates are published on the ENTSO-E Transparency Platform (ETP)
+under Redispatch."* Dieselben Tatsachen liegen also auch dort. Die Terms of Use
+der ENTSO-E Transparency Platform führen nach **Klausel 2.5** eine Liste von
+Daten, die *„open for free re-use with no need to seek the prior agreement of
+the respective Primary Owner of Data"* sind; seit Februar 2022 gilt darauf
+**CC BY 4.0**.
 
-`scripts/fetch-redispatch.py` hat dafür einen Riegel: ohne
-`--lizenz-geklaert` schreibt es nichts nach `data/`. Mit `--pruefen VON BIS`
-läuft es rein lesend und gibt nur eine Zusammenfassung auf die Konsole — das
-ist Belegarbeit, keine Veröffentlichung.
+**Was offen bleibt.** Ob Redispatch auf dieser Liste steht, ist nicht geprüft —
+die Seite mit der Liste beantwortet meine Abrufe mit HTTP 403. Das ist die
+einzige offene Stelle und im eingeloggten Portal mit einem Klick zu prüfen.
 
-### Wege, das zu klären
+**Was daraus folgt.** Veröffentlicht werden **Tagesaggregate** — Summen je Tag,
+je ÜNB und je Primärenergieart — keine Kopie der Messwertliste. Genannt werden
+beide Wege. `scripts/fetch-redispatch.py` schreibt weiterhin nur mit
+`--lizenz-geklaert`; der Riegel trägt die Begründung im Kopf.
+
+### Falls sich das ändern soll
 
 1. **Nachfragen.** Die ÜNB veröffentlichen Redispatch aufgrund einer
    gesetzlichen Pflicht (§ 13 EnWG, dazu die EU-Transparenzverordnung). Eine
