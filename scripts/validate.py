@@ -636,8 +636,15 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     for schluessel, q in qv["quellen"].items():
         for feld in ("name", "url", "lizenz", "lizenz_url", "namensnennung", "erhebung"):
             b.pruefe(bool(q.get(feld)), f"Quelle {schluessel}: Feld {feld} gefuellt")
-    b.pruefe("nichts modelliert" in (qv.get("_hinweis") or ""),
-             "Quellenverzeichnis sagt ausdruecklich, dass nichts modelliert wird")
+    hinweis = qv.get("_hinweis") or ""
+    b.pruefe("nichts modelliert" in hinweis,
+             "Quellenverzeichnis sagt ausdruecklich, dass keine ZAHL modelliert wird")
+    # Seit dem 31.08.2026 gibt es genau eine abgeleitete Geometrie. Der Hinweis
+    # muss sie benennen -- ein pauschales "nichts modelliert" waere ab da falsch.
+    b.pruefe("abgeleitet" in hinweis and "Regelzonen" in hinweis,
+             "Quellenverzeichnis benennt die eine abgeleitete Geometrie")
+    b.pruefe(qv.get("quellen", {}).get("abgeleitet", {}).get("name", "").endswith("KEINE Messung"),
+             "die abgeleitete Flaeche steht unter einer eigenen, so benannten Quelle")
 
     lizenztext = lade("LIZENZ-DATEN.md")
     for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",

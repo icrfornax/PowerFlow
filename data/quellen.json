@@ -1,6 +1,6 @@
 {
- "_hinweis": "Quellenverzeichnis der Seite. Aus den tatsaechlich vorhandenen Dateien erzeugt, nicht von Hand gepflegt. Jede Datei unter data/ ist einer Quelle zugeordnet; scripts/quellen.py bricht ab, wenn eine ohne Zuordnung auftaucht. Es werden ausschliesslich gemessene oder als Stammdatum veroeffentlichte Werte gefuehrt -- nichts modelliert, nichts geschaetzt, nichts erfunden.",
- "erzeugt": "2026-08-30T17:37:58+02:00",
+ "_hinweis": "Quellenverzeichnis der Seite. Aus den tatsaechlich vorhandenen Dateien erzeugt, nicht von Hand gepflegt. Jede Datei unter data/ ist einer Quelle zugeordnet; scripts/quellen.py bricht ab, wenn eine ohne Zuordnung auftaucht. Alle ZAHLEN dieser Seite sind gemessen oder als Stammdatum veroeffentlicht -- nichts modelliert, nichts geschaetzt, nichts erfunden. Genau eine GEOMETRIE ist abgeleitet: die Flaeche der vier Regelzonen, weil es dafuer keine amtliche oder offene Geometrie gibt. Sie steht unter der eigenen Quelle „abgeleitet“, ist auf der Karte voreingestellt ausgeschaltet und nennt ihre gemessene Trefferquote.",
+ "erzeugt": "2026-08-30T21:28:56+02:00",
  "quellen": {
   "smard": {
    "name": "SMARD, Bundesnetzagentur",
@@ -33,6 +33,14 @@
    "lizenz_url": "https://github.com/icrfornax/PowerFlow/blob/main/LICENSE",
    "namensnennung": "keine gefordert",
    "erhebung": "aus den Dateien dieses Repositorys erzeugt, keine eigene Messung"
+  },
+  "abgeleitet": {
+   "name": "PowerFlow, abgeleitet -- KEINE Messung",
+   "url": "https://github.com/icrfornax/PowerFlow/blob/main/scripts/zonenflaeche.py",
+   "lizenz": "ODbL 1.0 (Share-alike), weil aus OpenStreetMap abgeleitet",
+   "lizenz_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "namensnennung": "Bundesnetzagentur | SMARD.de; © OpenStreetMap contributors",
+   "erhebung": "nicht erhoben, sondern aus belegten Stützpunkten interpoliert; die gemessene Trefferquote steht in der Datei und auf der Seite"
   },
   "netztransparenz": {
    "name": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
@@ -177,6 +185,18 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
   },
   {
+   "titel": "Regelzonen als Flaeche (abgeleitet)",
+   "inhalt": "Interpolierte Ausdehnung der vier Regelzonen. Jede Rasterzelle bekommt die Zone ihres naechstgelegenen Stuetzpunktes; Stuetzpunkte sind Kraftwerke mit amtlicher Zonenangabe und Leitungen mit eindeutigem Betreiber. KEINE amtliche Grenze. Trefferquote gegen die amtliche Angabe von 596 Kraftwerken: 93,3 %.",
+   "quelle": "abgeleitet",
+   "beleg": "docs/beleg-regelzonenflaeche.md",
+   "dateien": 1,
+   "bytes": 37740,
+   "zeitraum": null,
+   "muster": "data/regelzonen-flaeche.json",
+   "abzug": "data/regelzonen-flaeche.json",
+   "alle": null
+  },
+  {
    "titel": "Dieses Verzeichnis",
    "inhalt": "Welcher Datensatz aus welcher Quelle stammt. Aus den vorhandenen Dateien erzeugt, keine eigene Messung.",
    "quelle": "powerflow",
@@ -189,6 +209,6 @@
    "alle": null
   }
  ],
- "dateien_gesamt": 167,
- "bytes_gesamt": 24487794
+ "dateien_gesamt": 168,
+ "bytes_gesamt": 24525534
 }

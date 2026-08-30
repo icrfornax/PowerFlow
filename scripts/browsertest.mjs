@@ -281,8 +281,10 @@ try {
   })()`);
   pruefe(fluss.titel.some((x) => /Import/.test(x)),
     "die Zuflusssaeule nennt den Import", fluss.titel.join(" | "));
-  pruefe(fluss.gruppen.some((x) => /Import je Nachbarland/.test(x)),
-    "Import je Nachbarland ist eigene Gruppe", fluss.gruppen.join(" | "));
+  pruefe(fluss.titel.filter((x) => /Import je Nachbarland/.test(x)).length === 1,
+    "Import ist eine eigene Saeule, kein Anhaengsel", fluss.titel.join(" | "));
+  pruefe(fluss.titel.length === 4, `vier Saeulen im Flussbild (${fluss.titel.length})`,
+    fluss.titel.join(" | "));
   pruefe(fluss.zonen === 4, `vier Regelzonen mit Traegerstapel (${fluss.zonen})`);
   pruefe(fluss.stapel >= 4 * 4,
     `${fluss.stapel} Traegerabschnitte in den vier Stapeln`);
@@ -587,6 +589,56 @@ try {
   await js(`document.querySelector('.pf-zonenknopf[data-zone="Amprion"]').click()`);
   await masse(1280, 900);
 
+  /* Die abgeleitete Regelzonenflaeche. Geprueft wird ausdruecklich, dass sie
+     AUS ist, wenn niemand sie einschaltet -- das ist eine Auflage aus
+     docs/beleg-regelzonenflaeche.md und keine Geschmacksfrage. */
+  const zf = await js(`(function () {
+    const b = document.getElementById("pf-ebene-zonenflaeche");
+    if (!b) { return { fehlt: true }; }
+    const vorher = { an: b.checked,
+                     pfade: document.querySelectorAll(".pf-zonenflaeche path").length };
+    b.click();
+    return { vorher: vorher, beschriftung: b.parentNode.textContent.trim() };
+  })()`);
+  pruefe(!zf.fehlt, "Ebene fuer die Regelzonenflaeche vorhanden");
+  pruefe(zf.vorher && zf.vorher.an === false && zf.vorher.pfade === 0,
+    "die abgeleitete Flaeche ist voreingestellt AUS", JSON.stringify(zf.vorher));
+  pruefe(/abgeleitet/.test(zf.beschriftung || ""),
+    "die Ebene heisst ausdruecklich 'abgeleitet'", zf.beschriftung);
+  await schlafen(2000);
+  const zfAn = await js(`(function () {
+    const p = [...document.querySelectorAll(".pf-zonenflaeche path")];
+    return { pfade: p.length, zonen: p.map((x) => x.getAttribute("data-zone")),
+             deckung: p.length ? getComputedStyle(p[0]).fillOpacity : null,
+             titel: p.length ? p[0].querySelector("title").textContent : "" };
+  })()`);
+  pruefe(zfAn.pfade === 4, `eingeschaltet zeichnet sie vier Zonen (${zfAn.pfade})`,
+    JSON.stringify(zfAn.zonen));
+  pruefe(parseFloat(zfAn.deckung) <= 0.25,
+    `die Flaeche bleibt blass (fill-opacity ${zfAn.deckung})`);
+  pruefe(/keine amtliche Grenze/.test(zfAn.titel),
+    "die Flaeche sagt im Titel, dass sie keine amtliche Grenze ist", zfAn.titel);
+  await js(`document.getElementById("pf-ebene-zonenflaeche").click()`);
+  await schlafen(400);
+
+  // Der Zeitraumblock bleibt oben stehen, und der Themaknopf sitzt darin.
+  const kleber = await js(`(function () {
+    const drin = !!document.querySelector(".pf-regler .pf-thema-knopf");
+    window.scrollTo(0, 1400);
+    const r = document.querySelector(".pf-regler-abschnitt").getBoundingClientRect();
+    const ueberschriften = [...document.querySelectorAll(".pf-abschnitt > h2")]
+      .map((x) => x.textContent);
+    window.scrollTo(0, 0);
+    return { knopfDrin: drin, oben: Math.round(r.top),
+             freieVariable: ueberschriften.some((x) => /Freie Variable/.test(x)) };
+  })()`);
+  pruefe(kleber.knopfDrin, "der Hell/Dunkel-Knopf sitzt im Zeitraumblock");
+  pruefe(kleber.oben >= -2 && kleber.oben < 60,
+    `der Zeitraumblock bleibt beim Scrollen oben stehen (top ${kleber.oben})`);
+  pruefe(!kleber.freieVariable,
+    "keine Abschnittsueberschrift 'Freie Variable' mehr");
+  await schlafen(300);
+
   const ebene = await js(`(function () {
     const b = document.getElementById("pf-ebene-kraftwerke");
     b.click();
@@ -631,7 +683,12 @@ try {
     `vier Hinweiskaesten: ${qu.kaesten.join(" | ")}`);
   pruefe(qu.quellenAbschnitt, "Abschnitt Quellen und Downloads vorhanden");
   pruefe(qu.datensaetze >= 10, `${qu.datensaetze} Datensaetze im Quellenverzeichnis`);
-  pruefe(qu.quellen.length === 5, `fuenf Quellen genannt: ${qu.quellen.join(" | ")}`);
+  pruefe(qu.quellen.length === 6, `sechs Quellen genannt: ${qu.quellen.join(" | ")}`);
+  // Die abgeleitete Flaeche muss im Verzeichnis als solche kenntlich sein und
+  // darf nicht neben den Messungen stehen.
+  pruefe(qu.quellen.some((x) => /KEINE Messung/.test(x)),
+    "die abgeleitete Geometrie ist im Verzeichnis als KEINE Messung ausgewiesen",
+    qu.quellen.join(" | "));
   pruefe(qu.lizenzen.length >= 3, `${qu.lizenzen.length} verschiedene Lizenzen genannt`);
   pruefe(qu.abzuege >= 12, `${qu.abzuege} Abzugsknoepfe im Verzeichnis`);
   await foto("quellen", ".pf-abschnitt:last-of-type");

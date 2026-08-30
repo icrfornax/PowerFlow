@@ -219,14 +219,53 @@ Flaechen statt Schraffur, Netzlast in eigenem Blau, Preis als Stufenflaeche in
 gedaempftem Gelb mit fester Achse. Achte Kennzahl: Anteil der Erneuerbaren an
 der Netzlast.
 
-Ausserdem erledigt (31.08.2026): Zufluss zeigt Erzeugung UND Import, die
-Mittelsaeule rechnet die Bilanz vor, und ein eigener Abschnitt zeigt die
-Erzeugung nach Energietraeger je Regelzone -- mit den Traegerfarben, fester
-Stapelreihenfolge und der Gegenprobe gegen die Deutschlandsumme.
+Ausserdem erledigt (31.08.2026): Zufluss zeigt Erzeugung UND Import als zwei
+eigene Saeulen, die Mittelsaeule rechnet die Bilanz vor, und ein eigener
+Abschnitt zeigt die Erzeugung nach Energietraeger je Regelzone -- mit den
+Traegerfarben, fester Stapelreihenfolge und der Gegenprobe gegen die
+Deutschlandsumme. Der Zeitraumblock bleibt beim Scrollen oben stehen und
+enthaelt jetzt den Hell/Dunkel-Knopf; die Abschnittsueberschrift "Freie
+Variable" ist weg.
 
-Noch offen: Methodik-PDF; Regelzonen als Flaeche auf
-der Karte; Import und Export im Verlauf; Anlagen aus dem
+Ausserdem erledigt (31.08.2026): Regelzonen als Flaeche auf der Karte -- siehe
+den eigenen Abschnitt unten.
+
+Noch offen: Methodik-PDF; Import und Export im Verlauf; Anlagen aus dem
 Marktstammdatenregister.
+
+## Regelzonen als Flaeche -- die einzige Ableitung
+
+Erledigt am 31.08.2026, aber unter Auflagen. Beleg:
+`docs/beleg-regelzonenflaeche.md`, erzeugt von `scripts/zonenflaeche.py`.
+
+**Eine belegte Geometrie der Regelzonen gibt es nicht.** Overpass liefert fuer
+Grenzrelationen der vier UeNB NULL Treffer, die Bundesnetzagentur
+veroeffentlicht eine Netzkarte als PDF. Bundeslandgrenzen sind kein Ersatz --
+die Zonen folgen ihnen nicht.
+
+Die Flaeche ist deshalb **interpoliert**: jede Rasterzelle (0,02 Grad) bekommt
+die Zone ihres naechstgelegenen Stuetzpunktes. Stuetzpunkte sind 596 Kraftwerke
+mit amtlicher Zonenangabe aus den SMARD-Stammdaten und 3.200 ausgeduennte
+Leitungsknoten mit eindeutigem OSM-Betreiber. Leitungen mit dem Betreiber "RWE"
+bleiben bewusst draussen -- die Gleichsetzung mit Amprion waere eine Annahme.
+
+**Gemessene Trefferquote: 93,3 %.** Fuer jedes der 596 Kraftwerke wird die Zone
+aus den uebrigen Stuetzpunkten vorhergesagt; 556 stimmen, 40 nicht, vor allem
+am Oberrhein und an der Grenze Bayern/Hessen. Das Skript BRICHT AB, wenn die
+Quote unter 85 % faellt.
+
+Fuenf Auflagen, die nicht aufgeweicht werden duerfen:
+1. Die Ebene ist auf der Karte **voreingestellt aus**.
+2. Sie heisst in der Ebenenliste ausdruecklich "abgeleitet".
+3. Die Trefferquote steht im Abschnitt "Grenzen", nicht im Kleingedruckten.
+4. Im Quellenverzeichnis steht sie unter der eigenen Quelle "PowerFlow,
+   abgeleitet -- KEINE Messung", nicht neben den Messungen.
+5. Sie wird blass gezeichnet und liegt UNTER Leitungen, Umspannwerken und
+   Kraftwerken. Das Gemessene bleibt oben.
+
+Der Satz "nichts modelliert" im Quellenverzeichnis gilt weiterhin fuer jede
+ZAHL. Fuer Geometrie gilt er nicht mehr uneingeschraenkt, und der Hinweis sagt
+das jetzt selbst. `scripts/validate.py` prueft beides.
 
 ## Redispatch
 

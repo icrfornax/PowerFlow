@@ -56,6 +56,15 @@ QUELLEN = {
         "namensnennung": "keine gefordert",
         "erhebung": "aus den Dateien dieses Repositorys erzeugt, keine eigene Messung",
     },
+    "abgeleitet": {
+        "name": "PowerFlow, abgeleitet -- KEINE Messung",
+        "url": "https://github.com/icrfornax/PowerFlow/blob/main/scripts/zonenflaeche.py",
+        "lizenz": "ODbL 1.0 (Share-alike), weil aus OpenStreetMap abgeleitet",
+        "lizenz_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+        "namensnennung": "Bundesnetzagentur | SMARD.de; © OpenStreetMap contributors",
+        "erhebung": "nicht erhoben, sondern aus belegten Stützpunkten interpoliert; "
+                    "die gemessene Trefferquote steht in der Datei und auf der Seite",
+    },
     "netztransparenz": {
         "name": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
         "url": "https://www.netztransparenz.de/",
@@ -102,6 +111,14 @@ GRUPPEN = [
      "Tagesaggregate: Arbeit nach Richtung, anweisendem Netzbetreiber und "
      "Primaerenergieart, in MWh.", "docs/beleg-redispatch.md",
      "redispatch-verzeichnis.json"),
+    # Die EINZIGE abgeleitete Geometrie des Projekts. Sie bekommt eine eigene
+    # Quelle, damit sie im Verzeichnis nicht neben den Messungen steht.
+    ("regelzonen-flaeche.json", "abgeleitet", "Regelzonen als Flaeche (abgeleitet)",
+     "Interpolierte Ausdehnung der vier Regelzonen. Jede Rasterzelle bekommt die "
+     "Zone ihres naechstgelegenen Stuetzpunktes; Stuetzpunkte sind Kraftwerke mit "
+     "amtlicher Zonenangabe und Leitungen mit eindeutigem Betreiber. KEINE amtliche "
+     "Grenze. Trefferquote gegen die amtliche Angabe von 596 Kraftwerken: 93,3 %.",
+     "docs/beleg-regelzonenflaeche.md", None),
     # Dieses Verzeichnis ist KEINE Messung und stammt nicht von SMARD -- es
     # wird aus den Dateien dieses Repositorys erzeugt.
     ("quellen.json", "powerflow", "Dieses Verzeichnis",
@@ -201,9 +218,14 @@ def main(still: bool = False) -> int:
             "Quellenverzeichnis der Seite. Aus den tatsaechlich vorhandenen "
             "Dateien erzeugt, nicht von Hand gepflegt. Jede Datei unter data/ "
             "ist einer Quelle zugeordnet; scripts/quellen.py bricht ab, wenn "
-            "eine ohne Zuordnung auftaucht. Es werden ausschliesslich gemessene "
-            "oder als Stammdatum veroeffentlichte Werte gefuehrt -- nichts "
-            "modelliert, nichts geschaetzt, nichts erfunden."
+            "eine ohne Zuordnung auftaucht. Alle ZAHLEN dieser Seite sind "
+            "gemessen oder als Stammdatum veroeffentlicht -- nichts "
+            "modelliert, nichts geschaetzt, nichts erfunden. Genau eine "
+            "GEOMETRIE ist abgeleitet: die Flaeche der vier Regelzonen, weil "
+            "es dafuer keine amtliche oder offene Geometrie gibt. Sie steht "
+            "unter der eigenen Quelle „abgeleitet“, ist auf der Karte "
+            "voreingestellt ausgeschaltet und nennt ihre gemessene "
+            "Trefferquote."
         ),
         "erzeugt": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "quellen": QUELLEN,

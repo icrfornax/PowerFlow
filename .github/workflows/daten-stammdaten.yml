@@ -48,6 +48,13 @@ jobs:
         if: github.event_name == 'schedule' || inputs.netz
         run: python scripts/fetch-netz.py
 
+      - name: Regelzonenflaeche neu ableiten
+        # Haengt an beiden Stammdatensaetzen: aendern sich Kraftwerke oder
+        # Leitungen, muss die abgeleitete Flaeche mitwandern. Das Skript
+        # bricht ab, wenn die gemessene Trefferquote unter 85 % faellt -- dann
+        # schlaegt dieser Schritt fehl, und das ist Absicht.
+        run: python scripts/zonenflaeche.py
+
       - name: Quellenverzeichnis neu bauen
         # Muss VOR dem Tuersteher laufen: er prueft, dass das Verzeichnis alle
         # Dateien zaehlt. Und quellen.py bricht selbst ab, wenn eine Datei

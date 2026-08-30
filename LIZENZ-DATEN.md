@@ -13,6 +13,7 @@ verpflichtet zur Weitergabe unter denselben Bedingungen.
 | `data/grundkarte.json` | Natural Earth | gemeinfrei (public domain) | keine gefordert |
 | `data/netz-hoechstspannung.json`, `data/netz-hochspannung.json`, `data/netz-umspannwerke.json` | OpenStreetMap | **ODbL 1.0** | `© OpenStreetMap contributors` |
 | `data/redispatch/*.json` | netztransparenz.de (die vier ÜNB), auch über ENTSO-E | siehe unten — **teilweise ungeklärt** | `netztransparenz.de — 50Hertz, Amprion, TenneT, TransnetBW` |
+| `data/regelzonen-flaeche.json` | **abgeleitet**, nicht erhoben — aus SMARD und OpenStreetMap | **ODbL 1.0** (die schärfere der beiden erbt) | `Bundesnetzagentur \| SMARD.de` und `© OpenStreetMap contributors` |
 
 ## SMARD — CC BY 4.0
 
@@ -44,6 +45,12 @@ Das ist die Lizenz mit Folgen:
   Datenbank* im Sinne der ODbL. Wer sie weitergibt oder in eigene Daten
   einarbeitet und diese veröffentlicht, muss das Ergebnis wieder unter ODbL
   stellen.
+- **`data/regelzonen-flaeche.json` fällt ausdrücklich darunter.** Sie ist aus
+  den OSM-Betreiberangaben *und* aus den SMARD-Kraftwerksdaten gerechnet. Wo
+  ODbL und CC BY 4.0 zusammentreffen, gilt für das Ergebnis die schärfere
+  Bedingung: ODbL mit Share-alike, und **beide** Namensnennungen. Beide stehen
+  im Kopf der Datei. Inhaltlich ist die Datei keine Messung — siehe
+  `docs/beleg-regelzonenflaeche.md`.
 - Das gilt **nicht** für den Code und **nicht** für die anderen Datendateien.
   Die Lizenzen gelten getrennt nebeneinander, sie färben nicht aufeinander ab.
 - Eine aus den Daten erzeugte *Darstellung* — etwa ein Bildschirmfoto der

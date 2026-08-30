@@ -285,9 +285,10 @@ body {
 
 .pf-fluss {
   display: grid; gap: 12px;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
 }
-@media (max-width: 860px) { .pf-fluss { grid-template-columns: 1fr; } }
+@media (max-width: 1180px) { .pf-fluss { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px) { .pf-fluss { grid-template-columns: 1fr; } }
 
 .pf-saeule {
   background: var(--flaeche); border: 1px solid var(--linie);
@@ -402,6 +403,11 @@ body {
   fill: var(--karte-land); stroke: var(--karte-grenze); stroke-width: 0.6;
   stroke-linejoin: round; vector-effect: non-scaling-stroke;
 }
+/* Abgeleitete Regelzonenflaeche. Bewusst blass: sie ist eine Naeherung und
+   soll nicht wie eine amtliche Grenze aussehen. */
+.pf-zonenflaeche path { fill-opacity: 0.20; stroke: none; }
+.pf-zonenflaeche { pointer-events: none; }
+
 .pf-geo-anlage circle {
   fill-opacity: 0.55; stroke-width: 0.8; stroke-opacity: 0.9;
   transition: fill-opacity 120ms ease;
@@ -480,16 +486,41 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
   background: var(--flaeche-hoch); padding: 1px 5px; border-radius: 4px;
 }
 
-/* ---------- Der einzige Regler: der Kalendertag ---------- */
+/* ---------- Der einzige Regler: der Zeitraum ---------- */
 
+/* Der Block bleibt beim Scrollen oben stehen. Er ist das einzige
+   Bedienelement der Seite -- wer weiter unten eine Zahl sieht, muss den
+   Zeitraum aendern koennen, ohne erst wieder hochzufahren.
+
+   position: sticky und nicht fixed: der Block bleibt im Textfluss, schiebt
+   also nichts unter sich und braucht keine ausgleichende Hoehe. */
+.pf-regler-abschnitt {
+  position: sticky; top: 0; z-index: 20;
+  margin-top: 18px; padding-top: 10px; padding-bottom: 10px;
+  /* Der Hintergrund muss deckend sein, sonst scrollt der Inhalt sichtbar
+     durch den Block hindurch. */
+  background: var(--grund);
+}
 .pf-regler {
   background: var(--flaeche); border: 1px solid var(--linie);
   border-left: 3px solid var(--fokus); border-radius: var(--radius);
   padding: 14px 16px;
 }
+.pf-regler-kopf {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; margin-bottom: 10px;
+}
 .pf-regler-titel {
   display: block; font-size: 0.78rem; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--schrift-still); margin-bottom: 10px;
+  text-transform: uppercase; color: var(--schrift-still);
+}
+/* Auf schmalen Geraeten waere ein festgeklebter Block zu teuer: er fraesse
+   ein Drittel der Hoehe. Dort scrollt er mit. */
+@media (max-width: 700px) {
+  .pf-regler-abschnitt { position: static; }
+}
+@media (max-height: 560px) {
+  .pf-regler-abschnitt { position: static; }
 }
 .pf-regler-reihe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 

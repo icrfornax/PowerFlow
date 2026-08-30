@@ -103,14 +103,19 @@
       kraftwerke: true,
       umspannwerke: true,
       hoechstspannung: true,
-      hochspannung: false
+      hochspannung: false,
+      /* Voreingestellt AUS, und das ist Absicht: die Flaeche ist die einzige
+         abgeleitete Geometrie auf dieser Seite. Wer sie sehen will, schaltet
+         sie ein und liest dabei, was sie ist. */
+      zonenflaeche: false
     }
   };
 
   var NETZDATEI = {
     hoechstspannung: "data/netz-hoechstspannung.json",
     hochspannung: "data/netz-hochspannung.json",
-    umspannwerke: "data/netz-umspannwerke.json"
+    umspannwerke: "data/netz-umspannwerke.json",
+    zonenflaeche: "data/regelzonen-flaeche.json"
   };
 
   function netzLaden(name) {
@@ -701,6 +706,38 @@
     });
     svg.appendChild(gLaender);
 
+    /* Regelzonen als Flaeche -- die EINZIGE abgeleitete Geometrie auf dieser
+       Karte.
+
+       Sie liegt UEBER der Bundeslandfuellung -- die ist deckend, darunter
+       waere die Flaeche unsichtbar -- und unter Leitungen, Umspannwerken und
+       Kraftwerken, damit die gemessenen Dinge oben bleiben.
+
+       Gezeichnet wird je Zone EIN Pfad aus vielen Rechtecken. Die Rechtecke
+       stossen aneinander und ergeben eine geschlossene Flaeche; einzelne
+       Elemente waeren bei 1.871 Rechtecken zu langsam. */
+    if (Z.ebenen.zonenflaeche && Z.netz.zonenflaeche) {
+      var zf = Z.netz.zonenflaeche;
+      var gZf = s("g", { "class": "pf-zonenflaeche" });
+      Object.keys(zf.zonen).forEach(function (zone) {
+        var d = "";
+        zf.zonen[zone].forEach(function (r) {
+          var x0 = X(r[0]), x1 = X(r[0] + r[2]);
+          var y0 = Y(r[1] + zf.raster), y1 = Y(r[1]);
+          d += "M" + x0.toFixed(1) + " " + y0.toFixed(1)
+             + "L" + x1.toFixed(1) + " " + y0.toFixed(1)
+             + "L" + x1.toFixed(1) + " " + y1.toFixed(1)
+             + "L" + x0.toFixed(1) + " " + y1.toFixed(1) + "Z";
+        });
+        var pfad = s("path", { d: d, fill: ZONENFARBE[zone], "data-zone": zone });
+        pfad.appendChild(s("title")).textContent =
+          "Regelzone " + zone + " — abgeleitete Fläche, keine amtliche Grenze";
+        gZf.appendChild(pfad);
+      });
+      svg.appendChild(gZf);
+    }
+
+
     /* Leitungen. Bei knapp 40.000 Wegen waeren 40.000 SVG-Elemente zu langsam.
        Deshalb EIN Pfadelement je Spannungsebene mit vielen Teilzuegen. */
     /* Ein Pfad je Kombination aus Betreiber und Spannungsebene. Farbe sagt
@@ -1021,7 +1058,9 @@
       { schluessel: "kraftwerke", text: "Kraftwerke" },
       { schluessel: "umspannwerke", text: "Umspannwerke ab 110 kV", datei: "umspannwerke" },
       { schluessel: "hoechstspannung", text: "Leitungen 220/380 kV", datei: "hoechstspannung" },
-      { schluessel: "hochspannung", text: "Leitungen 110 kV (5,9 MB)", datei: "hochspannung" }
+      { schluessel: "hochspannung", text: "Leitungen 110 kV (5,9 MB)", datei: "hochspannung" },
+      { schluessel: "zonenflaeche", text: "Regelzonen als Fläche (abgeleitet)",
+        datei: "zonenflaeche" }
     ].forEach(function (e) {
       var id = "pf-ebene-" + e.schluessel;
       var wrap = el("label", { "class": "pf-ebene", "for": id });
@@ -2034,6 +2073,16 @@
     }));
     links.appendChild(el("p", { "class": "pf-bahn", text: "Zufluss · Netz · Abfluss" }));
     kopfzeile.appendChild(links);
+    kopf.appendChild(kopfzeile);
+    neu.appendChild(kopf);
+
+    // --- Der einzige Regler: der Zeitraum ---
+    var regler = el("div", { "class": "pf-regler" });
+    var reglerKopf = el("div", { "class": "pf-regler-kopf" });
+    reglerKopf.appendChild(el("span", { "class": "pf-regler-titel", text: "Zeitraum" }));
+    /* Der Themaknopf sitzt hier und nicht mehr in der Kopfzeile: der
+       Zeitraumblock bleibt beim Scrollen oben stehen, der Kopf nicht. Ein
+       Knopf, der weggescrollt ist, ist kein Knopf. */
     var themaKnopf = el("button", {
       "class": "pf-thema-knopf", type: "button",
       "aria-label": "Zwischen hellem und dunklem Schema wechseln", text: "Hell / Dunkel"
@@ -2044,14 +2093,8 @@
         || (!jetzt && window.matchMedia("(prefers-color-scheme: light)").matches);
       document.documentElement.setAttribute("data-thema", hell ? "dunkel" : "hell");
     });
-    kopfzeile.appendChild(themaKnopf);
-    kopf.appendChild(kopfzeile);
-    neu.appendChild(kopf);
-
-    // --- Der einzige Regler: der Zeitraum ---
-    var regler = el("div", { "class": "pf-regler" });
-    regler.appendChild(el("span", { "class": "pf-regler-titel",
-      text: "Zeitraum — die einzige freie Variable" }));
+    reglerKopf.appendChild(themaKnopf);
+    regler.appendChild(reglerKopf);
 
     var reihe = el("div", { "class": "pf-regler-reihe" });
     var zurueckKnopf = el("button", { "class": "pf-schritt", type: "button",
@@ -2117,10 +2160,16 @@
     });
     regler.appendChild(schnell);
     regler.appendChild(el("p", { "class": "pf-regler-fuss",
-      text: "Wählbar vom " + datumLang(Z.minTag) + " bis zum " + datumLang(Z.maxTag)
+      text: "Der Zeitraum ist die einzige freie Variable dieser Seite; alles Übrige ist "
+        + "gemessen. Wählbar vom " + datumLang(Z.minTag) + " bis zum " + datumLang(Z.maxTag)
         + ". Ein einzelner Tag wird stündlich gezeigt, ein längerer Zeitraum tageweise. "
         + "Zurücksetzen stellt den Zeitraum des ersten Seitenaufrufs wieder her." }));
-    neu.appendChild(abschnitt("Freie Variable", regler));
+    /* Ohne Abschnittsueberschrift: der Block traegt seinen Titel selbst, und
+       eine zweite Zeile "Freie Variable" darueber kostet nur Hoehe -- die
+       fehlt oben, wo der Block stehen bleibt. */
+    var reglerBox = el("section", { "class": "pf-abschnitt pf-regler-abschnitt" });
+    reglerBox.appendChild(regler);
+    neu.appendChild(reglerBox);
 
     if (!k) {
       neu.appendChild(el("div", { "class": "pf-fehler",
@@ -2364,17 +2413,18 @@
     var maxZu = Math.max.apply(null, tr.map(function (e) { return e.mwh; })
       .concat(zu.map(function (e) { return e.mwh; })));
 
-    var zuInhalt = el("div");
-    zuInhalt.appendChild(el("p", { "class": "pf-gruppentitel",
-      text: "Erzeugung nach Energieträger · " + gwh(k.erzeugung, 1) + " GWh" }));
-    zuInhalt.appendChild(balkenliste(tr, null, maxZu, traegerFarbe));
-    if (zu.length) {
-      zuInhalt.appendChild(el("p", { "class": "pf-gruppentitel",
-        text: "Import je Nachbarland · " + gwh(k.imp, 1) + " GWh" }));
-      zuInhalt.appendChild(balkenliste(zu, "var(--teal)", maxZu));
-    }
-    fluss.appendChild(saeule("zufluss", "Zufluss · Erzeugung + Import",
-      gwh((k.erzeugung || 0) + (k.imp || 0), 1) + " GWh", zuInhalt));
+    /* Vier Saeulen, nicht drei: der Import ist ein eigener Vorgang und kein
+       Anhaengsel der Erzeugung. Energietraeger und Nachbarlaender in eine Liste
+       zu schuetten hiesse, zwei verschiedene Dinge in dieselbe Spalte zu
+       schreiben. Beide Zufluesse behalten den Teal-Akzent ihrer Richtung.
+
+       Beide Zuflusssaeulen teilen sich denselben Massstab (maxZu). Ein eigener
+       Massstab je Saeule liesse 170 GWh Import aus Frankreich so lang aussehen
+       wie 2.388 GWh Wind. */
+    fluss.appendChild(saeule("zufluss", "Zufluss · Erzeugung",
+      gwh(k.erzeugung, 1) + " GWh", balkenliste(tr, null, maxZu, traegerFarbe)));
+    fluss.appendChild(saeule("zufluss", "Zufluss · Import je Nachbarland",
+      gwh(k.imp, 1) + " GWh", balkenliste(zu, "var(--teal)", maxZu)));
 
     var netzInhalt = el("div");
     var zz = zonen(von, bis).sort(function (a, b) { return b.saldo - a.saldo; });
@@ -2433,8 +2483,8 @@
       .map(function (a) { return { name: a.land, mwh: a.exp }; })
       .sort(function (a, b) { return b.mwh - a.mwh; });
     var maxAb = Math.max.apply(null, ab.map(function (e) { return e.mwh; }));
-    fluss.appendChild(saeule("abfluss", "Abfluss · Export", gwh(k.exp, 1) + " GWh",
-      balkenliste(ab, "var(--orange)", maxAb)));
+    fluss.appendChild(saeule("abfluss", "Abfluss · Export je Nachbarland",
+      gwh(k.exp, 1) + " GWh", balkenliste(ab, "var(--orange)", maxAb)));
     neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh im Zeitraum)", fluss));
 
     // --- Regelzonen ---
@@ -2680,9 +2730,14 @@
       "Mittelspannung. In OpenStreetMap kaum erfasst.",
       "Der Betreiber von 45,5 % der Höchstspannungsabschnitte. OpenStreetMap kennt "
         + "ihn dort nicht; diese Leitungen bleiben grau statt geraten.",
-      "Die Regelzonen als Fläche. Sie folgen nicht den Bundeslandgrenzen, und eine "
-        + "belegbare Geometrie dafür gibt es nicht. Die Zone erscheint als Farbe der "
-        + "Leitungen und über das Hervorheben in der Legende."
+      "Eine belegte Grenze der Regelzonen. Es gibt keine — OpenStreetMap führt "
+        + "keine Grenzrelation dafür, die Bundesnetzagentur veröffentlicht eine "
+        + "Netzkarte als PDF. Die Karte kann eine Fläche einblenden, aber die ist "
+        + "abgeleitet und keine Grenze: jede Rasterzelle bekommt die Zone ihres "
+        + "nächstgelegenen Stützpunktes. Wie gut das trifft, ist gemessen — "
+        + "93,3 % der 596 Kraftwerke mit amtlicher Zonenangabe, 40 daneben, vor allem "
+        + "am Oberrhein und an der Grenze Bayern/Hessen. Die Ebene ist deshalb "
+        + "voreingestellt ausgeschaltet."
     ].forEach(function (t) { ul.appendChild(el("li", { text: t })); });
     nicht.appendChild(ul);
     neu.appendChild(abschnitt("Grenzen", nicht));
@@ -2785,6 +2840,9 @@
         text: "Jede Zahl auf dieser Seite stammt aus einer der folgenden Dateien. Es "
           + "werden ausschließlich gemessene oder als Stammdatum veröffentlichte Werte "
           + "geführt — nichts modelliert, nichts geschätzt, nichts erfunden. "
+          + "Genau eine GEOMETRIE ist abgeleitet, die Fläche der vier Regelzonen; sie "
+          + "steht unten unter der eigenen Quelle „abgeleitet — KEINE Messung“ und "
+          + "ist auf der Karte voreingestellt ausgeschaltet. "
           + "scripts/quellen.py bricht ab, sobald eine Datei ohne Quellenangabe unter "
           + "data/ auftaucht." }));
       var qroll = el("div", { "class": "pf-tabellen-rollbereich" });
