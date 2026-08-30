@@ -189,9 +189,27 @@ Ausserdem erledigt: Zeitraumwahl mit Schnellwahl, Karte fuellt ihren Rahmen,
 drei GitHub-Actions-Workflows (taeglicher SMARD-Abruf, monatliche Stammdaten,
 Tuersteher bei jeder Aenderung).
 
-Noch offen: Redispatch; Methodik-PDF; Regelzonen als Flaeche auf
+Noch offen: Methodik-PDF; Regelzonen als Flaeche auf
 der Karte; Import und Export im Verlauf; Anlagen aus dem
 Marktstammdatenregister.
+
+## Redispatch — Zugang steht, Lizenz ungeklaert
+
+Die netztransparenz-API ist erschlossen und die Daten sind belegt
+(`docs/beleg-redispatch.md`). **Veroeffentlicht wird nichts**, solange die
+Lizenz nicht geklaert ist: es gibt dort keine Datennutzungsseite, und das
+Impressum verlangt fuer Vervielfaeltigung die vorherige schriftliche Zustimmung
+der vier UeNB. Das ist etwas anderes als CC BY 4.0 bei SMARD.
+
+`scripts/fetch-redispatch.py` schreibt ohne `--lizenz-geklaert` nichts nach
+`data/`. Wer den Riegel loest, traegt in den Beleg ein, worauf er sich stuetzt.
+
+Zwei Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
+- **Immer `GESAMTE_ARBEIT_MWH` summieren, nie Leistung mal Dauer.** Bei 253 von
+  1.187 Saetzen des August 2026 ist die mittlere Leistung der Mittelwert ueber
+  die tatsaechlich aktive Zeit, nicht ueber das genannte Fenster.
+- **Die Quelle liefert UTC.** Im Sommer zwei Stunden Unterschied. Das Feld
+  ZEITZONE wird gelesen, nicht angenommen.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
