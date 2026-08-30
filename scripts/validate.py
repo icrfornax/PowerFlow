@@ -39,6 +39,7 @@ PFLICHTDATEIEN = [
     ".github/workflows/daten-smard.yml",
     ".github/workflows/daten-stammdaten.yml",
     ".github/workflows/pruefen.yml",
+    "scripts/browsertest.mjs",
     # Ohne .nojekyll laeuft die Auslieferung auf GitHub Pages durch Jekyll.
     # Die Seite ist reines statisches HTML; Jekyll bringt nichts und kann
     # Dateien unterschlagen. Die Datei ist leer und muss leer bleiben duerfen.
@@ -489,6 +490,10 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         b.pruefe(wf.index("scripts/validate.py") < wf.index("git commit"),
                  f"{name}: Tuersteher laeuft vor dem Commit")
         b.pruefe("--negativtests" in wf, f"{name}: Negativtests laufen mit")
+    # Der Browsertest gehoert in den Tuersteher, nicht in die Erinnerung des
+    # Entwicklers. Eine Pruefung, die nur laeuft, wenn jemand daran denkt,
+    # laeuft irgendwann nicht mehr.
+    b.pruefe("browsertest.mjs" in pruefwf, "Pruef-Workflow fuehrt den Browsertest aus")
 
     lizenztext = lade("LIZENZ-DATEN.md")
     for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",

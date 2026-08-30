@@ -18,7 +18,7 @@
   "use strict";
 
   var ANKER = "powerflow-anker";
-  var VERSION = "20260830-zeitraum";
+  var VERSION = "20260831-browsertest";
 
   // ---- Formatierung -------------------------------------------------------
   // Anzeige deutsch. Die Exporte benutzen bewusst den Punkt als
@@ -374,7 +374,8 @@
     if (o.einheit) { w.appendChild(el("span", { "class": "pf-einheit", text: o.einheit })); }
     k.appendChild(w);
     if (o.bezug) { k.appendChild(el("p", { "class": "pf-bezug", text: o.bezug })); }
-    k.appendChild(el("p", { "class": "pf-marke", text: o.marke || "kein Regler — gemessener Tageswert" }));
+    k.appendChild(el("p", { "class": "pf-marke",
+      text: o.marke || "kein Regler — gemessener Wert" }));
     if (o.info) { infoKnopf(k, o.info, o.titel); }
     return k;
   }
@@ -638,8 +639,8 @@
                    ["Regelzone", a.regelzone],
                    ["Land", (a.land || "") + (a.staat && a.staat !== "Deutschland"
                      ? " (" + a.staat + ")" : "")],
-                   ["Blöcke", (a.bloecke || []).length + ", davon " + bloecke.length
-                     + " mit abrufbarer Erzeugungsreihe"]],
+                   ["Blöcke", (a.bloecke || []).length + " (" + bloecke.length
+                     + " mit Erzeugungsreihe)"]],
           fuss: "Stammdatum aus SMARD. Die Nettoleistung sagt, was die Anlage kann — "
             + "nicht, was sie an diesem Tag erzeugt hat."
         });
@@ -673,9 +674,11 @@
         if (!ziel) { return; }
         var laenge = Math.sqrt(ziel[0] * ziel[0] + ziel[1] * ziel[1]) || 1;
         var ex = ziel[0] / laenge, ey = ziel[1] / laenge;
-        // Anker knapp ausserhalb der Landesmitte in Richtung des Nachbarn.
-        var ax = X(mitte[0] + ex * (lonMax - lonMin) * 0.42);
-        var ay = Y(mitte[1] + ey * (latMax - latMin) * 0.42);
+        // Anker in Richtung des Nachbarn, nahe an der Grenze. 0,62 statt 0,42:
+        // bei 0,42 schwebten die Pfeile mitten im Land und liessen sich als
+        // innerdeutsche Fluesse missverstehen -- genau das, was sie nicht sind.
+        var ax = X(mitte[0] + ex * (lonMax - lonMin) * 0.62);
+        var ay = Y(mitte[1] + ey * (latMax - latMin) * 0.62);
         var px = ex * kx * skala, py = -ey * skala;
         var pl = Math.sqrt(px * px + py * py) || 1;
         px /= pl; py /= pl;
@@ -706,14 +709,13 @@
           fill: "transparent", "class": "pf-pfeil-ziel" });
         waehlbar(kreis, {
           art: "Kuppelstelle", titel: w.land,
-          zeilen: [["Richtung", einwaerts ? "Zufluss nach Deutschland"
-                                          : "Abfluss aus Deutschland"],
-                   ["Saldo " + zeitraumKurz(von, bis), vz(w.saldo, 2) + " GWh"],
+          zeilen: [["Richtung", einwaerts ? "Zufluss nach DE" : "Abfluss aus DE"],
+                   ["Saldo", vz(w.saldo, 2) + " GWh"],
                    ["Import", gwh(w.imp, 2) + " GWh"],
                    ["Export", gwh(w.exp, 2) + " GWh"]],
-          fuss: "Gemessen. Richtung und Menge stammen aus den SMARD-Reihen für den "
-            + "physikalischen Stromfluss. Die Lage des Pfeils ist schematisch und "
-            + "bezeichnet keinen konkreten Grenzübergang."
+          fuss: "Zeitraum " + zeitraumKurz(von, bis) + ". Gemessen: Richtung und Menge "
+            + "stammen aus den SMARD-Reihen für den physikalischen Stromfluss. Die Lage "
+            + "des Pfeils ist schematisch und bezeichnet keinen konkreten Grenzübergang."
         });
         pfeil.appendChild(kreis);
         gK.appendChild(pfeil);
@@ -808,11 +810,25 @@
     kasten.textContent = "";
     var a = Z.karte.auswahl;
     if (!a) {
-      kasten.appendChild(el("p", { "class": "pf-auswahl-leer",
-        text: "Nichts ausgewählt. Ein Klick auf ein Kraftwerk, ein Umspannwerk oder "
-          + "einen Grenzpfeil zeigt die Einzelheiten hier." }));
+      // Nichts ausgewaehlt heisst: nichts einblenden. Ein leerer Kasten ueber
+      // der Karte wuerde nur Flaeche verdecken.
+      kasten.hidden = true;
       return;
     }
+    kasten.hidden = false;
+    var schliessen = el("button", { "class": "pf-auswahl-zu", type: "button",
+      "aria-label": "Auswahl schließen", text: "×" });
+    schliessen.addEventListener("click", function () {
+      Z.karte.auswahl = null;
+      auswahlZeigen();
+      var svg = document.querySelector(".pf-karte");
+      if (svg) {
+        svg.querySelectorAll("[data-gewaehlt]").forEach(function (x) {
+          x.removeAttribute("data-gewaehlt");
+        });
+      }
+    });
+    kasten.appendChild(schliessen);
     kasten.appendChild(el("p", { "class": "pf-auswahl-art", text: a.art }));
     kasten.appendChild(el("h3", { text: a.titel }));
     var liste = el("dl", { "class": "pf-auswahl-liste" });
@@ -1432,7 +1448,7 @@
       titel: "Bilanzrest", wert: vz(k.rest, 2), einheit: "GWh",
       bezug: (k.rest === null ? "—" : nf2.format(k.rest / k.netzlast * 100) + " % der Netzlast")
         + " · " + bezugstext(k.rest, v.rest, vv, vb),
-      marke: "Selbstkontrolle — geht nicht auf null auf",
+      marke: "Selbstkontrolle — geht nicht auf null",
       info: {
         wert: "Erzeugung + Import − Export − Netzlast. Rechnet die anderen Kacheln gegen.",
         grenzenTitel: "Was hier hineinläuft",
@@ -1534,6 +1550,7 @@
     // --- Karte ---
     var karteHuelle = el("div", { "class": "pf-karte-huelle" });
     var roll = el("div", { "class": "pf-karte-rollbereich" });
+    roll.setAttribute("data-bezug", "1");
     var K = karte(Z.grundkarte, Z.kraftwerke.anlagen, von, bis);
     roll.appendChild(K.svg);
     karteHuelle.appendChild(roll);
@@ -1557,12 +1574,14 @@
     kbed.appendChild(el("span", { "class": "pf-kartenhinweis",
       text: "Mausrad oder +/− zoomt, Ziehen verschiebt, Klick wählt aus. "
         + "Mit der Tastatur: anfahren, dann Pfeiltasten und +/−." }));
-    karteHuelle.appendChild(kbed);
-
+    // Der Auswahlkasten liegt IN der Karte, nicht darunter: wer auf einen Punkt
+    // klickt, schaut auf die Karte und nicht ans Seitenende.
     var auswahlkasten = el("div", { "class": "pf-auswahl", id: "pf-auswahl",
       "aria-live": "polite" });
-    karteHuelle.appendChild(auswahlkasten);
+    auswahlkasten.hidden = true;
+    roll.appendChild(auswahlkasten);
 
+    karteHuelle.appendChild(kbed);
     karteHuelle.appendChild(ebenenSchalter());
 
     var legende = el("div", { "class": "pf-legende" });

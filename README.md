@@ -40,6 +40,7 @@ Belege
     docs/beleg-grundkarte.md        Herkunft und Lizenz der Kartengeometrie
     docs/beleg-netzgeometrie.md     Leitungen und Umspannwerke aus OpenStreetMap
     docs/beleg-verlauf.md           Stundenwerte, Gegenprobe und Diagrammfarben
+    docs/beleg-browsertest.md       Browsertest ueber das DevTools-Protokoll
     LIZENZ-DATEN.md                 die drei Datenlizenzen und ihre Folgen
 
 Prüfen
@@ -51,6 +52,7 @@ Prüfen
     python scripts/fetch-verlauf.py
     python scripts/validate.py
     python scripts/validate.py --negativtests
+    node scripts/browsertest.mjs http://127.0.0.1:8080
     python -m http.server 8765
 
 Vorbild für Aufbau und Sorgfaltsniveau ist das „Flussbilanz-Labor" in icrfornax/de-gas-storage-tracker-bnetza.

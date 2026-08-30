@@ -188,7 +188,7 @@ Ausserdem erledigt: Zeitraumwahl mit Schnellwahl, Karte fuellt ihren Rahmen,
 drei GitHub-Actions-Workflows (taeglicher SMARD-Abruf, monatliche Stammdaten,
 Tuersteher bei jeder Aenderung).
 
-Noch offen: Redispatch; Browsertest; Methodik-PDF; Regelzonen als Flaeche auf
+Noch offen: Redispatch; Methodik-PDF; Regelzonen als Flaeche auf
 der Karte; Import und Export im Verlauf; Anlagen aus dem
 Marktstammdatenregister.
 
@@ -225,6 +225,18 @@ stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
 5. Interaktive Grafik liefern, mit Browsertest.
 6. Methodik-PDF und Exporte liefern.
 7. Live-Seite pruefen, Workflow-Laeufe pruefen, offene Punkte auflisten.
+
+## Browsertest
+
+Er braucht **keine** zusaetzliche Software. Chrome spricht das
+DevTools-Protokoll von Haus aus, Node bringt seit v22 einen WebSocket-Client
+mit. `scripts/browsertest.mjs` startet einen eigenen Chrome mit wegwerfbarem
+Profil und prueft Dark, Light, 390 px, alle Info-Knoepfe, jedes Bedienelement,
+den CSV-Abzug und die Konsole. Er laeuft im Workflow `pruefen.yml` mit.
+
+**Die Bildschirmfotos ansehen, nicht nur die Haken zaehlen.** Drei echte Maengel
+sind nur beim Hinsehen aufgefallen und von keiner Pruefung gemeldet worden --
+siehe `docs/beleg-browsertest.md`.
 
 ## Skills in diesem Repository
 

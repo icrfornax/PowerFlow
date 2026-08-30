@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Bildschirmfotos und Abzuege des Browsertests. Ergebnis eines Laufs,
+# nicht Quelltext.
+.browsertest/
