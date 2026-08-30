@@ -27,7 +27,9 @@ Aufbau
     data/                 CSV und JSON, aus den Abrufskripten erzeugt
     scripts/smard.py      Filter-IDs als benannte Konstanten, Abrufbausteine
     scripts/fetch-*.py    Abrufskripte
+    scripts/quellen.py    baut data/quellen.json aus den vorhandenen Dateien
     scripts/validate.py   Türsteher vor dem Deploy, mit Negativtests
+    scripts/browsertest.mjs  Browsertest über das DevTools-Protokoll
     docs/beleg-*.md       Nachweise je Datenquelle
     .github/workflows/    drei Workflows: taeglicher Abruf, Stammdaten, Tuersteher
 
@@ -57,6 +59,10 @@ Prüfen
     python -m http.server 8765
 
 Vorbild für Aufbau und Sorgfaltsniveau ist das „Flussbilanz-Labor" in icrfornax/de-gas-storage-tracker-bnetza.
+
+Quellen auf der Seite
+
+Der Abschnitt „Quellen und Downloads" am Seitenende führt jeden Datensatz mit Inhalt, Zeitraum, Quelle, Lizenz, Umfang und Abzug. Er wird von scripts/quellen.py aus den tatsächlich vorhandenen Dateien erzeugt — und bricht ab, sobald eine Datei unter data/ ohne Quellenzuordnung auftaucht. Es werden ausschließlich gemessene oder als Stammdatum veröffentlichte Werte geführt: nichts modelliert, nichts geschätzt.
 
 Datenquellen
 

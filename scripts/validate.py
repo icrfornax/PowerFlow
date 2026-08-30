@@ -31,6 +31,7 @@ PFLICHTDATEIEN = [
     "data/tage-verzeichnis.json",
     "data/verlauf-verzeichnis.json",
     "data/redispatch-verzeichnis.json",
+    "data/quellen.json",
     "data/kraftwerke.json",
     "data/grundkarte.json",
     "data/netz-hoechstspannung.json",
@@ -41,6 +42,7 @@ PFLICHTDATEIEN = [
     ".github/workflows/daten-stammdaten.yml",
     ".github/workflows/pruefen.yml",
     "scripts/browsertest.mjs",
+    "scripts/quellen.py",
     # Ohne .nojekyll laeuft die Auslieferung auf GitHub Pages durch Jekyll.
     # Die Seite ist reines statisches HTML; Jekyll bringt nichts und kann
     # Dateien unterschlagen. Die Datei ist leer und muss leer bleiben duerfen.
@@ -562,10 +564,14 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         b.pruefe(wf.index("scripts/validate.py") < wf.index("git commit"),
                  f"{name}: Tuersteher laeuft vor dem Commit")
         b.pruefe("--negativtests" in wf, f"{name}: Negativtests laufen mit")
+        b.pruefe(wf.index("scripts/quellen.py") < wf.index("scripts/validate.py"),
+                 f"{name}: Quellenverzeichnis wird vor dem Tuersteher neu gebaut")
     # Der Browsertest gehoert in den Tuersteher, nicht in die Erinnerung des
     # Entwicklers. Eine Pruefung, die nur laeuft, wenn jemand daran denkt,
     # laeuft irgendwann nicht mehr.
     b.pruefe("browsertest.mjs" in pruefwf, "Pruef-Workflow fuehrt den Browsertest aus")
+    b.pruefe("quellen.py --negativtest" in pruefwf,
+             "Pruef-Workflow weist den Quellen-Waechter nach")
 
     # --- Geheimnisse ---
     # Ein einmal gepushtes Geheimnis steht auch nach dem Loeschen noch in der
@@ -611,6 +617,27 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         b.pruefe(schief < GRENZE_REDISPATCH_SCHIEF_PROZENT,
                  f"{eintrag['jahr']}: hoch gegen runter {schief:.1f} % schief "
                  f"(Budget {GRENZE_REDISPATCH_SCHIEF_PROZENT:.0f} %)")
+
+    # --- Quellenverzeichnis ---
+    # Der eigentliche Waechter steckt in scripts/quellen.py: es bricht ab,
+    # sobald eine Datei unter data/ keiner Quelle zugeordnet ist. Hier wird
+    # geprueft, dass das Ergebnis vollstaendig und aktuell ist -- eine Zahl
+    # ohne Herkunft gibt es auf dieser Seite nicht.
+    qv = json.loads(lade("data/quellen.json"))
+    b.pruefe(len(qv["datensaetze"]) >= 10,
+             f"Quellenverzeichnis: {len(qv['datensaetze'])} Datensaetze")
+    tatsaechlich = sum(1 for p in (WURZEL / "data").rglob("*") if p.is_file())
+    b.pruefe(qv["dateien_gesamt"] == tatsaechlich,
+             f"Quellenverzeichnis zaehlt alle Dateien ({qv['dateien_gesamt']} "
+             f"verzeichnet, {tatsaechlich} vorhanden)")
+    ohneQuelle = [d["titel"] for d in qv["datensaetze"]
+                  if d["quelle"] not in qv["quellen"]]
+    b.pruefe(not ohneQuelle, f"jeder Datensatz hat eine bekannte Quelle ({ohneQuelle})")
+    for schluessel, q in qv["quellen"].items():
+        for feld in ("name", "url", "lizenz", "lizenz_url", "namensnennung", "erhebung"):
+            b.pruefe(bool(q.get(feld)), f"Quelle {schluessel}: Feld {feld} gefuellt")
+    b.pruefe("nichts modelliert" in (qv.get("_hinweis") or ""),
+             "Quellenverzeichnis sagt ausdruecklich, dass nichts modelliert wird")
 
     lizenztext = lade("LIZENZ-DATEN.md")
     for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",

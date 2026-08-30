@@ -113,7 +113,11 @@ die Regelzonenbilanz.
 - **Zahlformate:** Anzeige deutsch ueber `Intl.NumberFormat("de-DE")`, CSV
   maschinenlesbar mit Punkt als Dezimaltrennzeichen. Den Unterschied im
   Dateikopf erklaeren.
-- **Keine Zahl ohne Herkunft.** Uebernommene Zahl: Herausgeber, Dokument, Jahr.
+- **Keine Zahl ohne Herkunft.** Durchgesetzt durch `scripts/quellen.py`: es
+  ordnet jede Datei unter `data/` einer Quelle zu und **bricht ab**, wenn eine
+  ohne Zuordnung auftaucht. Das Ergebnis steht als Tabelle am Seitenende.
+  Es werden ausschliesslich gemessene oder als Stammdatum veroeffentlichte
+  Werte gefuehrt -- nichts modelliert, nichts geschaetzt. Uebernommene Zahl: Herausgeber, Dokument, Jahr.
   Selbst gerechnete Zahl: die Formel.
 
 ## Technik

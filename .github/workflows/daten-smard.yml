@@ -61,6 +61,12 @@ jobs:
           fi
           python scripts/fetch-redispatch.py --lizenz-geklaert "$(date -u +%Y)"
 
+      - name: Quellenverzeichnis neu bauen
+        # Muss VOR dem Tuersteher laufen: er prueft, dass das Verzeichnis alle
+        # Dateien zaehlt. Und quellen.py bricht selbst ab, wenn eine Datei
+        # unter data/ ohne Quellenzuordnung auftaucht.
+        run: python scripts/quellen.py
+
       - name: Tuersteher
         run: |
           python scripts/validate.py
