@@ -285,6 +285,60 @@
     }).filter(function (x) { return x.saldo !== null; });
   }
 
+  /* Erzeugung je Regelzone, nach denselben acht Gruppen wie im Verlauf. Damit
+     traegt Braunkohle in der Zonenansicht dieselbe Farbe wie im Diagramm und
+     auf der Karte -- Farbe sagt WER, nicht WO.
+
+     Was hier NICHT steht und auch nicht stehen kann: wohin der Ueberschuss
+     einer Zone geflossen ist. Erzeugung und Netzlast je Zone sind gemessen,
+     ihre Differenz ist eine Bilanz. Ein Fluss von einer Zone in eine andere
+     wird nicht veroeffentlicht -- Deutschland und Luxemburg sind EINE
+     Gebotszone, und die Verordnung 543/2013 Art. 12.1(g) verlangt
+     physikalische Fluesse nur zwischen Gebotszonen. Aus vier Bilanzen liessen
+     sich die sechs Fluesse zwischen den Zonen ohnehin nicht ausrechnen; jede
+     Aufteilung waere eine Modellrechnung. */
+  function zonenTraeger(von, bis) {
+    var d = Z.jahre[Number(von.slice(0, 4))];
+    if (!d) { return []; }
+    return Object.keys(d.regelzonen).map(function (z) {
+      var last = summeZeitraum(von, bis, ["regelzonen", z, "netzlast"]).wert;
+      var gruppen = TRAEGERGRUPPEN.map(function (g) {
+        var summe = 0, gefunden = false;
+        g.quellen.forEach(function (q) {
+          var w = summeZeitraum(von, bis, ["regelzonen", z, "erzeugung", q]).wert;
+          if (w !== null) { summe += w; gefunden = true; }
+        });
+        return { name: g.name, token: g.token, mwh: gefunden ? summe : 0 };
+      }).filter(function (g) { return g.mwh > 0; });
+      var gen = gruppen.reduce(function (a, g) { return a + g.mwh; }, 0);
+      var ee = 0;
+      EE_REIHEN.forEach(function (q) {
+        var w = summeZeitraum(von, bis, ["regelzonen", z, "erzeugung", q]).wert;
+        if (w !== null) { ee += w; }
+      });
+      return { zone: z, netzlast: last, erzeugung: gen, gruppen: gruppen, ee: ee,
+               saldo: last === null ? null : gen - last };
+    }).filter(function (x) { return x.erzeugung > 0; })
+      .sort(function (a, b) { return b.erzeugung - a.erzeugung; });
+  }
+
+  /* Gegenprobe: die vier Zonen muessen sich auf Deutschland summieren. Ab 2021
+     tun sie das praktisch exakt; davor nicht, und das darf nicht weggeglaettet
+     werden. Gemessen ueber alle 4.258 Tage weicht die Zonensumme an 1.173 Tagen
+     um mehr als 1 % ab, davon 1.076 vor 2018. Groesster Einzelposten: die Reihe
+     "Sonstige Konventionelle" steht 2015 in der Zonenaufteilung fuenfmal so
+     hoch wie fuer Deutschland insgesamt.
+
+     Der Wert wird deshalb fuer den GEWAEHLTEN Zeitraum gerechnet und nicht an
+     einer Jahreszahl festgemacht -- auch 2025 gibt es noch fuenf Tage
+     daneben. */
+  function zonenAbweichung(von, bis) {
+    var de = summeGruppe(von, bis, "erzeugung");
+    var zo = zonenTraeger(von, bis).reduce(function (a, x) { return a + x.erzeugung; }, 0);
+    if (de === null || !de) { return null; }
+    return (zo - de) / de * 100;
+  }
+
   function laender(von, bis) {
     var d = Z.jahre[Number(von.slice(0, 4))];
     if (!d) { return []; }
@@ -421,7 +475,17 @@
       + (p >= 0 ? "+" : "−") + nf1.format(Math.abs(p)) + " %";
   }
 
-  function balkenliste(eintraege, farbe, maxWert) {
+  function traegerFarbe(name) {
+    var treffer = TRAEGERGRUPPEN.filter(function (g) {
+      return g.quellen.indexOf(name) >= 0;
+    })[0];
+    return "var(" + (treffer ? treffer.token : "--tr-sonst") + ")";
+  }
+
+  /* farbe gilt fuer alle Balken; farbeJe (optional) entscheidet je Eintrag und
+     hat Vorrang. So tragen Energietraeger ihre Farbe und Nachbarlaender die
+     eine Farbe ihrer Richtung. */
+  function balkenliste(eintraege, farbe, maxWert, farbeJe) {
     var liste = el("div", { "class": "pf-balken" });
     eintraege.forEach(function (e) {
       var zeile = el("div", { "class": "pf-zeile" });
@@ -432,7 +496,7 @@
       schiene.appendChild(el("div", {
         "class": "pf-fuellung",
         style: "width:" + (maxWert > 0 ? Math.max(0, e.mwh / maxWert * 100) : 0).toFixed(2)
-          + "%;background:" + farbe + ";"
+          + "%;background:" + (farbeJe ? farbeJe(e.name) : farbe) + ";"
       }));
       liste.appendChild(schiene);
     });
@@ -1589,6 +1653,137 @@
     return huelle;
   }
 
+  /* Erzeugung nach Energietraeger, aufgeteilt auf die vier Regelzonen.
+
+     Der Balken einer Zone ist auf die groesste Zone skaliert, nicht auf sich
+     selbst -- sonst saehen alle vier gleich gross aus und die Aussage "im
+     Norden steht das meiste" ginge verloren. Die Anteile innerhalb einer Zone
+     bleiben trotzdem ablesbar, weil die Abschnitte anteilig geteilt sind. */
+  function regelzonenAbschnitt(von, bis) {
+    var huelle = el("div", { "class": "pf-zonen-huelle" });
+    var zz = zonenTraeger(von, bis);
+    if (!zz.length) {
+      huelle.appendChild(el("p", { "class": "pf-laden",
+        text: "Für diesen Zeitraum liegt keine Aufteilung auf die Regelzonen vor." }));
+      return huelle;
+    }
+    var maxGen = Math.max.apply(null, zz.map(function (x) { return x.erzeugung; }));
+
+    var liste = el("div", { "class": "pf-zonen" });
+    zz.forEach(function (x) {
+      var karte = el("div", { "class": "pf-zone" });
+      var kopf = el("div", { "class": "pf-zone-kopf" });
+      kopf.appendChild(el("span", { "class": "pf-zone-name", text: x.zone }));
+      kopf.appendChild(el("span", { "class": "pf-zone-zahl",
+        text: gwh(x.erzeugung, 1) + " GWh erzeugt" }));
+      karte.appendChild(kopf);
+
+      var schiene = el("div", { "class": "pf-zone-schiene" });
+      var stapel = el("div", { "class": "pf-zone-stapel",
+        style: "width:" + (x.erzeugung / maxGen * 100).toFixed(2) + "%;" });
+      /* FESTE Reihenfolge, nicht nach Groesse sortiert. Sonst steht Wind in
+         jedem der vier Balken an einer anderen Stelle und der Vergleich
+         zwischen den Zonen -- der eigentliche Zweck -- wird zum Suchspiel. */
+      x.gruppen.forEach(function (g) {
+        var anteil = g.mwh / x.erzeugung * 100;
+        stapel.appendChild(el("span", {
+          style: "width:" + anteil.toFixed(2) + "%;background:var(" + g.token + ");",
+          title: g.name + ": " + gwh(g.mwh, 1) + " GWh · " + nf1.format(anteil) + " %"
+        }));
+      });
+      schiene.appendChild(stapel);
+      karte.appendChild(schiene);
+
+      var fuss = [];
+      if (x.netzlast !== null) {
+        fuss.push("Netzlast " + gwh(x.netzlast, 1) + " GWh");
+        fuss.push("Saldo " + vz(x.saldo, 1) + " GWh");
+      }
+      if (x.erzeugung > 0 && x.netzlast) {
+        fuss.push("Erneuerbare " + nf1.format(x.ee / x.netzlast * 100) + " % der Zonenlast");
+      }
+      karte.appendChild(el("p", { "class": "pf-zone-fuss", text: fuss.join(" · ") }));
+      liste.appendChild(karte);
+    });
+    huelle.appendChild(liste);
+
+    var legende = el("div", { "class": "pf-legende pf-legende-traeger" });
+    legende.appendChild(el("span", { "class": "pf-legende-titel", text: "Energieträger:" }));
+    TRAEGERGRUPPEN.slice().reverse().forEach(function (g) {
+      if (!zz.some(function (x) {
+        return x.gruppen.some(function (y) { return y.name === g.name; });
+      })) { return; }
+      var sp = el("span");
+      sp.appendChild(el("i", { style: "background:var(" + g.token + ");" }));
+      sp.appendChild(document.createTextNode(g.name));
+      legende.appendChild(sp);
+    });
+    huelle.appendChild(legende);
+
+    /* Was die Zahlen sagen und was nicht. Der Satz steht bewusst hier und
+       nicht nur in einem Popover: die naheliegende Fehllesung ist, aus vier
+       Salden auf Fluesse zwischen den Zonen zu schliessen. */
+    huelle.appendChild(el("p", { "class": "pf-bezug",
+      text: "Erzeugung und Netzlast je Zone sind gemessen. Ihre Differenz ist eine "
+        + "Bilanz — sie sagt, wie viel eine Zone mehr oder weniger erzeugt hat als "
+        + "sie verbraucht hat, aber nicht, wohin der Überschuss gegangen ist. Flüsse "
+        + "zwischen den vier Regelzonen werden nicht veröffentlicht und stehen "
+        + "deshalb hier nicht. Aus vier Bilanzen ließen sie sich auch nicht "
+        + "ausrechnen: es sind sechs Verbindungen, und jede Zone tauscht zusätzlich "
+        + "direkt mit dem Ausland. Jede Aufteilung wäre eine Modellrechnung." }));
+
+    // Gegenprobe im Klartext, nicht versteckt.
+    var abw = zonenAbweichung(von, bis);
+    if (abw !== null) {
+      huelle.appendChild(el("p", { "class": "pf-bezug",
+        text: "Gegenprobe: die vier Zonen zusammen ergeben "
+          + (Math.abs(abw) < 0.05 ? "genau" : nf2.format(Math.abs(abw)) + " % "
+             + (abw > 0 ? "mehr" : "weniger") + " als")
+          + " die Erzeugung für Deutschland insgesamt." }));
+    }
+
+    var schalter = el("button", { "class": "pf-tabellenschalter", type: "button",
+      "aria-expanded": "false", text: "Als Tabelle anzeigen" });
+    var tabHuelle = el("div", { "class": "pf-tabellen-rollbereich" });
+    tabHuelle.hidden = true;
+    schalter.addEventListener("click", function () {
+      var auf = tabHuelle.hidden;
+      tabHuelle.hidden = !auf;
+      schalter.setAttribute("aria-expanded", auf ? "true" : "false");
+      schalter.textContent = auf ? "Tabelle ausblenden" : "Als Tabelle anzeigen";
+      if (auf && !tabHuelle.childNodes.length) {
+        var tab = el("table", { "class": "pf-tabelle" });
+        var kopfz = el("tr");
+        kopfz.appendChild(el("th", { text: "Regelzone", scope: "col" }));
+        TRAEGERGRUPPEN.forEach(function (g) {
+          kopfz.appendChild(el("th", { text: g.name, scope: "col" }));
+        });
+        ["Erzeugung", "Netzlast", "Saldo"].forEach(function (h) {
+          kopfz.appendChild(el("th", { text: h + " (GWh)", scope: "col" }));
+        });
+        var kopf = el("thead"); kopf.appendChild(kopfz); tab.appendChild(kopf);
+        var koerper = el("tbody");
+        zz.forEach(function (x) {
+          var tr = el("tr");
+          tr.appendChild(el("th", { text: x.zone, scope: "row" }));
+          TRAEGERGRUPPEN.forEach(function (g) {
+            var e = x.gruppen.filter(function (y) { return y.name === g.name; })[0];
+            tr.appendChild(el("td", { text: e ? gwh(e.mwh, 1) : "—" }));
+          });
+          tr.appendChild(el("td", { text: gwh(x.erzeugung, 1) }));
+          tr.appendChild(el("td", { text: x.netzlast === null ? "—" : gwh(x.netzlast, 1) }));
+          tr.appendChild(el("td", { text: x.saldo === null ? "—" : vz(x.saldo, 1) }));
+          koerper.appendChild(tr);
+        });
+        tab.appendChild(koerper);
+        tabHuelle.appendChild(tab);
+      }
+    });
+    huelle.appendChild(schalter);
+    huelle.appendChild(tabHuelle);
+    return huelle;
+  }
+
   // ---- Redispatch ---------------------------------------------------------
   /* Eingriffe der Uebertragungsnetzbetreiber ins Kraftwerkseinsatzprogramm.
      Das ist die gemessene Antwort auf die Frage nach dem Netzengpass -- und
@@ -2114,6 +2309,20 @@
         + "Zonenwerte dieses Zeitraums sind deshalb mit Vorsicht zu lesen. Die Ursache ist "
         + "nicht geklärt.");
     }
+    /* Die Zonensumme wird fuer den gewaehlten Zeitraum nachgerechnet, nicht an
+       einer Jahreszahl festgemacht. Sonst faellt durch, dass es auch im
+       Dezember 2025 noch Tage mit fast 3 % Abweichung gibt. */
+    var zAbw = zonenAbweichung(von, bis);
+    if (zAbw !== null && Math.abs(zAbw) > 1) {
+      warnungen.push("Die Erzeugung der vier Regelzonen summiert sich in diesem Zeitraum "
+        + "auf " + nf2.format(Math.abs(zAbw)) + " % " + (zAbw > 0 ? "mehr" : "weniger")
+        + " als die Erzeugung für Deutschland insgesamt. Beide Reihen kommen aus "
+        + "derselben Quelle und müssten gleich sein. Größter Einzelposten ist die "
+        + "Reihe „Sonstige Konventionelle“, die 2015 in der Zonenaufteilung "
+        + "fünfmal so hoch steht wie für Deutschland. Der Abschnitt zu den Regelzonen "
+        + "ist für diesen Zeitraum entsprechend unsicher — die Werte werden nicht "
+        + "korrigiert und nicht angeglichen.");
+    }
     if (k.rest !== null && Math.abs(k.rest / k.netzlast * 100) > 5) {
       warnungen.push("Die Bilanz dieses Zeitraums geht um "
         + nf1.format(Math.abs(k.rest / k.netzlast * 100)) + " % nicht auf. Das liegt über dem "
@@ -2137,10 +2346,35 @@
 
     // --- Flussbild ---
     var fluss = el("div", { "class": "pf-fluss" });
+    var ll = laender(von, bis);
+
+    /* Zufluss ist Erzeugung UND Import. Frueher stand hier nur die Erzeugung,
+       waehrend gegenueber der Export stand -- das Bild war unsymmetrisch und
+       liess den Import unter den Tisch fallen. Beide Gruppen stehen jetzt in
+       derselben Saeule, aber getrennt beschriftet: Energietraeger sind keine
+       Nachbarlaender.
+
+       Die Traegerbalken tragen die Traegerfarbe, nicht ein einheitliches Teal.
+       Braunkohle ist auf dieser Seite ueberall dieselbe Farbe -- auf der Karte,
+       im Verlauf, in den Regelzonen und hier. */
     var tr = traeger(von, bis);
-    var maxZu = Math.max.apply(null, tr.map(function (e) { return e.mwh; }));
-    fluss.appendChild(saeule("zufluss", "Zufluss · Erzeugung", gwh(k.erzeugung, 1) + " GWh",
-      balkenliste(tr, "var(--teal)", maxZu)));
+    var zu = ll.filter(function (a) { return a.imp > 0; })
+      .map(function (a) { return { name: a.land, mwh: a.imp }; })
+      .sort(function (a, b) { return b.mwh - a.mwh; });
+    var maxZu = Math.max.apply(null, tr.map(function (e) { return e.mwh; })
+      .concat(zu.map(function (e) { return e.mwh; })));
+
+    var zuInhalt = el("div");
+    zuInhalt.appendChild(el("p", { "class": "pf-gruppentitel",
+      text: "Erzeugung nach Energieträger · " + gwh(k.erzeugung, 1) + " GWh" }));
+    zuInhalt.appendChild(balkenliste(tr, null, maxZu, traegerFarbe));
+    if (zu.length) {
+      zuInhalt.appendChild(el("p", { "class": "pf-gruppentitel",
+        text: "Import je Nachbarland · " + gwh(k.imp, 1) + " GWh" }));
+      zuInhalt.appendChild(balkenliste(zu, "var(--teal)", maxZu));
+    }
+    fluss.appendChild(saeule("zufluss", "Zufluss · Erzeugung + Import",
+      gwh((k.erzeugung || 0) + (k.imp || 0), 1) + " GWh", zuInhalt));
 
     var netzInhalt = el("div");
     var zz = zonen(von, bis).sort(function (a, b) { return b.saldo - a.saldo; });
@@ -2162,10 +2396,39 @@
       text: "Saldo = Erzeugung minus Netzlast je Regelzone, in GWh. Der Austausch mit allen "
         + "Nachbarn zusammen — anderen Regelzonen und Ausland. Kein Fluss von einer Zone in "
         + "eine andere." }));
+
+    /* Die Gleichung, die das Bild zusammenhaelt. Sie steht hier ausgeschrieben,
+       damit man die drei Saeulen gegeneinander nachrechnen kann, ohne sie
+       abzutippen -- und damit der Rest sichtbar ist, statt in einer Kachel zu
+       verschwinden. Er geht nicht auf null auf, und das soll man sehen. */
+    if (k.rest !== null) {
+      var rechnung = el("div", { "class": "pf-rechnung" });
+      rechnung.appendChild(el("p", { "class": "pf-gruppentitel", text: "Die Bilanz" }));
+      [["Erzeugung", gwh(k.erzeugung, 1)],
+       ["+ Import", gwh(k.imp, 1)],
+       ["− Export", gwh(k.exp, 1)],
+       ["− Netzlast", gwh(k.netzlast, 1)]].forEach(function (z) {
+        var r = el("div", { "class": "pf-rechnung-zeile" });
+        r.appendChild(el("span", { text: z[0] }));
+        r.appendChild(el("span", { "class": "pf-zahl", text: z[1] }));
+        rechnung.appendChild(r);
+      });
+      var summe = el("div", { "class": "pf-rechnung-zeile pf-rechnung-summe" });
+      summe.appendChild(el("span", { text: "= Bilanzrest" }));
+      // Zwei Nachkommastellen wie in der Kachel "Bilanzrest" -- wer beide
+      // Zahlen nebeneinander liest, soll nicht ueber eine Rundung stolpern.
+      summe.appendChild(el("span", { "class": "pf-zahl", text: vz(k.rest, 2) }));
+      rechnung.appendChild(summe);
+      rechnung.appendChild(el("p", { "class": "pf-bezug",
+        text: "Alles in GWh. " + nf2.format(k.rest / k.netzlast * 100) + " % der Netzlast. "
+          + "Der Rest geht nicht auf null auf und wird nicht dorthin gerechnet — darin "
+          + "stecken Netzverluste und die unterschiedliche zeitliche Auflösung von "
+          + "Erzeugung und Außenhandel." }));
+      netzInhalt.appendChild(rechnung);
+    }
     fluss.appendChild(saeule("netz", "Netz · Regelzonen", gwh(k.netzlast, 1) + " GWh Netzlast",
       netzInhalt));
 
-    var ll = laender(von, bis);
     var ab = ll.filter(function (a) { return a.exp > 0; })
       .map(function (a) { return { name: a.land, mwh: a.exp }; })
       .sort(function (a, b) { return b.mwh - a.mwh; });
@@ -2173,6 +2436,10 @@
     fluss.appendChild(saeule("abfluss", "Abfluss · Export", gwh(k.exp, 1) + " GWh",
       balkenliste(ab, "var(--orange)", maxAb)));
     neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh im Zeitraum)", fluss));
+
+    // --- Regelzonen ---
+    neu.appendChild(abschnitt("Regelzonen · Erzeugung nach Energieträger",
+      regelzonenAbschnitt(von, bis)));
 
     // --- Redispatch ---
     neu.appendChild(abschnitt("Redispatch · Eingriffe ins Netz",

@@ -219,6 +219,11 @@ Flaechen statt Schraffur, Netzlast in eigenem Blau, Preis als Stufenflaeche in
 gedaempftem Gelb mit fester Achse. Achte Kennzahl: Anteil der Erneuerbaren an
 der Netzlast.
 
+Ausserdem erledigt (31.08.2026): Zufluss zeigt Erzeugung UND Import, die
+Mittelsaeule rechnet die Bilanz vor, und ein eigener Abschnitt zeigt die
+Erzeugung nach Energietraeger je Regelzone -- mit den Traegerfarben, fester
+Stapelreihenfolge und der Gegenprobe gegen die Deutschlandsumme.
+
 Noch offen: Methodik-PDF; Regelzonen als Flaeche auf
 der Karte; Import und Export im Verlauf; Anlagen aus dem
 Marktstammdatenregister.
@@ -256,6 +261,15 @@ stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
    von 0,5 % war auf einen einzelnen Tag geeicht und ist zurueckgenommen.
 2. **Vor 2019 ist die Regelzonenaufteilung unvollstaendig** - 2015 fehlen bis zu
    3,4 % der Last je Tag. Ursache nicht geklaert. Die Seite warnt sichtbar.
+   Bei der **Erzeugung** ist der Riss groesser als bei der Last: die Zonensumme
+   liegt 2015 um +7,5 % und 2016 um +6,6 % ueber der Deutschlandsumme, weil die
+   Reihe "Sonstige Konventionelle" in der Zonenaufteilung fuenfmal so hoch
+   steht. An 1.173 von 4.258 Tagen weicht die Zonensumme um mehr als 1 % ab,
+   davon fuenf ab 2021 (alle Nov/Dez 2025, groesster −2,84 % am 09.12.2025).
+   Die Warnung haengt deshalb **nicht an einer Jahreszahl**, sondern wird fuer
+   den gewaehlten Zeitraum nachgerechnet. Diese Abweichung war von der auf 2019
+   gesetzten Toleranzgrenze verdeckt -- eine Grenze, die man setzt, muss man
+   auch daraufhin ansehen, was sie sonst noch zudeckt.
 3. **Tages- und Stundenwerte muessen im SELBEN Lauf geholt werden.** SMARD
    meldet zurueckliegende Werte nach: am 30.08.2026 stand der 28.08. zuerst bei
    1.214.078,00 MWh und nach dem naechsten Abruf bei 1.213.793,75 MWh. Wer die

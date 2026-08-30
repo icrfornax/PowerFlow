@@ -135,6 +135,54 @@ Es bleibt eine echte Ungenauigkeit der Quelle: **249 von 31.785 Vergleichen
 unsichtbar gemacht, sondern als **Budget** geführt: der Deploy hält an, wenn der
 Anteil über 1,0 % oder die größte Abweichung über 50.000 MWh steigt.
 
+## Erzeugung je Zone: ein zweiter, größerer Riss vor 2018
+
+Nachgetragen am 31.08.2026, aufgefallen beim Bau des Regelzonen-Abschnitts.
+
+Die Tabelle oben vergleicht die **Last**. Vergleicht man die **Erzeugung**, ist
+der Riss vor 2018 deutlich größer:
+
+| Jahr | Abw. Last | Abw. Erzeugung |
+|---|---:|---:|
+| 2015 | −0,66 % | **+7,52 %** |
+| 2016 | −0,17 % | **+6,65 %** |
+| 2017 | −0,22 % | −1,44 % |
+| 2018 | +0,01 % | −0,76 % |
+| 2019 | +0,00 % | −0,22 % |
+| 2021–2026 | +0,00 % | ±0,03 % |
+
+Die Zonensumme liegt 2015 also um mehr als sieben Prozent **über** der
+Deutschlandsumme. Der Einzelposten ist gefunden:
+
+| Reihe | DE 2015 | Summe der Zonen | Abw. |
+|---|---:|---:|---:|
+| Sonstige Konventionelle | 10.425.309 MWh | 55.252.172 MWh | **+430 %** |
+| Biomasse | 39.751.085 MWh | 34.848.865 MWh | −12,3 % |
+| Wasserkraft | 14.094.166 MWh | 13.103.322 MWh | −7,0 % |
+
+„Sonstige Konventionelle" steht in der Zonenaufteilung 2015 rund **fünfmal so
+hoch** wie für Deutschland insgesamt. 2016 noch 3,8-fach, ab 2017 kippt das
+Vorzeichen. Beide Reihen kommen aus derselben Quelle und müssten gleich sein.
+
+**Warum das die bestehende Prüfung nicht gemeldet hat:** der Türsteher prüft die
+Zonensumme erst ab dem 01.01.2019 streng. Das war eine bewusste Festlegung wegen
+der Lastlücke — sie hat aber den größeren Erzeugungsriss mit abgedeckt, ohne
+dass er je benannt worden wäre. Das ist mein Fehler, nicht der der Quelle: eine
+Toleranzgrenze, die man setzt, muss man auch daraufhin ansehen, was sie sonst
+noch verdeckt.
+
+**Wie oft es vorkommt**, über alle 4.258 belegten Tage gerechnet: an **1.173
+Tagen** weicht die Zonensumme der Erzeugung um mehr als 1 % ab. Davon liegen
+1.076 vor 2018, 97 zwischen 2018 und 2020 und **fünf ab 2021** — alle im
+November und Dezember 2025, der größte am 09.12.2025 mit −2,84 %.
+
+**Folge für die Seite:** die Warnung hängt nicht mehr an einer Jahreszahl,
+sondern wird für den **gewählten Zeitraum nachgerechnet**
+(`zonenAbweichung()` in `assets/powerflow.js`). Liegt sie über 1 %, sagt die
+Seite es im Kasten „Hinweise zur Datenlage" und nennt die Zahl. Der
+Regelzonen-Abschnitt zeigt die Gegenprobe außerdem immer an, auch wenn sie
+aufgeht. Korrigiert oder angeglichen wird nichts.
+
 ## Was streng geprüft wird und aufgeht
 
 - **Residuallast**: `Netzlast − Wind Onshore − Wind Offshore − Photovoltaik`

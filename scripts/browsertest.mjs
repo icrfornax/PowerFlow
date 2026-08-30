@@ -255,6 +255,52 @@ try {
     `${vorgabe.trenner} Tagestrenner im Wochenverlauf`);
   await foto("verlauf-woche", ".pf-verlauf");
 
+  /* Zufluss/Abfluss und die Regelzonen. Nachgerechnet wird die Bilanz aus den
+     ANGEZEIGTEN Zahlen -- wenn die Saeulen und die Gleichung auseinanderlaufen,
+     faellt es hier auf und nicht erst dem Leser. */
+  const fluss = await js(`(function () {
+    /* ACHTUNG, zweimal hineingelaufen: dieser Ausdruck steht in einem
+       Template-Literal. Dort faellt \. zu . zusammen, der regulaere Ausdruck
+       loescht dann JEDES Zeichen und parseFloat liefert NaN. Deshalb hier
+       split/join statt eines regulaeren Ausdrucks -- ohne Backslash gibt es
+       nichts zu verschlucken. */
+    const zahl = (s) => parseFloat(
+      s.split(".").join("").replace(",", ".").replace("−", "-"));
+    const titel = [...document.querySelectorAll(".pf-saeule > h3")].map((x) => x.textContent);
+    const gruppen = [...document.querySelectorAll(".pf-saeule .pf-gruppentitel")]
+      .map((x) => x.textContent);
+    // Beschriftung und Zahl je Zeile, in Reihenfolge -- ein Vergleich auf
+    // Zeichenketten mit Minuszeichen und Pluszeichen ist zu heikel.
+    const r = [...document.querySelectorAll(".pf-rechnung-zeile")].map((z) => ({
+      label: z.firstChild.textContent, wert: zahl(z.lastChild.textContent)
+    }));
+    return { titel: titel, gruppen: gruppen, rechnung: r,
+             zonen: document.querySelectorAll(".pf-zone").length,
+             stapel: document.querySelectorAll(".pf-zone-stapel span").length,
+             fuss: [...document.querySelectorAll(".pf-zone-fuss")].map((x) => x.textContent) };
+  })()`);
+  pruefe(fluss.titel.some((x) => /Import/.test(x)),
+    "die Zuflusssaeule nennt den Import", fluss.titel.join(" | "));
+  pruefe(fluss.gruppen.some((x) => /Import je Nachbarland/.test(x)),
+    "Import je Nachbarland ist eigene Gruppe", fluss.gruppen.join(" | "));
+  pruefe(fluss.zonen === 4, `vier Regelzonen mit Traegerstapel (${fluss.zonen})`);
+  pruefe(fluss.stapel >= 4 * 4,
+    `${fluss.stapel} Traegerabschnitte in den vier Stapeln`);
+  pruefe(fluss.fuss.every((x) => /Netzlast/.test(x) && /Saldo/.test(x) && /Erneuerbare/.test(x)),
+    "jede Zone nennt Netzlast, Saldo und Erneuerbare", fluss.fuss[0]);
+
+  const rechnung = fluss.rechnung;
+  // Reihenfolge: Erzeugung, + Import, - Export, - Netzlast, = Bilanzrest.
+  const vz = [1, 1, -1, -1];
+  const soll = rechnung.slice(0, 4).reduce((a, z, i) => a + vz[i] * z.wert, 0);
+  const ist = rechnung[4] ? rechnung[4].wert : null;
+  // Die Summanden sind auf eine Nachkommastelle gerundet; vier davon ergeben
+  // hoechstens 0,2 GWh Rundungsspiel.
+  pruefe(rechnung.length === 5 && ist !== null && Math.abs(soll - ist) <= 0.25,
+    `die angezeigte Bilanz geht auf: ${soll.toFixed(1)} gegen `
+      + `${ist === null ? "?" : ist.toFixed(1)} GWh`,
+    JSON.stringify(rechnung));
+
   const rd = await js(`(function () {
     const k = [...document.querySelectorAll(".pf-kachel .pf-titel")]
       .map((x) => x.textContent);

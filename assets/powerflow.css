@@ -323,6 +323,64 @@ body {
 }
 .pf-balken .pf-fuellung { height: 100%; border-radius: 2px; }
 
+/* Zwischenueberschrift in einer Saeule: Energietraeger und Nachbarlaender
+   stehen beide im Zufluss, sind aber nicht dasselbe und werden getrennt
+   beschriftet. */
+.pf-gruppentitel {
+  margin: 12px 0 6px; font-size: 0.78rem; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--schrift-still);
+}
+.pf-gruppentitel:first-child { margin-top: 0; }
+
+/* ---------- Regelzonen: Erzeugung nach Energietraeger ---------- */
+
+.pf-zonen { display: grid; gap: 14px; margin: 0 0 14px; }
+.pf-zone {
+  background: var(--flaeche-hoch); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 12px 14px;
+}
+.pf-zone-kopf {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px; flex-wrap: wrap;
+}
+.pf-zone-name { font-weight: 600; color: var(--schrift); }
+.pf-zone-zahl {
+  font-family: var(--schrift-zahl); font-variant-numeric: tabular-nums;
+  color: var(--schrift-leise); font-size: 0.9rem;
+}
+/* Die Schiene ist der Massstab, der Stapel die Zone. Beide sind gleich breit
+   angelegt; der Stapel bekommt seinen Anteil an der groessten Zone als Breite.
+   Damit vergleicht man Zonen MITEINANDER und nicht jede mit sich selbst. */
+.pf-zone-schiene {
+  margin: 8px 0 6px; height: 16px; border-radius: 3px;
+  background: var(--grund); overflow: hidden;
+}
+.pf-zone-stapel { display: flex; height: 100%; border-radius: 3px; overflow: hidden; }
+.pf-zone-stapel span { display: block; height: 100%; }
+/* Eine haarduenne Fuge trennt zwei Abschnitte, ohne sie einzurahmen -- dieselbe
+   Loesung wie im Verlaufsdiagramm. */
+.pf-zone-stapel span + span { box-shadow: inset 1px 0 0 var(--flaeche-hoch); }
+.pf-zone-fuss {
+  margin: 0; font-size: 0.82rem; color: var(--schrift-leise);
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 900px) { .pf-zonen { grid-template-columns: 1fr 1fr; } }
+
+/* Die Bilanzgleichung in der Mittelsaeule. */
+.pf-rechnung { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--linie); }
+.pf-rechnung-zeile {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 0.88rem; color: var(--schrift-leise); padding: 3px 0;
+}
+.pf-rechnung-zeile .pf-zahl {
+  font-family: var(--schrift-zahl); font-variant-numeric: tabular-nums;
+  color: var(--schrift);
+}
+.pf-rechnung-summe {
+  margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--linie);
+  color: var(--schrift); font-weight: 600;
+}
+
 /* ---------- Karte ----------
    Zurueckhaltende Vektorkarte: dunkler Grund, kaum sichtbare Nachbarn,
    Bundeslaender als ruhige Flaeche, die Daten als leuchtende Punkte darueber.

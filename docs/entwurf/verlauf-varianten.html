@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entwurf · Varianten für den Verlauf</title>
+<style>
+:root {
+  --grund: #0e1418; --flaeche: #151d23; --flaeche-hoch: #1c262e; --linie: #2a3841;
+  --schrift: #e6edf3; --schrift-leise: #93a4b1; --schrift-still: #6b7c88;
+  --teal: #2fb3a3; --orange: #e08a3c;
+  --tr-kern: #9d76dd; --tr-braun: #a04038; --tr-stein: #dd5f9e; --tr-gas: #d0722f;
+  --tr-sonst: #7d8d99; --tr-bio: #46a06b; --tr-wind: #5f92dd; --tr-pv: #a8881a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--grund); color: var(--schrift);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.huelle { max-width: 1180px; margin: 0 auto; padding: 26px 20px 60px; }
+h1 { font-size: 1.5rem; margin: 0 0 4px; }
+.vor { color: var(--schrift-leise); margin: 0 0 26px; font-size: 0.92rem; }
+section { margin: 0 0 30px; }
+h2 { font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--schrift-still); margin: 0 0 3px; font-weight: 600; }
+.was { color: var(--schrift-leise); font-size: 0.85rem; margin: 0 0 10px; max-width: 78ch; }
+.karte { background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: 10px; padding: 14px 15px; }
+svg { display: block; width: 100%; height: auto; }
+.gitter line { stroke: var(--linie); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.gitter text { fill: var(--schrift-still); font-size: 11px;
+  font-family: "Cascadia Mono", Consolas, monospace; }
+.last { stroke: var(--schrift); stroke-width: 1.6; fill: none;
+  vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.legende { display: flex; flex-wrap: wrap; gap: 4px 15px; margin: 10px 0 0;
+  font-size: 0.8rem; color: var(--schrift-leise); }
+.legende span { display: inline-flex; align-items: center; gap: 6px; }
+.legende i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="huelle">
+  <h1>Vier Varianten für den Verlauf</h1>
+  <p class="vor">Dieselbe Woche, dieselben Daten. Nur die Darstellung ändert sich.</p>
+  <div id="ziel"></div>
+</div>
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function s(t, a) { var n = document.createElementNS(NS, t);
+    Object.keys(a || {}).forEach(function (k) { n.setAttribute(k, a[k]); }); return n; }
+  function el(t, a, txt) { var n = document.createElement(t);
+    Object.keys(a || {}).forEach(function (k) { n.setAttribute(k, a[k]); });
+    if (txt) { n.textContent = txt; } return n; }
+
+  var GRUPPEN = [
+    { name: "Braunkohle", token: "--tr-braun", q: ["Braunkohle"] },
+    { name: "Steinkohle", token: "--tr-stein", q: ["Steinkohle"] },
+    { name: "Erdgas", token: "--tr-gas", q: ["Erdgas"] },
+    { name: "Sonstige", token: "--tr-sonst",
+      q: ["Sonstige Konventionelle", "Sonstige Erneuerbare", "Pumpspeicher"] },
+    { name: "Wasser & Biomasse", token: "--tr-bio", q: ["Wasserkraft", "Biomasse"] },
+    { name: "Wind", token: "--tr-wind", q: ["Wind Onshore", "Wind Offshore"] },
+    { name: "Photovoltaik", token: "--tr-pv", q: ["Photovoltaik"] }
+  ];
+  var GRAU = ["#232e36", "#2a353e", "#313d47", "#38454f", "#3f4d58", "#465561", "#4d5d6a"];
+
+  var VARIANTEN = [
+    { nr: "A", titel: "Gedämpfte Flächen, kein Muster",
+      was: "Die Flächen behalten ihren Farbton, aber stark gedämpft — die Sättigung "
+         + "sitzt nur noch in der Legende und im Fadenkreuz. Kein Muster. Das ist die "
+         + "Empfehlung der Gestaltungsregeln: gesättigte Füllung gehört an kleine "
+         + "Marken, nie an große Flächen." },
+    { nr: "B", titel: "Graustufen, farbige Schraffur (dein Vorschlag)",
+      was: "Die Flächen sind Grauabstufungen; die Farbe steckt nur noch im Muster. "
+         + "Sehr ruhig — aber acht Graustufen sind schwer auseinanderzuhalten, und "
+         + "dauerhaft eingeschaltete Schraffur gilt selbst als Störung." },
+    { nr: "C", titel: "Grau als Grund, eine Reihe hervorgehoben",
+      was: "Alles grau, bis man in der Legende auf einen Träger zeigt — dann bekommt "
+         + "nur der Farbe. Am ruhigsten, und beantwortet die häufigste Frage direkt: "
+         + "„Wie viel war Wind?“ Hier ist Photovoltaik hervorgehoben." },
+    { nr: "D", titel: "Gedämpft plus Muster nur auf Wunsch",
+      was: "Wie A, aber mit einem Schalter für die Schraffur — für Ausdruck, für "
+         + "Farbsehschwäche, für Bildschirmfotos in Graustufen. Voreingestellt aus. "
+         + "So bleibt die zweite Codierung verfügbar, ohne immer zu stören." }
+  ];
+
+  fetch("../../data/verlauf/2026-08.json").then(function (r) { return r.json(); })
+    .then(function (d) {
+      var idx = [];
+      for (var i = 0; i < d.stunden.length; i++) {
+        var tag = d.stunden[i].slice(0, 10);
+        if (tag >= "2026-08-23" && tag <= "2026-08-29") { idx.push(i); }
+      }
+      var reihen = GRUPPEN.map(function (g) {
+        return { name: g.name, token: g.token, werte: idx.map(function (k) {
+          var sum = 0; g.q.forEach(function (q) {
+            var r = d.erzeugung[q]; if (r && r[k] != null) { sum += r[k]; } }); return sum; }) };
+      });
+      var last = idx.map(function (k) { return d.netzlast[k]; });
+      var preis = idx.map(function (k) { return d.preis_eur_mwh ? d.preis_eur_mwh[k] : null; });
+      var tage = idx.map(function (k) { return d.stunden[k].slice(0, 10); });
+      var ziel = document.getElementById("ziel");
+      VARIANTEN.forEach(function (v) {
+        var sec = el("section");
+        sec.appendChild(el("h2", {}, v.nr + " · " + v.titel));
+        sec.appendChild(el("p", { "class": "was" }, v.was));
+        var karte = el("div", { "class": "karte" });
+        karte.appendChild(bild(v.nr, reihen, last, preis, tage));
+        karte.appendChild(legende(v.nr, reihen));
+        sec.appendChild(karte);
+        ziel.appendChild(sec);
+      });
+    });
+
+  function legende(nr, reihen) {
+    var box = el("div", { "class": "legende" });
+    reihen.slice().reverse().forEach(function (r, i) {
+      var sp = el("span");
+      var farbe = (nr === "C" && r.name !== "Photovoltaik")
+        ? "var(--tr-sonst)" : "var(" + r.token + ")";
+      sp.appendChild(el("i", { style: "background:" + farbe + ";" }));
+      sp.appendChild(document.createTextNode(r.name));
+      box.appendChild(sp);
+    });
+    var sl = el("span");
+    sl.appendChild(el("i", { style: "width:16px;height:2px;border-radius:1px;background:var(--schrift);" }));
+    sl.appendChild(document.createTextNode("Netzlast"));
+    box.appendChild(sl);
+    return box;
+  }
+
+  function bild(nr, reihen, last, preis, tage) {
+    var B = 900, H = 430, li = 54, re = 14, ob = 26, hOb = 250, lu = 18, hPr = 76;
+    var yPr = ob + hOb + lu, n = last.length, iB = B - li - re;
+    var stapel = [], lauf = [], max = 0, i;
+    for (i = 0; i < n; i++) { lauf.push(0); }
+    reihen.forEach(function (r) {
+      var u = lauf.slice(); lauf = lauf.map(function (x, k) { return x + r.werte[k]; });
+      stapel.push({ r: r, u: u, o: lauf.slice() });
+    });
+    lauf.forEach(function (x) { if (x > max) { max = x; } });
+    last.forEach(function (x) { if (x != null && x > max) { max = x; } });
+    var achse = Math.ceil(max / 1000 / 20) * 20;
+    function X(k) { return li + k / (n - 1) * iB; }
+    function Y(m) { return ob + hOb - (m / 1000) / achse * hOb; }
+
+    var svg = s("svg", { viewBox: "0 0 " + B + " " + H });
+    if (nr === "B" || nr === "D") {
+      var defs = s("defs");
+      reihen.forEach(function (r, k) {
+        var p = s("pattern", { id: "m" + nr + k, width: 5, height: 5,
+          patternUnits: "userSpaceOnUse" });
+        p.appendChild(s("rect", { width: 5, height: 5,
+          fill: nr === "B" ? GRAU[k] : "var(" + r.token + ")",
+          "fill-opacity": nr === "B" ? 1 : 0.30 }));
+        p.appendChild(s("path", { d: k % 2 ? "M0 5 L5 0" : "M0 0 L5 5",
+          stroke: nr === "B" ? "var(" + r.token + ")" : "var(" + r.token + ")",
+          "stroke-width": nr === "B" ? 1.4 : 0.8, "stroke-opacity": nr === "B" ? 0.95 : 0.7,
+          fill: "none" }));
+        defs.appendChild(p);
+      });
+      svg.appendChild(defs);
+    }
+
+    var g = s("g", { "class": "gitter" });
+    for (var v = 0; v <= achse; v += achse / 4) {
+      var y = Y(v * 1000);
+      g.appendChild(s("line", { x1: li, x2: B - re, y1: y, y2: y }));
+      var t = s("text", { x: li - 8, y: y + 3.5, "text-anchor": "end" });
+      t.textContent = v; g.appendChild(t);
+    }
+    var eh = s("text", { x: li - 8, y: ob - 10, "text-anchor": "end" });
+    eh.textContent = "GW"; g.appendChild(eh);
+    var wechsel = [];
+    for (i = 0; i < n; i++) { if (i === 0 || tage[i] !== tage[i - 1]) { wechsel.push(i); } }
+    wechsel.forEach(function (a, k) {
+      if (k) { g.appendChild(s("line", { x1: X(a), x2: X(a), y1: ob, y2: yPr + hPr })); }
+      var ende = (k + 1 < wechsel.length) ? wechsel[k + 1] : n;
+      var tt = s("text", { x: (X(a) + X(Math.max(a, ende - 1))) / 2, y: H - 8,
+        "text-anchor": "middle" });
+      var dd = new Date(tage[a]);
+      tt.textContent = dd.toLocaleDateString("de-DE",
+        { weekday: "short", day: "2-digit", month: "2-digit" });
+      g.appendChild(tt);
+    });
+    svg.appendChild(g);
+
+    stapel.forEach(function (b, k) {
+      var d = "M" + X(0) + " " + Y(b.u[0]), j;
+      for (j = 0; j < n; j++) { d += "L" + X(j).toFixed(1) + " " + Y(b.o[j]).toFixed(1); }
+      for (j = n - 1; j >= 0; j--) { d += "L" + X(j).toFixed(1) + " " + Y(b.u[j]).toFixed(1); }
+      var fill, op = 1;
+      if (nr === "A") { fill = "var(" + b.r.token + ")"; op = 0.34; }
+      else if (nr === "B") { fill = "url(#mB" + k + ")"; }
+      else if (nr === "C") { fill = b.r.name === "Photovoltaik"
+        ? "var(" + b.r.token + ")" : GRAU[k]; op = b.r.name === "Photovoltaik" ? 0.6 : 1; }
+      else { fill = "url(#mD" + k + ")"; }
+      svg.appendChild(s("path", { d: d + "Z", fill: fill, "fill-opacity": op }));
+      // Hauchduenne Trennlinie in der Traegerfarbe -- ersetzt die Umrandung.
+      var ol = "M" + X(0) + " " + Y(b.o[0]);
+      for (j = 1; j < n; j++) { ol += "L" + X(j).toFixed(1) + " " + Y(b.o[j]).toFixed(1); }
+      svg.appendChild(s("path", { d: ol, fill: "none",
+        stroke: (nr === "C" && b.r.name !== "Photovoltaik") ? "var(--linie)"
+                : "var(" + b.r.token + ")",
+        "stroke-width": 1, "stroke-opacity": nr === "A" ? 0.85 : 0.6,
+        "vector-effect": "non-scaling-stroke" }));
+    });
+
+    var dl = "";
+    last.forEach(function (x, k) { if (x == null) { return; }
+      dl += (dl ? "L" : "M") + X(k).toFixed(1) + " " + Y(x).toFixed(1); });
+    svg.appendChild(s("path", { d: dl, "class": "last" }));
+
+    // Preis: Stufenflaeche statt Staebchen
+    var pw = preis.filter(function (x) { return x != null; });
+    var pMin = Math.min(0, Math.min.apply(null, pw)), pMax = Math.max.apply(null, pw);
+    var pU = Math.floor(pMin / 50) * 50, pO = Math.ceil(pMax / 50) * 50;
+    function Yp(e) { return yPr + hPr - (e - pU) / (pO - pU) * hPr; }
+    var gp = s("g", { "class": "gitter" });
+    [pU, 0, pO].forEach(function (e) {
+      if (e < pU || e > pO) { return; }
+      var yy = Yp(e);
+      gp.appendChild(s("line", { x1: li, x2: B - re, y1: yy, y2: yy }));
+      var tt = s("text", { x: li - 8, y: yy + 3.5, "text-anchor": "end" });
+      tt.textContent = e; gp.appendChild(tt);
+    });
+    var pe = s("text", { x: li + 4, y: yPr + 12 }); pe.textContent = "€/MWh";
+    gp.appendChild(pe); svg.appendChild(gp);
+    var dp = "M" + X(0) + " " + Yp(0), dpl = "";
+    preis.forEach(function (e, k) {
+      if (e == null) { return; }
+      var xa = X(k), xb = X(Math.min(k + 1, n - 1));
+      dp += "L" + xa.toFixed(1) + " " + Yp(e).toFixed(1)
+          + "L" + xb.toFixed(1) + " " + Yp(e).toFixed(1);
+      dpl += (dpl ? "L" : "M") + xa.toFixed(1) + " " + Yp(e).toFixed(1)
+           + "L" + xb.toFixed(1) + " " + Yp(e).toFixed(1);
+    });
+    dp += "L" + X(n - 1) + " " + Yp(0) + "Z";
+    svg.appendChild(s("path", { d: dp, fill: "var(--schrift-leise)", "fill-opacity": 0.16 }));
+    svg.appendChild(s("path", { d: dpl, fill: "none", stroke: "var(--schrift-leise)",
+      "stroke-width": 1.2, "vector-effect": "non-scaling-stroke" }));
+    return svg;
+  }
+})();
+</script>
+</body>
+</html>
