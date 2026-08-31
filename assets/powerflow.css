@@ -569,7 +569,14 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-zuruecksetzen:hover:not(:disabled) { color: var(--schrift); border-color: var(--schrift-still); }
 .pf-zuruecksetzen:disabled { opacity: 0.35; cursor: not-allowed; }
 
-.pf-regler-fuss { font-size: 0.8rem; color: var(--schrift-still); margin: 11px 0 0; }
+/* Die frueher hier stehende Fusszeile ist in den Info-Knopf am Titel gewandert:
+   vier Zeilen, die man einmal liest, kosten in einem festgeklebten Block
+   dauerhaft Hoehe. Der Knopf steht inline neben dem Titel; das Popover haengt
+   sich an den Reglerkasten und nicht an die Titelzeile, damit es unter dem
+   Kopf aufgeht und nicht neben ihm. */
+.pf-regler { position: relative; }
+.pf-regler-titelzeile { display: flex; align-items: center; gap: 6px; }
+.pf-regler-titelzeile .pf-info { position: static; }
 
 .pf-bis { color: var(--schrift-still); font-size: 0.85rem; }
 

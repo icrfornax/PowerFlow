@@ -14,7 +14,6 @@ es auf dieser Seite nicht -- auch nicht versehentlich.
 
 from __future__ import annotations
 
-import datetime as dt
 import json
 import pathlib
 import sys
@@ -242,14 +241,39 @@ def main(still: bool = False) -> int:
             "voreingestellt ausgeschaltet und nennt ihre gemessene "
             "Trefferquote."
         ),
-        "erzeugt": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+        # KEIN Zeitstempel. Der Tuersteher erzeugt dieses Verzeichnis neu und
+        # vergleicht es mit dem eingecheckten -- eine Uhrzeit darin macht jeden
+        # Vergleich unmoeglich, und genau daran ist er sechs Laeufe lang
+        # gescheitert. Wann etwas erzeugt wurde, sagt die Versionsgeschichte.
         "quellen": QUELLEN,
         "datensaetze": eintraege,
         "dateien_gesamt": len(alle),
         "bytes_gesamt": sum(p.stat().st_size for p in alle),
     }
     ziel = DATA / "quellen.json"
-    ziel.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    # Das Verzeichnis zaehlt AUCH SICH SELBST. Seine eigene Groesse steht damit
+    # erst fest, nachdem es geschrieben ist -- ein Fixpunkt. Deshalb wird so
+    # lange neu geschrieben, bis die verzeichnete Groesse der tatsaechlichen
+    # entspricht. In der Praxis sind das zwei Durchgaenge. Ohne das kann der
+    # Tuersteher, der das Verzeichnis neu erzeugt und vergleicht, nie aufgehen.
+    def schreibe():
+        ziel.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n",
+                        encoding="utf-8")
+
+    schreibe()
+    for _ in range(5):
+        eigen = ziel.stat().st_size
+        selbst = [e for e in doc["datensaetze"] if e["muster"] == "data/quellen.json"]
+        vorher = selbst[0]["bytes"] if selbst else None
+        if vorher == eigen:
+            break
+        if selbst:
+            selbst[0]["bytes"] = eigen
+        doc["bytes_gesamt"] = sum(p.stat().st_size for p in alle)
+        schreibe()
+    else:
+        raise SystemExit("Die Groesse des Quellenverzeichnisses pendelt. "
+                         "Erst ansehen, dann weiterbauen.")
     if not still:
         print(f"  {len(eintraege)} Datensaetze, {len(alle)} Dateien, "
               f"{doc['bytes_gesamt'] / 1e6:.1f} MB")

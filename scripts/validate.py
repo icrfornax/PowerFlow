@@ -643,6 +643,23 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     for schluessel, q in qv["quellen"].items():
         for feld in ("name", "url", "lizenz", "lizenz_url", "namensnennung", "erhebung"):
             b.pruefe(bool(q.get(feld)), f"Quelle {schluessel}: Feld {feld} gefuellt")
+    # Das Verzeichnis muss REPRODUZIERBAR sein. Der Tuersteher erzeugt es neu
+    # und vergleicht; steht eine Uhrzeit darin oder haengen die Groessen an den
+    # Zeilenenden des Arbeitsverzeichnisses, kann der Vergleich nie aufgehen.
+    # Genau daran ist er sechs Laeufe lang gescheitert -- deshalb wird beides
+    # jetzt schon hier geprueft, nicht erst auf dem Runner.
+    b.pruefe("erzeugt" not in qv,
+             "Quellenverzeichnis traegt keinen Zeitstempel (sonst nie reproduzierbar)")
+    falsch = []
+    for d in qv["datensaetze"]:
+        muster = d["muster"].split("/", 1)[1]
+        ist = sum(p.stat().st_size for p in sorted((WURZEL / "data").glob(muster)))
+        if ist != d["bytes"]:
+            falsch.append(f"{d['titel']}: {d['bytes']} verzeichnet, {ist} gemessen")
+    b.pruefe(not falsch,
+             "die verzeichneten Dateigroessen stimmen mit den Dateien ueberein"
+             + (" -- " + " | ".join(falsch[:3]) if falsch else ""))
+
     hinweis = qv.get("_hinweis") or ""
     b.pruefe("nichts modelliert" in hinweis,
              "Quellenverzeichnis sagt ausdruecklich, dass keine ZAHL modelliert wird")

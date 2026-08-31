@@ -1,0 +1,19 @@
+# Zeilenenden: ueberall LF, auch im Arbeitsverzeichnis unter Windows.
+#
+# Der Grund ist keine Geschmacksfrage. data/quellen.json fuehrt die GROESSE
+# jeder Datei in Bytes, und der Tuersteher erzeugt das Verzeichnis neu und
+# vergleicht es mit dem eingecheckten. Mit CRLF im Arbeitsverzeichnis kommt
+# unter Windows eine andere Zahl heraus als auf dem Linux-Runner --
+# data/kraftwerke.json etwa 571.317 statt 546.721 Bytes. Der Vergleich konnte
+# so nie aufgehen.
+#
+# Ausserdem ist die LF-Groesse die richtige: GitHub liefert den Inhalt des
+# Repositorys aus, und der steht in LF. Die Zahl auf der Seite soll die Groesse
+# der Datei nennen, die jemand tatsaechlich herunterlaedt.
+* text=auto eol=lf
+
+*.png binary
+*.PNG binary
+*.jpg binary
+*.pdf binary
+*.zip binary

@@ -2184,7 +2184,10 @@
     // --- Der einzige Regler: der Zeitraum ---
     var regler = el("div", { "class": "pf-regler" });
     var reglerKopf = el("div", { "class": "pf-regler-kopf" });
-    reglerKopf.appendChild(el("span", { "class": "pf-regler-titel", text: "Zeitraum" }));
+    // Titel und Info-Knopf gehoeren zusammen; der Themaknopf steht rechts.
+    var reglerTitel = el("div", { "class": "pf-regler-titelzeile" });
+    reglerTitel.appendChild(el("span", { "class": "pf-regler-titel", text: "Zeitraum" }));
+    reglerKopf.appendChild(reglerTitel);
     /* Der Themaknopf sitzt hier und nicht mehr in der Kopfzeile: der
        Zeitraumblock bleibt beim Scrollen oben stehen, der Kopf nicht. Ein
        Knopf, der weggescrollt ist, ist kein Knopf. */
@@ -2264,11 +2267,23 @@
       schnell.appendChild(kn);
     });
     regler.appendChild(schnell);
-    regler.appendChild(el("p", { "class": "pf-regler-fuss",
-      text: "Der Zeitraum ist die einzige freie Variable dieser Seite; alles Übrige ist "
-        + "gemessen. Wählbar vom " + datumLang(Z.minTag) + " bis zum " + datumLang(Z.maxTag)
-        + ". Ein einzelner Tag wird stündlich gezeigt, ein längerer Zeitraum tageweise. "
-        + "Zurücksetzen stellt den Zeitraum des ersten Seitenaufrufs wieder her." }));
+    /* Die Erlaeuterung steckt im Info-Knopf neben dem Titel und nicht mehr als
+       Absatz darunter. Der Block bleibt beim Scrollen oben stehen -- vier
+       Zeilen Text, die man einmal liest, kosten dort dauerhaft Hoehe. Der
+       Inhalt ist derselbe, er ist nur einen Zeiger weit entfernt. */
+    infoKnopf(reglerTitel, {
+      wert: "Der Zeitraum ist die einzige freie Variable dieser Seite. Alles Übrige "
+        + "kommt aus der Messung — es gibt keinen zweiten Regler.",
+      grenzenTitel: "Wählbar und Darstellung",
+      grenzen: "Wählbar vom " + datumLang(Z.minTag) + " bis zum " + datumLang(Z.maxTag)
+        + ". Ein einzelner Tag wird stündlich gezeigt, ein längerer Zeitraum "
+        + "tageweise: eine Woche sind 168 Punkte und noch gut zu lesen, ein Monat in "
+        + "Stundenwerten wäre Kammputz. Zurücksetzen stellt den Zeitraum des ersten "
+        + "Seitenaufrufs wieder her.",
+      quellen: QUELLE_SMARD,
+      messung: "Der Bezugswert ist damit fest: derselbe Zeitraum ein Jahr früher, reale "
+        + "Messwerte. Kein Monatsmittel, keine geglättete Kurve."
+    }, "Zeitraum");
     /* Ohne Abschnittsueberschrift: der Block traegt seinen Titel selbst, und
        eine zweite Zeile "Freie Variable" darueber kostet nur Hoehe -- die
        fehlt oben, wo der Block stehen bleibt. */

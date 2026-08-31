@@ -1,6 +1,5 @@
 {
  "_hinweis": "Quellenverzeichnis der Seite. Aus den tatsaechlich vorhandenen Dateien erzeugt, nicht von Hand gepflegt. Jede Datei unter data/ ist einer Quelle zugeordnet; scripts/quellen.py bricht ab, wenn eine ohne Zuordnung auftaucht. Alle ZAHLEN dieser Seite sind gemessen oder als Stammdatum veroeffentlicht -- nichts modelliert, nichts geschaetzt, nichts erfunden. Genau eine GEOMETRIE ist abgeleitet: die Flaeche der vier Regelzonen, weil es dafuer keine amtliche oder offene Geometrie gibt. Sie steht unter der eigenen Quelle „abgeleitet“, ist auf der Karte voreingestellt ausgeschaltet und nennt ihre gemessene Trefferquote.",
- "erzeugt": "2026-08-31T01:39:23+02:00",
  "quellen": {
   "smard": {
    "name": "SMARD, Bundesnetzagentur",
@@ -222,7 +221,7 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 9544,
+   "bytes": 9502,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
@@ -230,5 +229,5 @@
   }
  ],
  "dateien_gesamt": 169,
- "bytes_gesamt": 24910223
+ "bytes_gesamt": 24910181
 }
