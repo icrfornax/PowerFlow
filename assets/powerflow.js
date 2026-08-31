@@ -3033,6 +3033,17 @@
         + "Photovoltaik stehen dort nicht einzeln. Auf der Karte fehlen sie deshalb, "
         + "im Verlauf sind sie vollständig enthalten.",
       "Mittelspannung. In OpenStreetMap kaum erfasst.",
+      "Eine Regelzone je Windpark. Das Marktstammdatenregister führt sie nicht. "
+        + "Die Parks bleiben deshalb ohne Zonenfarbe und treten zurück, wenn eine "
+        + "Zone hervorgehoben wird — statt eine Zugehörigkeit vorzutäuschen, die "
+        + "nicht belegt ist.",
+      "Redispatch auf der Karte. Geprüft, und es geht nicht: das Feld "
+        + "BETROFFENE_ANLAGE nennt 404 verschiedene Bezeichnungen, aber gegen die "
+        + "596 Kraftwerke und 5.259 Umspannwerke geprüft bleiben 76,9 % der Arbeit "
+        + "ohne Ort. Die unscharfen Treffer sind teils falsch — „Obernburg“ wäre "
+        + "„Bernburg“ geworden, zwei verschiedene Orte. 13,3 % der Arbeit laufen "
+        + "ohnehin über die Börse und haben gar keinen Ort. Eine Karte daraus wäre "
+        + "eine Behauptung.",
       "Der Betreiber von 45,5 % der Höchstspannungsabschnitte. OpenStreetMap kennt "
         + "ihn dort nicht; diese Leitungen bleiben grau statt geraten.",
       "Eine belegte Grenze der Regelzonen. Es gibt keine — OpenStreetMap führt "
@@ -3118,39 +3129,45 @@
     offen.appendChild(el("h3", { text: "Was noch fehlt" }));
     offen.appendChild(el("p", { "class": "pf-kasten-vor",
       text: "Nicht Grenzen der Quellenlage, sondern Arbeit, die noch aussteht." }));
+    /* Am 31.08.2026 mit Immo durchgegangen. Die Liste ist keine Halde mehr,
+       sondern hat eine Reihenfolge: was oben steht, wird als Naechstes
+       angefasst. Vier Eintraege sind dabei weggefallen -- zwei gestrichen
+       (kleine Windparks, Solaranlagen) und zwei in den Kasten "Grenzen"
+       verschoben, wo sie hingehoeren: eine Grenze der Quelle ist keine
+       Aufgabe. */
     var ul2 = el("ul");
     [
-      "Methodik-PDF, das sich beim Bau selbst aus den Dateien neu rechnet.",
-      "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar wird, wie "
-        + "stark das Ergebnis am gewählten Zeitraum hängt.",
-      "Import und Export im Verlauf — bisher nur als Summe des Zeitraums, nicht "
-        + "Stunde für Stunde.",
-      "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie viermal so groß.",
-      "Kleine Windparks. Die Karte zeigt Parks ab 5 MW — das sind 4.030 Parks "
-        + "mit 67,6 der 81,6 GW, die in Betrieb sind. Darunter fehlen im Register "
-        + "haeufig die Koordinaten.",
-      "Solaranlagen. Geprüft und bewusst nicht aufgenommen: selbst ab 1 MW blieben "
-        + "rund elftausend Standorte, und die Karte handelt vom Netz und von den "
-        + "großen Erzeugern. Was bei der Prüfung herauskam, steht in "
-        + "docs/beleg-mastr.md.",
-      "1.030 Windenergieanlagen in Betrieb haben im Register keine Koordinate und "
-        + "fehlen auf der Karte. Das ist eine Lücke der Quelle, keine Auswahl.",
-      "Eine Regelzone je Windpark. Das Register führt sie nicht; die Parks "
-        + "bleiben deshalb ohne Zonenfarbe und treten zurück, wenn eine Zone "
-        + "hervorgehoben wird — statt eine Zugehörigkeit vorzutäuschen.",
-      "Redispatch auf der Karte. Geprüft und vorerst verworfen: das Feld "
-        + "BETROFFENE_ANLAGE nennt 404 verschiedene Bezeichnungen, aber nur ein "
-        + "kleiner Teil lässt sich einem Ort zuordnen. Gegen die 596 Kraftwerke "
-        + "und 5.259 Umspannwerke geprüft bleiben 76,9 % der Arbeit ohne Ort, und "
-        + "die unscharfen Treffer sind teils falsch — „Obernburg“ wäre "
-        + "„Bernburg“ geworden, zwei verschiedene Orte. Eine Karte daraus wäre "
-        + "eine Behauptung. 13,3 % der Arbeit laufen ohnehin über die Börse und "
-        + "haben gar keinen Ort.",
-      "Zugang zur ENTSO-E Transparency Platform ist beantragt. Damit ließe sich die "
-        + "Lizenzkette des Redispatch von einer Argumentation zu einer Zusage machen.",
-      "Ob Redispatch auf der Liste frei weiterverwendbarer ENTSO-E-Daten steht, ist "
-        + "nicht geprüft — die Seite mit der Liste antwortet mit HTTP 403."
-    ].forEach(function (t) { ul2.appendChild(el("li", { text: t })); });
+      { hoch: true,
+        text: "Ob Redispatch auf der Liste frei weiterverwendbarer "
+          + "ENTSO-E-Daten steht, ist nicht geprüft — die Seite mit der Liste "
+          + "antwortet mit HTTP 403. Das ist die einzige inhaltliche Lücke in "
+          + "einer Lizenzkette dieser Seite." },
+      { hoch: true,
+        text: "Zugang zur ENTSO-E Transparency Platform ist beantragt. Damit "
+          + "ließe sich die Lizenzkette des Redispatch von einer Argumentation "
+          + "zu einer Zusage machen — und die Frage darüber beantworten." },
+      { hoch: true,
+        text: "Methodik-PDF, das sich beim Bau selbst aus den Dateien neu "
+          + "rechnet." },
+      { hoch: false,
+        text: "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar "
+          + "wird, wie stark das Ergebnis am gewählten Zeitraum hängt." },
+      { hoch: false,
+        text: "Import und Export im Verlauf — bisher nur als Summe des "
+          + "Zeitraums, nicht Stunde für Stunde." },
+      { hoch: false,
+        text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
+          + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
+      { hoch: false,
+        text: "1.030 Windenergieanlagen in Betrieb haben im Register keine "
+          + "Koordinate und fehlen auf der Karte. Das ist eine Lücke der "
+          + "Quelle, keine Auswahl." }
+    ].forEach(function (p) {
+      var li = el("li");
+      if (p.hoch) { li.appendChild(el("b", { text: "Als Nächstes. " })); }
+      li.appendChild(document.createTextNode(p.text));
+      ul2.appendChild(li);
+    });
     offen.appendChild(ul2);
     neu.appendChild(abschnitt("Offene Punkte", offen));
 

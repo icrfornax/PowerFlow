@@ -824,6 +824,39 @@ try {
     `vier Hinweiskaesten: ${qu.kaesten.join(" | ")}`);
   pruefe(qu.quellenAbschnitt, "Abschnitt Quellen und Downloads vorhanden");
   pruefe(qu.datensaetze >= 10, `${qu.datensaetze} Datensaetze im Quellenverzeichnis`);
+  /* Die Liste "Was noch fehlt" ist am 31.08.2026 durchgegangen worden und hat
+     seither eine Reihenfolge: was oben steht, wird als Naechstes angefasst.
+     Geprueft wird, dass die Markierung da ist und dass die beiden gestrichenen
+     Punkte nicht zurueckkommen. */
+  const offen = await js(`(function () {
+    const kasten = [...document.querySelectorAll(".pf-kasten")].find(
+      (k) => /Offene Punkte|Was noch fehlt/.test(k.querySelector("h3").textContent));
+    if (!kasten) { return null; }
+    const li = [...kasten.querySelectorAll("li")];
+    // Der Kasten heisst "Was diese Seite nicht zeigt"; die Ueberschrift des
+    // Abschnitts darueber heisst "Grenzen".
+    const grenzen = [...document.querySelectorAll(".pf-kasten")].find(
+      (k) => /nicht zeigt/.test(k.querySelector("h3").textContent));
+    return {
+      anzahl: li.length,
+      hoch: li.filter((x) => x.querySelector("b")).length,
+      erste: li[0] ? li[0].textContent.slice(0, 60) : "",
+      texte: li.map((x) => x.textContent).join(" "),
+      grenzen: grenzen ? grenzen.textContent : ""
+    };
+  })()`);
+  pruefe(offen && offen.anzahl === 7,
+    `sieben offene Punkte nach der Durchsicht (${offen && offen.anzahl})`);
+  pruefe(offen && offen.hoch === 3,
+    `drei davon sind als "Als Naechstes" markiert (${offen && offen.hoch})`);
+  pruefe(offen && /Als N/.test(offen.erste),
+    "die Liste beginnt mit einem Punkt hoher Prioritaet", offen && offen.erste);
+  pruefe(offen && !/Solaranlagen|Kleine Windparks/.test(offen.texte),
+    "die zwei gestrichenen Punkte stehen nicht mehr in der Liste");
+  pruefe(offen && /Regelzone je Windpark/.test(offen.grenzen)
+    && /Redispatch auf der Karte/.test(offen.grenzen),
+    "die zwei verschobenen Punkte stehen jetzt unter Grenzen");
+
   pruefe(qu.quellen.length === 7, `sieben Quellen genannt: ${qu.quellen.join(" | ")}`);
   // Die abgeleitete Flaeche muss im Verzeichnis als solche kenntlich sein und
   // darf nicht neben den Messungen stehen.

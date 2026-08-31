@@ -244,7 +244,27 @@ Marken auf der Karte werden absteigend nach Leistung gezeichnet (der kleine
 Kreis liegt oben) und behalten beim Zoomen ihre Bildschirmgroesse, damit ein
 Zoom eine Haeufung ueberhaupt aufloest.
 
-Noch offen: Methodik-PDF; Import und Export im Verlauf.
+## Offene Punkte -- durchgegangen am 31.08.2026
+
+Mit Immo Punkt fuer Punkt sortiert. Die Liste auf der Seite hat seither eine
+Reihenfolge; was oben steht, traegt die Markierung "Als Naechstes".
+
+**Hoch (in dieser Reihenfolge):**
+1. Ob Redispatch auf der Liste frei weiterverwendbarer ENTSO-E-Daten steht --
+   die einzige inhaltliche Luecke in einer Lizenzkette dieser Seite.
+2. Zugang zur ENTSO-E Transparency Platform (beantragt, Antwort steht aus).
+   Beantwortet vermutlich Punkt 1 mit einem Klick.
+3. Methodik-PDF, das sich beim Bau selbst aus den Dateien neu rechnet.
+
+**Niedrig:** Gesamtlauf ueber alle Vergleichsjahre als CSV; Import und Export
+im Verlauf; Viertelstundenwerte (48 statt 12 MB, die jeder mitlaedt); die
+1.030 Windanlagen ohne Koordinate im Register.
+
+**Gestrichen:** kleine Windparks unter 5 MW; Solaranlagen. Beide Entscheidungen
+bleiben in `docs/beleg-mastr.md` belegt.
+
+**Nach "Grenzen" verschoben**, weil eine Grenze der Quelle keine Aufgabe ist:
+eine Regelzone je Windpark; Redispatch auf der Karte.
 
 ## Marktstammdatenregister
 
