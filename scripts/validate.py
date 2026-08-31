@@ -633,6 +633,22 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  "die Vorlage .env.beispiel enthaelt keine Werte"
                  + (f" -- gefuellt: {[z.split('=')[0] for z in gefuellt]}" if gefuellt else ""))
 
+    # Schriftfamilie gegen Farbe. --schrift ist eine FARBE; font-family:
+    # var(--schrift) ist ungueltig, faellt stillschweigend auf die geerbte
+    # Schrift zurueck und sieht auf den ersten Blick nur "etwas anders" aus.
+    # Genau das ist in der Redispatch-Ablesung passiert und war nur im
+    # Bildschirmfoto zu sehen. Erlaubt sind hier ausschliesslich Tokens, deren
+    # Name das sagt.
+    # Kommentare vorher heraus: die Erklaerung oben nennt den falschen Fall
+    # woertlich, und eine Textsuche ueber den eigenen Kommentar ist in diesem
+    # Projekt schon dreimal schiefgegangen.
+    css_ohne = re.sub(r"/\*.*?\*/", " ", css, flags=re.S)
+    falsche_schrift = [x for x in re.findall(r"font-family:\s*var\((--[a-z-]+)\)", css_ohne)
+                       if "familie" not in x and "zahl" not in x]
+    b.pruefe(not falsche_schrift,
+             "font-family verwendet nur Schrift-Tokens, keine Farb-Tokens"
+             + (f" -- {sorted(set(falsche_schrift))}" if falsche_schrift else ""))
+
     # --- Redispatch ---
     rdv = json.loads(lade("data/redispatch-verzeichnis.json"))
     b.pruefe(len(rdv["jahre"]) >= 5, f"Redispatch: {len(rdv['jahre'])} Jahresdateien")
@@ -660,6 +676,19 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  f"{eintrag['jahr']}: hoch gegen runter {schief:.1f} % schief "
                  f"(Budget {GRENZE_REDISPATCH_SCHIEF_PROZENT:.0f} %)")
 
+        # Zwei Zaehler, die am 31.08.2026 dazugekommen sind, weil an beiden
+        # Stellen vorher stillschweigend uebergangen wurde, was nicht passte:
+        # eine RICHTUNG, deren Umlaut an der Quelle zerfallen ist, und ein
+        # anweisender Betreiber ausserhalb der vier. Ein Zaehler, den niemand
+        # prueft, ist kein Zaehler.
+        b.pruefe(d.get("saetze_ohne_richtung") == 0,
+                 f"{eintrag['jahr']}: jede Massnahme hat eine Richtung "
+                 f"({d.get('saetze_ohne_richtung')} ohne, "
+                 f"{d.get('arbeit_ohne_richtung_mwh')} MWh)")
+        b.pruefe(d.get("anweiser_ausserhalb_der_vier") == {},
+                 f"{eintrag['jahr']}: nur die vier bekannten Betreiber weisen an "
+                 f"({d.get('anweiser_ausserhalb_der_vier')})")
+
         # Das Zeitprofil. Geprueft wird dreierlei: dass es ueberhaupt da ist,
         # dass jeder Tag genau 24 Zaehler hat, und dass in jeder Stunde des
         # Tages etwas passiert ist. Der letzte Punkt faengt einen Fehler ab,
@@ -684,6 +713,28 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         b.pruefe(sum(je_stunde) >= n_massnahmen,
                  f"{eintrag['jahr']}: {sum(je_stunde):,} Massnahmen-Stunden zu "
                  f"{n_massnahmen:,} Massnahmen -- mindestens eine je Massnahme")
+
+        # Die Aufgliederungen muessen je Stunde genau auf die Gesamtzahl
+        # aufgehen. Ginge eine Gruppe verloren, saehe die Grafik trotzdem
+        # vollstaendig aus -- der Stapel wird ja auf die Gesamthoehe skaliert.
+        schief = []
+        for tag, x in d["tage"].items():
+            g = x["aktive_je_stunde"]
+            for feld in ("stunden_je_grund", "stunden_je_uenb",
+                         "stunden_je_energieart"):
+                summe = [0] * 24
+                for reihe_h in x.get(feld, {}).values():
+                    for i, wert in enumerate(reihe_h):
+                        summe[i] += wert
+                if summe != g:
+                    schief.append(f"{tag}/{feld}")
+            ri = x.get("stunden_richtung") or {"hoch": [0] * 24, "runter": [0] * 24}
+            if [ri["hoch"][i] + ri["runter"][i] for i in range(24)] != g:
+                schief.append(f"{tag}/richtung")
+        b.pruefe(not schief,
+                 f"{eintrag['jahr']}: jede Aufgliederung geht je Stunde auf"
+                 + (f" -- {len(schief)} Abweichungen, z.B. {schief[:3]}"
+                    if schief else ""))
 
     # --- Quellenverzeichnis ---
     # Der eigentliche Waechter steckt in scripts/quellen.py: es bricht ab,
@@ -975,6 +1026,11 @@ def negativtests() -> int:
                                         "pages/builds")}),
         ("Netzdatei auf [Breite, Laenge] gedreht",
          lambda: {"netz": _netz_gedreht(basis["netz"])}),
+        # Eine Farbe als Schriftfamilie. Sieht im Quelltext richtig aus, ist
+        # ungueltig und faellt stillschweigend auf die geerbte Schrift zurueck.
+        ("Farb-Token als Schriftfamilie eingesetzt",
+         lambda: {"css": basis["css"]
+                  + chr(10) + ".pf-probe { font-family: var(--schrift); }" + chr(10)}),
     ]
 
     print("Negativtests -- jede Pruefung muss bei verfaelschter Eingabe anschlagen.")

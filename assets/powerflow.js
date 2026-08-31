@@ -2024,6 +2024,19 @@
         + "nicht. Das ist der Regelfall." }
   ];
 
+  /* Die Stunde mit den meisten bzw. wenigsten laufenden Massnahmen. Zwei
+     kleine Funktionen statt einer Schleife an drei Stellen. */
+  function spitzenstunde(reihe) {
+    var i = 0;
+    for (var h = 1; h < 24; h++) { if (reihe[h] > reihe[i]) { i = h; } }
+    return i;
+  }
+  function tiefststunde(reihe) {
+    var i = 0;
+    for (var h = 1; h < 24; h++) { if (reihe[h] < reihe[i]) { i = h; } }
+    return i;
+  }
+
   function rdGruppe(grund) {
     for (var i = 0; i < RD_GRUNDGRUPPEN.length; i++) {
       if (RD_GRUNDGRUPPEN[i].trifft(grund)) { return RD_GRUNDGRUPPEN[i]; }
@@ -2048,8 +2061,21 @@
        ueberhaupt eine lief (stundenTage). Beides wird gebraucht: die erste
        Reihe sagt WIE VIEL, die zweite WIE OFT. Ein hoher Mittelwert aus wenigen
        Tagen mit vielen Massnahmen sieht sonst aus wie Dauerbetrieb. */
-    var stunden = [], stundenTage = [];
-    for (var si = 0; si < 24; si++) { stunden.push(0); stundenTage.push(0); }
+    var stunden = [], stundenTage = [], stundenDauer = [];
+    for (var si = 0; si < 24; si++) {
+      stunden.push(0); stundenTage.push(0); stundenDauer.push(0);
+    }
+    /* Dieselbe Zaehlung, aufgegliedert. Die Schluessel bleiben der Wortlaut
+       der Quelle; zu Gruppen zusammengefasst wird erst beim Zeichnen. */
+    var stdGruppe = {}, stdUenb = {}, stdArt = {}, stdHoch = [], stdRunter = [];
+    for (var sj = 0; sj < 24; sj++) { stdHoch.push(0); stdRunter.push(0); }
+    function reihe24(karte, schluessel) {
+      if (!karte[schluessel]) {
+        karte[schluessel] = [];
+        for (var q = 0; q < 24; q++) { karte[schluessel].push(0); }
+      }
+      return karte[schluessel];
+    }
     tageImZeitraum(von, bis).forEach(function (tag) {
       if (tag < REDISPATCH_AB) { return; }
       var d = Z.redispatch[Number(tag.slice(0, 4))];
@@ -2086,6 +2112,25 @@
         for (var h = 0; h < 24; h++) {
           stunden[h] += ajs[h];
           if (ajs[h]) { stundenTage[h]++; }
+          if (t.stunden_dauer_h) { stundenDauer[h] += t.stunden_dauer_h[h]; }
+        }
+        Object.keys(t.stunden_je_grund || {}).forEach(function (g) {
+          var ziel = reihe24(stdGruppe, rdGruppe(g).name), q = t.stunden_je_grund[g];
+          for (var h2 = 0; h2 < 24; h2++) { ziel[h2] += q[h2]; }
+        });
+        Object.keys(t.stunden_je_uenb || {}).forEach(function (u) {
+          var ziel = reihe24(stdUenb, u), q = t.stunden_je_uenb[u];
+          for (var h3 = 0; h3 < 24; h3++) { ziel[h3] += q[h3]; }
+        });
+        Object.keys(t.stunden_je_energieart || {}).forEach(function (a) {
+          var ziel = reihe24(stdArt, a), q = t.stunden_je_energieart[a];
+          for (var h4 = 0; h4 < 24; h4++) { ziel[h4] += q[h4]; }
+        });
+        if (t.stunden_richtung) {
+          for (var h5 = 0; h5 < 24; h5++) {
+            stdHoch[h5] += t.stunden_richtung.hoch[h5];
+            stdRunter[h5] += t.stunden_richtung.runter[h5];
+          }
         }
       }
     });
@@ -2094,7 +2139,9 @@
              jeUenb: jeUenb, jeArt: jeArt, tageMitMassnahme: mitMassnahme,
              belegteTage: belegteTage, jeGrund: jeGrund, jeGruppe: jeGruppe,
              jeAnfordernd: jeAnfordernd, jeDauer: jeDauer, ausland: ausland,
-             stunden: stunden, stundenTage: stundenTage };
+             stunden: stunden, stundenTage: stundenTage,
+             stundenDauer: stundenDauer, stdGruppe: stdGruppe, stdUenb: stdUenb,
+             stdArt: stdArt, stdHoch: stdHoch, stdRunter: stdRunter };
   }
 
   var QUELLE_RD = [
@@ -2134,63 +2181,6 @@
         + (netzlast ? " · entspricht " + nf2.format(r.gesamt / netzlast * 100)
             + " % der Netzlast im Zeitraum" : "") }));
 
-    /* WANN eingegriffen wurde.
-
-       Bis hierher stand im ganzen Abschnitt keine einzige Uhrzeit -- man sah,
-       wie viel und warum, aber nicht wann. Gezeigt wird die Zahl der
-       gleichzeitig laufenden Massnahmen je Stunde des Tages, gemittelt ueber
-       die Tage des Zeitraums.
-
-       Was hier bewusst NICHT steht, ist die Arbeit je Stunde. Die Quelle nennt
-       je Massnahme eine Gesamtarbeit und ein Fenster, nicht den Verlauf darin.
-       Sie gleichmaessig zu verteilen waere eine Annahme, und sie traegt nicht:
-       bei 253 von 1.187 geprueften Saetzen ist die mittlere Leistung der
-       Mittelwert ueber die tatsaechlich aktive Zeit, nicht ueber das Fenster.
-       "Aktiv oder nicht" ist dagegen ablesbar, ohne etwas anzunehmen. */
-    if (r.stunden && r.belegteTage) {
-      var maxStd = Math.max.apply(null, r.stunden);
-      if (maxStd > 0) {
-        var uhr = el("div", { "class": "pf-rd-zeit" });
-        uhr.appendChild(el("h4", { text: "Wann eingegriffen wurde" }));
-        var gitter = el("div", { "class": "pf-rd-uhr" });
-        for (var h = 0; h < 24; h++) {
-          var mittel = r.stunden[h] / r.belegteTage;
-          var sp = el("div", { "class": "pf-rd-stunde",
-            title: zwei(h) + ":00 bis " + zwei((h + 1) % 24) + ":00 — im Mittel "
-              + nf1.format(mittel) + " gleichzeitig laufende Maßnahmen; an "
-              + r.stundenTage[h] + " von " + r.belegteTage + " Tagen lief in "
-              + "dieser Stunde mindestens eine" });
-          var saeuleEl = el("div", { "class": "pf-rd-saeule",
-            style: "height:" + (r.stunden[h] / maxStd * 100).toFixed(1) + "%;" });
-          sp.appendChild(saeuleEl);
-          gitter.appendChild(sp);
-        }
-        uhr.appendChild(gitter);
-        var achse = el("div", { "class": "pf-rd-uhr-achse" });
-        for (var hb = 0; hb < 24; hb++) {
-          achse.appendChild(el("span", { text: hb % 6 === 0 ? zwei(hb) : "" }));
-        }
-        uhr.appendChild(achse);
-        var spitze = 0, tief = 0;
-        for (var hc = 1; hc < 24; hc++) {
-          if (r.stunden[hc] > r.stunden[spitze]) { spitze = hc; }
-          if (r.stunden[hc] < r.stunden[tief]) { tief = hc; }
-        }
-        uhr.appendChild(el("p", { "class": "pf-bezug",
-          text: "Gleichzeitig laufende Maßnahmen je Stunde des Tages, gemittelt "
-            + "über " + r.belegteTage + " Tage (Ortszeit). Am meisten um "
-            + zwei(spitze) + ":00 mit im Mittel "
-            + nf1.format(r.stunden[spitze] / r.belegteTage) + ", am wenigsten um "
-            + zwei(tief) + ":00 mit " + nf1.format(r.stunden[tief] / r.belegteTage)
-            + ". Gezählt wird, ob eine Maßnahme in der Stunde lief — nicht, wie "
-            + "viel Arbeit auf sie entfiel. Die Quelle nennt je Maßnahme eine "
-            + "Gesamtarbeit und ein Fenster, keinen Verlauf darin; sie "
-            + "gleichmäßig zu verteilen wäre eine Annahme, die nachweislich "
-            + "nicht trägt." }));
-        huelle.appendChild(uhr);
-      }
-    }
-
     function balken(titel, werte, farbe) {
       var box = el("div", { "class": "pf-rd-gruppe" });
       box.appendChild(el("h4", { text: titel }));
@@ -2213,21 +2203,206 @@
       return box;
     }
 
-    /* GRUND DER MASSNAHME -- die wichtigste der drei Ergaenzungen.
+    /* WANN UND WARUM -- ein Block statt zweier.
 
-       Bis hierher hiess Redispatch auf dieser Seite pauschal "Eingriff ins
-       Netz". Das stimmt fuer den Regelfall, aber nicht fuer alles: ein Teil
-       der Massnahmen sind angemeldete Probefahrten, und ein weiterer Teil ist
-       gar kein Eingriff an einer Anlage, sondern ein Gegengeschaeft ueber eine
-       Kuppelstelle. Beides steht jetzt getrennt da. */
-    var gruppen = RD_GRUNDGRUPPEN.filter(function (g) { return r.jeGruppe[g.name]; });
+       Vorher standen hier zwei getrennte Kaesten: ein Streifen mit den
+       Gruenden und darueber ein Zeitprofil aus 24 grauen Saeulen. Das
+       Zeitprofil sagte nur "mittags mehr als nachts" und beantwortete keine
+       einzige Anschlussfrage; beim Zeigen kam der Text des title-Attributs und
+       sonst nichts. Beides ist jetzt dieselbe Grafik: die Saeule zeigt, WIE
+       VIELE Massnahmen zu dieser Tageszeit gleichzeitig liefen, ihre Farbe
+       WARUM, und beim Zeigen oeffnet sich eine echte Ablesung mit Richtung,
+       anweisendem Betreiber, betroffener Erzeugungsart und mittlerer Dauer.
+       Die Gruppenliste darunter ist zugleich die Legende.
+
+       Was hier bewusst NICHT steht, ist Arbeit je Stunde. Die Quelle nennt je
+       Massnahme eine Gesamtarbeit und ein Fenster, nicht den Verlauf darin;
+       sie gleichmaessig zu verteilen waere eine Annahme, die bei 253 von 1.187
+       geprueften Saetzen nachweislich nicht traegt. "Aktiv oder nicht" ist
+       ohne jede Annahme ablesbar.
+
+       Was die Quelle gar nicht hat: eine Stufe oder Prioritaet der Massnahme,
+       und einen Ort der betroffenen Anlage. Das WO wird deshalb ueber den
+       anweisenden Betreiber beantwortet -- das ist die Regelzone und damit die
+       einzige belegbare Antwort. */
+    var gruppen = RD_GRUNDGRUPPEN.filter(function (g) { return r.jeGruppe[g.name]; })
+      .sort(function (a, b) { return r.jeGruppe[b.name] - r.jeGruppe[a.name]; });
+    var maxStd = Math.max.apply(null, r.stunden);
     if (gruppen.length) {
       var gkasten = el("div", { "class": "pf-rd-gruende" });
-      gkasten.appendChild(el("h4", { text: "Warum eingegriffen wurde" }));
+      gkasten.appendChild(el("h4", { text: "Wann und warum eingegriffen wurde" }));
+
+      if (r.belegteTage && maxStd > 0) {
+        var mittel = function (x) { return x / r.belegteTage; };
+        var hoechst = mittel(maxStd);
+        var rahmen = el("div", { "class": "pf-rd-rahmen" });
+
+        var achseY = el("div", { "class": "pf-rd-achse-y" });
+        [1, 0.5, 0].forEach(function (f) {
+          achseY.appendChild(el("span", { text: nf1.format(hoechst * f) }));
+        });
+        rahmen.appendChild(achseY);
+
+        var flaeche = el("div", { "class": "pf-rd-flaeche",
+          tabindex: "0", role: "group",
+          "aria-label": "Zeitprofil der Redispatch-Maßnahmen über 24 Stunden. "
+            + "Mit den Pfeiltasten die Stunde wechseln." });
+        [0.5, 1].forEach(function (f) {
+          flaeche.appendChild(el("i", { "class": "pf-rd-hilfslinie",
+            style: "bottom:" + (f * 100) + "%;" }));
+        });
+
+        var spalten24 = [];
+        for (var h = 0; h < 24; h++) {
+          var spalte = el("div", { "class": "pf-rd-spalte" });
+          var stapel = el("div", { "class": "pf-rd-stapel",
+            style: "height:" + (r.stunden[h] / maxStd * 100).toFixed(1) + "%;" });
+          /* Stapelreihenfolge fest: der Regelfall unten, das Seltene oben.
+             Sie folgt der Arbeit im Zeitraum und nicht der Stunde -- sonst
+             taenzelten die Farben von Saeule zu Saeule. */
+          gruppen.forEach(function (g) {
+            var reiheG = r.stdGruppe[g.name];
+            var n = reiheG ? reiheG[h] : 0;
+            if (!n || !r.stunden[h]) { return; }
+            stapel.appendChild(el("i", { "class": "pf-rd-teil",
+              style: "height:" + (n / r.stunden[h] * 100).toFixed(2) + "%;"
+                + "background:var(" + g.token + ");" }));
+          });
+          spalte.appendChild(stapel);
+          flaeche.appendChild(spalte);
+          spalten24.push(spalte);
+        }
+
+        /* Die Ablesung. Ein eigenes Element, kein title-Attribut: dort steht
+           eine Zeile ohne Zeilenumbruch, ohne Farbe und ohne Tastaturzugang,
+           und sie kam obendrein erst nach einer Sekunde. */
+        var info = el("div", { "class": "pf-rd-info", role: "status", hidden: "hidden" });
+        flaeche.appendChild(info);
+
+        function zeile(dl, name, wert, token) {
+          var dt2 = el("dt");
+          if (token) { dt2.appendChild(el("i", { style: "background:var(" + token + ");" })); }
+          dt2.appendChild(document.createTextNode(name));
+          dl.appendChild(dt2);
+          dl.appendChild(el("dd", { text: wert }));
+        }
+
+        function anteilszeile(dl, karte, stunde, titelToken) {
+          var namen = Object.keys(karte).filter(function (k) {
+            return karte[k][stunde];
+          }).sort(function (a, b) { return karte[b][stunde] - karte[a][stunde]; });
+          namen.forEach(function (n) {
+            zeile(dl, n, nf1.format(mittel(karte[n][stunde])) + " · "
+              + nf0.format(karte[n][stunde] / r.stunden[stunde] * 100) + " %",
+              titelToken ? titelToken(n) : null);
+          });
+        }
+
+        var aktiv = -1;
+        function zeigen(stunde) {
+          if (stunde < 0 || stunde > 23 || !r.stunden[stunde]) { return; }
+          if (aktiv >= 0) { spalten24[aktiv].removeAttribute("data-aktiv"); }
+          aktiv = stunde;
+          spalten24[aktiv].setAttribute("data-aktiv", "ja");
+          info.innerHTML = "";
+          info.appendChild(el("p", { "class": "pf-rd-info-uhr",
+            text: zwei(stunde) + ":00 bis " + zwei((stunde + 1) % 24) + ":00 Uhr" }));
+          var wert = el("p", { "class": "pf-rd-info-wert",
+            text: nf1.format(mittel(r.stunden[stunde])) });
+          wert.appendChild(el("span", { text: "Maßnahmen gleichzeitig, im Mittel" }));
+          info.appendChild(wert);
+          info.appendChild(el("p", { "class": "pf-bezug",
+            text: "an " + nf0.format(r.stundenTage[stunde]) + " von "
+              + nf0.format(r.belegteTage) + " Tagen lief in dieser Stunde "
+              + "mindestens eine · sie dauerten im Mittel "
+              + nf1.format(r.stundenDauer[stunde] / r.stunden[stunde])
+              + " Stunden insgesamt" }));
+
+          var dl = el("dl", { "class": "pf-rd-info-liste" });
+          dl.appendChild(el("dt", { "class": "pf-rd-info-titel", text: "Warum" }));
+          dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
+          anteilszeile(dl, r.stdGruppe, stunde, function (name) {
+            var g = RD_GRUNDGRUPPEN.filter(function (x) { return x.name === name; })[0];
+            return g ? g.token : null;
+          });
+          dl.appendChild(el("dt", { "class": "pf-rd-info-titel", text: "Richtung" }));
+          dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
+          zeile(dl, "hochgefahren", nf1.format(mittel(r.stdHoch[stunde])) + " · "
+            + nf0.format(r.stdHoch[stunde] / r.stunden[stunde] * 100) + " %", "--teal");
+          zeile(dl, "heruntergefahren", nf1.format(mittel(r.stdRunter[stunde])) + " · "
+            + nf0.format(r.stdRunter[stunde] / r.stunden[stunde] * 100) + " %", "--orange");
+          dl.appendChild(el("dt", { "class": "pf-rd-info-titel",
+            text: "Angewiesen von — die Regelzone" }));
+          dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
+          anteilszeile(dl, r.stdUenb, stunde);
+          dl.appendChild(el("dt", { "class": "pf-rd-info-titel",
+            text: "Betroffene Erzeugung" }));
+          dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
+          anteilszeile(dl, r.stdArt, stunde);
+          info.appendChild(dl);
+
+          /* Rand halten: an den ersten und letzten Stunden wuerde die Ablesung
+             sonst aus dem Bild laufen. */
+          info.removeAttribute("hidden");
+          info.style.left = stunde < 12 ? (stunde / 24 * 100) + "%" : "auto";
+          info.style.right = stunde < 12 ? "auto" : ((23 - stunde) / 24 * 100) + "%";
+        }
+
+        function verbergen() {
+          if (aktiv >= 0) { spalten24[aktiv].removeAttribute("data-aktiv"); }
+          aktiv = -1;
+          info.setAttribute("hidden", "hidden");
+        }
+
+        spalten24.forEach(function (sp, i) {
+          sp.addEventListener("mouseenter", function () { zeigen(i); });
+        });
+        flaeche.addEventListener("mouseleave", verbergen);
+        flaeche.addEventListener("focus", function () {
+          if (aktiv < 0) { zeigen(spitzenstunde(r.stunden)); }
+        });
+        flaeche.addEventListener("blur", verbergen);
+        flaeche.addEventListener("keydown", function (ev) {
+          if (ev.key === "Escape") { verbergen(); return; }
+          var schritt = ev.key === "ArrowRight" ? 1 : ev.key === "ArrowLeft" ? -1 : 0;
+          if (!schritt) { return; }
+          ev.preventDefault();
+          var naechste = (aktiv < 0 ? spitzenstunde(r.stunden) : aktiv + schritt + 24) % 24;
+          zeigen(naechste);
+        });
+
+        rahmen.appendChild(flaeche);
+        gkasten.appendChild(rahmen);
+
+        var achse = el("div", { "class": "pf-rd-uhr-achse" });
+        for (var hb = 0; hb < 24; hb++) {
+          achse.appendChild(el("span", { text: hb % 3 === 0 ? zwei(hb) : "" }));
+        }
+        gkasten.appendChild(achse);
+
+        var spitze = spitzenstunde(r.stunden);
+        var tief = tiefststunde(r.stunden);
+        gkasten.appendChild(el("p", { "class": "pf-bezug",
+          text: "Höhe: gleichzeitig laufende Maßnahmen je Stunde des Tages, "
+            + "gemittelt über " + nf0.format(r.belegteTage) + " Tage (Ortszeit). "
+            + "Farbe: der Grund. Am meisten um " + zwei(spitze) + ":00 mit "
+            + nf1.format(mittel(r.stunden[spitze])) + ", am wenigsten um "
+            + zwei(tief) + ":00 mit " + nf1.format(mittel(r.stunden[tief]))
+            + ". Zeigen oder mit den Pfeiltasten wählen öffnet die Ablesung. "
+            + "Gezählt wird, ob eine Maßnahme in der Stunde lief — nicht, wie "
+            + "viel Arbeit auf sie entfiel: die Quelle nennt je Maßnahme eine "
+            + "Gesamtarbeit und ein Fenster, keinen Verlauf darin. Eine Stufe "
+            + "oder Priorität führt sie nicht, und der Ort der betroffenen "
+            + "Anlage lässt sich nicht auflösen — deshalb steht dort, wer "
+            + "angewiesen hat." }));
+      }
+
+      /* Die Gruppenliste ist jetzt zugleich die Legende der Grafik daruber.
+         Sie fuehrt die ARBEIT in GWh -- die Grafik zaehlt Massnahmen. Zwei
+         verschiedene Groessen, und deswegen stehen beide da: der Probebetrieb
+         ist nach Zahl der Massnahmen sichtbar, nach Arbeit aber klein. */
       var streifen = el("div", { "class": "pf-rd-streifen" });
-      gruppen.slice().sort(function (a, b) {
-        return r.jeGruppe[b.name] - r.jeGruppe[a.name];
-      }).forEach(function (g) {
+      gruppen.forEach(function (g) {
         var anteil = r.jeGruppe[g.name] / r.gesamt * 100;
         streifen.appendChild(el("span", {
           style: "width:" + anteil.toFixed(2) + "%;background:var(" + g.token + ");",
@@ -2235,11 +2410,11 @@
             + nf1.format(anteil) + " %"
         }));
       });
+      gkasten.appendChild(el("p", { "class": "pf-gruppentitel",
+        text: "Dieselben Gründe nach Arbeit — die Grafik oben zählt Maßnahmen" }));
       gkasten.appendChild(streifen);
       var gliste = el("div", { "class": "pf-rd-grundliste" });
-      gruppen.slice().sort(function (a, b) {
-        return r.jeGruppe[b.name] - r.jeGruppe[a.name];
-      }).forEach(function (g) {
+      gruppen.forEach(function (g) {
         var z = el("div", { "class": "pf-rd-grund" });
         var kopf2 = el("div", { "class": "pf-zeile" });
         var name = el("span", { "class": "pf-name" });

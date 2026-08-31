@@ -388,12 +388,17 @@ Fehlern".
 
 ---
 
-## Zeitprofil über den Tag — belegt am 31.08.2026
+## Zeitprofil über den Tag — belegt am 31.08.2026, erweitert am selben Tag
 
 Bis hierher stand im ganzen Redispatch-Abschnitt keine einzige Uhrzeit. Man
 sah, **wie viel** eingegriffen wurde und **warum**, aber nicht **wann**. Die
 Quelle nennt zu jeder Maßnahme Beginn und Ende; daraus lässt sich ein
 Tagesprofil bilden, ohne etwas anzunehmen.
+
+Die erste Fassung war eine Reihe einfarbiger Säulen mit einem
+`title`-Attribut. Sie sagte nur „mittags mehr als nachts" und beantwortete
+keine Anschlussfrage — zu Recht als schwach zurückgewiesen. Die zweite Fassung
+gliedert dieselbe Zählung nach vier Merkmalen auf.
 
 ### Was gezählt wird — und was ausdrücklich nicht
 
@@ -411,6 +416,31 @@ Arbeitskurve über den Tag wäre also eine Grafik über eine Annahme.
 „Aktiv oder nicht aktiv" braucht diese Annahme nicht. Der Preis dafür: eine
 kurze Maßnahme über 15 Minuten zählt in dieser Stunde genauso wie eine, die
 sie ausfüllt. Das steht in der Bildunterschrift auf der Seite.
+
+### Die fünf Reihen je Tag
+
+| Feld | Was drinsteht |
+|---|---|
+| `aktive_je_stunde` | 24 Zähler: wie viele Maßnahmen liefen in dieser Stunde |
+| `stunden_richtung` | dieselbe Zählung, getrennt nach hoch und runter |
+| `stunden_je_grund` | nach dem **Grund**, im Wortlaut der Quelle |
+| `stunden_je_uenb` | nach dem **anweisenden** Betreiber — das ist die Regelzone |
+| `stunden_je_energieart` | nach der betroffenen Erzeugungsart |
+| `stunden_dauer_h` | Summe der **Gesamt**dauern der laufenden Maßnahmen; geteilt durch ihre Zahl ergibt das die mittlere Dauer |
+
+Die Aufgliederungen summieren sich je Stunde exakt auf `aktive_je_stunde` auf.
+`scripts/validate.py` rechnet das für jeden der 2.052 Tage nach.
+
+**Was die Quelle nicht hat**, und was deshalb auch nicht in der Ablesung steht:
+
+- **Eine Stufe oder Priorität.** Es gibt kein solches Feld. Die 15 Felder sind
+  oben in diesem Beleg aufgeführt.
+- **Einen Ort.** `BETROFFENE_ANLAGE` ist eine Bezeichnung ohne Koordinate;
+  76,9 % der Arbeit ließen sich keinem der 596 Kraftwerke und 5.259
+  Umspannwerke zuordnen, und unscharfe Treffer waren teils falsch
+  („Obernburg" gegen „Bernburg"). Das **Wo** wird deshalb über den anweisenden
+  Betreiber beantwortet — das ist die Regelzone und die einzige belegbare
+  Antwort darauf.
 
 ### Gemessen über 2021 bis 2026 (2.052 Tage, 657.831 Maßnahmen-Stunden)
 
@@ -448,5 +478,47 @@ doppelt belegt oder gar nicht — das bleibt so stehen und wird nicht geglättet
   ab, der beim Bauen tatsächlich auftrat: ein Zähler, der nur die Anfangsstunde
   jeder Maßnahme sieht, lässt die Nacht leer aussehen.
 - `scripts/browsertest.mjs`: 24 Säulen, genau eine höchste, Profil nicht flach,
-  jede Säule nennt Mittelwert und Zahl der Tage, und die Unterschrift sagt, dass
-  keine Arbeit je Stunde gezeigt wird.
+  jeder Stapel geht auf 100 % auf, die Ablesung geht beim Zeigen auf und führt
+  vier Aufgliederungen, die Pfeiltaste rückt weiter, Escape schließt.
+
+---
+
+## ZURÜCKGENOMMEN am 31.08.2026: sechs Sätze ohne Richtung
+
+Beim Gegenrechnen der neuen Stundenreihen ist aufgefallen, dass
+`hoch + runter` an drei Tagen nicht auf die Gesamtzahl aufging. Ursache:
+
+**Die Quelle schreibt „erhöhen" nicht immer gleich.** Meist steht dort
+`Wirkleistungseinspeisung erhöhen` mit richtigem ö (U+00F6), an einzelnen
+Sätzen aber `Wirkleistungseinspeisung erh¿hen` — an der Quelle ist der Umlaut
+zu U+00BF zerfallen. Im Abrufskript stand ein Vergleich auf **Gleichheit** mit
+dem vollen Wortlaut. Diese Sätze passten in keinen der beiden Zweige: ihre
+Arbeit landete weder unter `erhoehen_mwh` noch unter `reduzieren_mwh` und
+fehlte damit auch in `gesamt_mwh`. Als Maßnahme gezählt wurden sie trotzdem.
+
+**Umfang, über alle sechs Jahre nachgemessen:**
+
+| Jahr | betroffene Sätze | fehlende Arbeit | Anteil des Jahres |
+|---|---|---|---|
+| 2022 | 6 von 12.438 | 5.905 MWh | 0,03 % |
+| alle übrigen | 0 | 0 | 0 |
+
+Betroffen waren der 22., 23.04., 08.06. und 03.08.2022. Die Jahressumme 2022
+steigt damit von 22,051 auf 22,057 TWh. Das ist klein — aber es ist dieselbe
+Fehlerklasse wie das Dezimalkomma: **eine Zeichenkette der Quelle wurde
+angenommen statt nachgesehen**, und niemand zählte mit.
+
+Was jetzt dort steht:
+
+1. `richtung()` sucht nicht mehr auf Gleichheit, sondern auf das, was den
+   Zerfall überlebt: `reduzieren` ist reines ASCII, beim Gegenstück trägt das
+   `erh` vor dem Umlaut.
+2. Wer trotzdem nicht einzuordnen ist, wird in `saetze_ohne_richtung` und
+   `arbeit_ohne_richtung_mwh` gezählt — und `fetch-redispatch.py` **bricht ab**,
+   sobald dort etwas steht. Jede Maßnahme fährt hoch oder runter; ein Drittes
+   gibt es nicht.
+3. Dasselbe für den anweisenden Betreiber: was nicht zu den vier gehört, stand
+   vorher in einem stillen `if u in ...` und fiel heraus. Jetzt zählt
+   `anweiser_ausserhalb_der_vier` mit, und auch das bricht ab.
+4. `scripts/validate.py` prüft beide Zähler in den fertigen Dateien nach.
+

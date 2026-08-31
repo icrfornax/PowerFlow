@@ -816,28 +816,95 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-rd-zahl[data-akzent="violett"] .pf-wert { color: var(--violett); }
 
 /* ---------- Redispatch: Zeitprofil ----------
-   24 Saeulen, eine je Stunde des Tages. Keine Werteachse: die Zahl steht im
-   Titel jeder Saeule und in der Bildunterschrift. Eine Achse mit
-   Nachkommastellen an einem 90 px hohen Bild waere Schmuck. */
-.pf-rd-zeit { margin-top: 20px; }
-.pf-rd-zeit > h4 {
-  margin: 0 0 8px; font-size: 0.78rem; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--schrift-still); font-weight: 600;
+   24 gestapelte Saeulen, eine je Stunde des Tages. Hoehe = wie viele
+   Massnahmen liefen gleichzeitig, Farbe = warum. Die Werteachse hat drei
+   Marken; alles Genauere steht in der Ablesung, die beim Zeigen aufgeht. */
+.pf-rd-rahmen { display: flex; gap: 8px; align-items: stretch; }
+.pf-rd-achse-y {
+  display: flex; flex-direction: column; justify-content: space-between;
+  font-size: 0.7rem; color: var(--schrift-still); text-align: right;
+  min-width: 26px; font-variant-numeric: tabular-nums;
+  padding-bottom: 0; line-height: 1;
 }
-.pf-rd-uhr {
-  display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px;
-  align-items: end; height: 92px; padding: 0 0 2px;
-  border-bottom: 1px solid var(--linie);
+.pf-rd-flaeche {
+  position: relative; flex: 1; display: grid;
+  grid-template-columns: repeat(24, 1fr); gap: 2px; align-items: end;
+  height: 150px; border-bottom: 1px solid var(--linie);
+  border-left: 1px solid var(--linie); padding: 0 1px;
 }
-.pf-rd-stunde { height: 100%; display: flex; align-items: flex-end; }
-.pf-rd-saeule {
-  width: 100%; min-height: 2px; border-radius: 3px 3px 0 0;
-  background: var(--violett);
+.pf-rd-flaeche:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.pf-rd-hilfslinie {
+  position: absolute; left: 0; right: 0; height: 0;
+  border-top: 1px dashed var(--linie); pointer-events: none;
 }
-.pf-rd-stunde:hover .pf-rd-saeule { background: var(--teal); }
+.pf-rd-spalte { height: 100%; display: flex; align-items: flex-end; }
+/* column-reverse: das zuerst angehaengte Stueck liegt unten. Die
+   Stapelreihenfolge folgt der Arbeit im Zeitraum, nicht der Stunde -- sonst
+   taenzelten die Farben von Saeule zu Saeule. */
+.pf-rd-stapel {
+  width: 100%; min-height: 2px; display: flex; flex-direction: column-reverse;
+  border-radius: 3px 3px 0 0; overflow: hidden;
+}
+.pf-rd-teil { display: block; width: 100%; }
+.pf-rd-spalte[data-aktiv] .pf-rd-stapel {
+  outline: 1px solid var(--schrift); outline-offset: 1px;
+}
+.pf-rd-spalte:hover { cursor: default; }
+
+/* Die Ablesung. Ein eigenes Element statt eines title-Attributs: dort steht
+   eine Zeile ohne Umbruch, ohne Farbe und ohne Tastaturzugang. */
+/* Sie steht UNTER der Grafik, nicht darueber. Darueber stiess sie an den oben
+   klebenden Zeitraumblock, und ihre ersten Zeilen -- Uhrzeit und Zahl --
+   verschwanden dahinter. Das war im Bildschirmfoto zu sehen und in keiner
+   Pruefung. */
+.pf-rd-info {
+  position: absolute; top: calc(100% + 10px); z-index: 5;
+  width: min(340px, 92vw); padding: 12px 14px;
+  background: var(--flaeche-hoch); border: 1px solid var(--linie);
+  border-radius: 8px; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.pf-rd-info-uhr {
+  margin: 0; font-size: 0.75rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still);
+}
+.pf-rd-info-wert {
+  margin: 2px 0 4px; font-family: var(--schrift-zahl); font-size: 1.35rem;
+  color: var(--violett); font-variant-numeric: tabular-nums;
+}
+/* --schrift ist eine FARBE, keine Schriftfamilie. Hier stand einmal
+   font-family: var(--schrift) -- ungueltig, und die Beschriftung erbte
+   stillschweigend die Ziffernschrift des Elternelements. validate.py prueft
+   das jetzt fuer die ganze Datei. */
+.pf-rd-info-wert span {
+  font-family: var(--schrift-familie); font-size: 0.75rem;
+  color: var(--schrift-leise); margin-left: 6px;
+}
+.pf-rd-info .pf-bezug { margin: 0 0 8px; }
+.pf-rd-info-liste {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; margin: 0;
+  font-size: 0.8rem;
+}
+.pf-rd-info-liste dt { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pf-rd-info-liste dt i {
+  width: 9px; height: 9px; border-radius: 2px; flex: none;
+}
+.pf-rd-info-liste dd {
+  margin: 0; color: var(--schrift-leise); font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* Zwischenueberschrift in der Liste: eine Zeile ueber beide Spalten. */
+.pf-rd-info-liste dt.pf-rd-info-titel {
+  font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--schrift-still); margin-top: 7px;
+  border-top: 1px solid var(--linie); padding-top: 6px;
+}
+.pf-rd-info-liste dd.pf-rd-info-titel {
+  margin-top: 7px; border-top: 1px solid var(--linie); padding-top: 6px;
+}
 .pf-rd-uhr-achse {
   display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px;
-  font-size: 0.7rem; color: var(--schrift-still); margin-top: 4px;
+  font-size: 0.7rem; color: var(--schrift-still); margin: 4px 0 0 34px;
   font-variant-numeric: tabular-nums;
 }
 

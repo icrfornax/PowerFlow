@@ -352,7 +352,7 @@ try {
     "der Probebetrieb wird ausdruecklich vom Notfall getrennt",
     rd.warnung.slice(0, 90));
   await foto("redispatch", ".pf-rd-kopf");
-  await foto("redispatch-zeit", ".pf-rd-zeit");
+  await foto("redispatch-zeit", ".pf-rd-gruende");
 
   // --- Waagerechter Ueberlauf, drei Breiten ---
   for (const [name, breite, hoehe, mobil] of [
@@ -758,21 +758,35 @@ try {
     "genau einer der beiden laengsten Laenderbalken fuellt die Schiene",
     `${skala.impErster} / ${skala.expErster}`);
 
-  /* DAS ZEITPROFIL DES REDISPATCH. Vorher stand im ganzen Abschnitt keine
-     einzige Uhrzeit. Geprueft wird, dass 24 Saeulen dastehen, dass sie nicht
-     alle gleich hoch sind (das waere ein Rechenfehler) und dass die
-     Bildunterschrift sagt, was gezaehlt wird und was NICHT. */
+  /* DAS ZEITPROFIL DES REDISPATCH -- neu gebaut am 31.08.2026.
+
+     Die erste Fassung war 24 graue Saeulen mit einem title-Attribut. Sie
+     beantwortete keine Anschlussfrage. Jetzt ist die Saeule nach dem Grund
+     gestapelt, und beim Zeigen oeffnet sich eine echte Ablesung. Geprueft wird
+     genau das: die Stapelung, die Ablesung und ihr Inhalt. */
   const rdzeit = await js(`(function () {
-    const saeulen = [...document.querySelectorAll(".pf-rd-saeule")];
-    const h = saeulen.map((x) => parseFloat(x.style.height));
-    const p = document.querySelector(".pf-rd-zeit .pf-bezug");
-    const s0 = document.querySelector(".pf-rd-stunde");
+    const spalten = [...document.querySelectorAll(".pf-rd-spalte")];
+    const stapel = spalten.map((x) => x.querySelector(".pf-rd-stapel"));
+    const h = stapel.map((x) => (x ? parseFloat(x.style.height) : 0));
+    const teile = stapel.map((x) => (x ? x.querySelectorAll(".pf-rd-teil").length : 0));
+    const p = document.querySelector(".pf-rd-gruende .pf-bezug");
     return {
-      n: saeulen.length,
+      n: spalten.length,
       voll: h.filter((x) => x > 99.5).length,
       spanne: h.length ? Math.max.apply(null, h) - Math.min.apply(null, h) : 0,
-      titel: s0 ? s0.getAttribute("title") : "",
-      text: p ? p.textContent : ""
+      mehrfarbig: teile.filter((x) => x > 1).length,
+      // Summe der Stueckhoehen je Saeule: muss 100 % ergeben, sonst fehlt eine
+      // Gruppe im Stapel.
+      summen: stapel.map((x) => {
+        if (!x) { return 0; }
+        let s = 0;
+        x.querySelectorAll(".pf-rd-teil").forEach((i) => {
+          s += parseFloat(i.style.height);
+        });
+        return Math.round(s);
+      }).filter((s) => s > 0),
+      text: p ? p.textContent : "",
+      titel: (document.querySelector(".pf-rd-gruende h4") || {}).textContent || ""
     };
   })()`);
   pruefe(rdzeit.n === 24, "24 Saeulen -- eine je Stunde des Tages",
@@ -780,12 +794,89 @@ try {
   pruefe(rdzeit.voll === 1 && rdzeit.spanne > 5,
     "genau eine Stunde ist die hoechste, und das Profil ist nicht flach",
     `voll ${rdzeit.voll}, Spanne ${rdzeit.spanne}`);
-  pruefe(rdzeit.titel.indexOf("gleichzeitig") >= 0
-    && rdzeit.titel.indexOf("von") >= 0,
-    "jede Stunde nennt Mittelwert und Zahl der Tage", rdzeit.titel.slice(0, 80));
+  pruefe(rdzeit.mehrfarbig >= 1,
+    "die Saeulen sind nach dem Grund gestapelt, nicht einfarbig",
+    `${rdzeit.mehrfarbig} von 24 mit mehr als einem Stueck`);
+  pruefe(rdzeit.summen.every((s) => s === 100),
+    "jeder Stapel geht auf 100 % auf -- keine Gruppe faellt heraus",
+    `${rdzeit.summen.filter((s) => s !== 100).length} Abweichungen`);
+  pruefe(/Wann und warum/.test(rdzeit.titel),
+    "ein Block statt zweier: Wann UND warum", rdzeit.titel);
   pruefe(rdzeit.text.indexOf("nicht, wie") >= 0
-    && rdzeit.text.indexOf("Annahme") >= 0,
-    "und die Unterschrift sagt, dass keine Arbeit je Stunde gezeigt wird");
+    && rdzeit.text.indexOf("Stufe") >= 0,
+    "die Unterschrift sagt, was gezaehlt wird und was die Quelle nicht hat");
+
+  /* DIE ABLESUNG. Der eigentliche Anlass des Umbaus: beim Zeigen kam vorher
+     nur der title-Text. Geprueft wird, dass ein echtes Element aufgeht, dass
+     es die vier Aufgliederungen fuehrt und dass es die Tastatur bedient. */
+  const rdInfo = await js(`(function () {
+    const spalten = [...document.querySelectorAll(".pf-rd-spalte")];
+    const info = document.querySelector(".pf-rd-info");
+    const vorher = info ? info.hasAttribute("hidden") : null;
+    // Die Stunde mit dem hoechsten Stapel -- dort ist sicher etwas zu sehen.
+    let beste = 0, hoch = -1;
+    spalten.forEach((sp, i) => {
+      const s = sp.querySelector(".pf-rd-stapel");
+      const v = s ? parseFloat(s.style.height) : 0;
+      if (v > hoch) { hoch = v; beste = i; }
+    });
+    spalten[beste].dispatchEvent(new MouseEvent("mouseenter", { bubbles: false }));
+    const titel = [...document.querySelectorAll(".pf-rd-info-liste dt.pf-rd-info-titel")]
+      .map((x) => x.textContent).filter((x) => x);
+    const ergebnis = {
+      vorherVersteckt: vorher,
+      offen: info && !info.hasAttribute("hidden"),
+      uhr: (document.querySelector(".pf-rd-info-uhr") || {}).textContent || "",
+      wert: (document.querySelector(".pf-rd-info-wert") || {}).textContent || "",
+      abschnitte: titel,
+      zeilen: document.querySelectorAll(".pf-rd-info-liste dd").length,
+      markiert: document.querySelectorAll(".pf-rd-spalte[data-aktiv]").length,
+      farbtupfer: document.querySelectorAll(".pf-rd-info-liste dt i").length
+    };
+    // Tastatur: Pfeil nach rechts muss eine Stunde weiterruecken.
+    const flaeche = document.querySelector(".pf-rd-flaeche");
+    flaeche.dispatchEvent(new KeyboardEvent("keydown",
+      { key: "ArrowRight", bubbles: true, cancelable: true }));
+    ergebnis.nachPfeil = (document.querySelector(".pf-rd-info-uhr") || {}).textContent || "";
+    flaeche.dispatchEvent(new KeyboardEvent("keydown",
+      { key: "Escape", bubbles: true, cancelable: true }));
+    ergebnis.nachEscape = info.hasAttribute("hidden");
+    return ergebnis;
+  })()`);
+  pruefe(rdInfo.vorherVersteckt === true && rdInfo.offen === true,
+    "die Ablesung ist zu und geht beim Zeigen auf");
+  pruefe(/\d\d:00 bis \d\d:00 Uhr/.test(rdInfo.uhr),
+    "sie nennt die Uhrzeit von und bis", rdInfo.uhr);
+  pruefe(rdInfo.wert.indexOf("gleichzeitig") >= 0,
+    "und den Mittelwert gleichzeitig laufender Massnahmen", rdInfo.wert);
+  pruefe(rdInfo.abschnitte.length === 4,
+    `vier Aufgliederungen (${rdInfo.abschnitte.join(" | ")})`);
+  pruefe(/Regelzone/.test(rdInfo.abschnitte.join(" ")),
+    "das WO wird ueber die Regelzone beantwortet, nicht ueber einen Ort");
+  pruefe(rdInfo.zeilen >= 8,
+    `die Ablesung fuehrt ${rdInfo.zeilen} Zeilen, nicht eine`);
+  pruefe(rdInfo.farbtupfer >= 3,
+    "Gruende und Richtungen tragen ihre Farbe auch in der Ablesung",
+    String(rdInfo.farbtupfer));
+  pruefe(rdInfo.markiert === 1,
+    "die abgelesene Saeule ist markiert", String(rdInfo.markiert));
+  pruefe(rdInfo.nachPfeil !== rdInfo.uhr && rdInfo.nachPfeil !== "",
+    "die Pfeiltaste rueckt eine Stunde weiter",
+    `${rdInfo.uhr} -> ${rdInfo.nachPfeil}`);
+  pruefe(rdInfo.nachEscape === true, "Escape schliesst sie wieder");
+
+  /* Ein Bild MIT geoeffneter Ablesung -- und um 60 px hoeher gescrollt, damit
+     der oben klebende Zeitraumblock nicht die Spitze der Saeulen verdeckt. Das
+     ist beim ersten Anlauf passiert: die Grafik sah gestutzt aus, war es aber
+     nicht. Die Bildschirmfotos werden angesehen, nicht nur gezaehlt. */
+  await js(`document.querySelector(".pf-rd-rahmen")`
+    + `.scrollIntoView({ block: "center", behavior: "instant" });`
+    + `window.scrollBy(0, -70);`);
+  await schlafen(350);
+  await js(`document.querySelectorAll(".pf-rd-spalte")[11]`
+    + `.dispatchEvent(new MouseEvent("mouseenter"))`);
+  await schlafen(250);
+  await foto("redispatch-ablesung");
 
   await foto("fluss", ".pf-fluss");
   await foto("fluss-preis", ".pf-preiszeile");

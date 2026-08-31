@@ -209,6 +209,10 @@ die Regelzonenbilanz.
   Zeitraum darueber hinausgeht; die Quelle kennt -500,00 Euro (02.07.2023,
   14 Uhr) und +936,28 Euro (12.12.2024, 17 Uhr). Ein gemessener Wert wird nie
   am Bildrand abgeschnitten.
+- **Ein Farb-Token ist keine Schriftfamilie.** `font-family: var(--schrift)` ist
+  ungueltig und faellt stillschweigend auf die geerbte Schrift zurueck -- eine
+  Beschriftung stand dadurch in der Ziffernschrift. Sichtbar nur im
+  Bildschirmfoto, in keiner Pruefung; `validate.py` prueft es jetzt.
 - Beschriftungen nennen Einheit und Bezug.
 - Zugaenglichkeit: sichtbarer Fokus, aria-Beschriftungen an Knoepfen ohne Text,
   `prefers-reduced-motion` beachten, Tabellen und Grafiken mit eigenem
@@ -425,7 +429,7 @@ gezaehlt und mitsamt seiner Arbeit weggeworfen.
 Ueber 2025 gemessen: **4.374 von 19.257 Saetzen (22,7 %) und 5,529 von 20,324
 TWh (27,2 %)**. Die Seite hat monatelang zu niedrige Redispatch-Zahlen gezeigt.
 Alle sechs Jahresdateien sind neu abgerufen; die Werte lauten jetzt 15,42 (2021),
-22,05 (2022), 24,81 (2023), 22,28 (2024), 20,32 (2025) und 13,18 TWh (2026 bis
+22,06 (2022), 24,81 (2023), 22,28 (2024), 20,32 (2025) und 13,18 TWh (2026 bis
 30.08.).
 
 **Wie es unentdeckt bleiben konnte:** das Feld `unvollstaendige_saetze` stand
@@ -435,7 +439,20 @@ Zaehler, den keiner prueft, ist kein Zaehler. Deshalb jetzt zweifach geprueft:
 `validate.py` prueft, dass in keiner Jahresdatei ein verworfener Satz steht.
 
 Seit dem 31.08.2026 steht je Tag ein **Zeitprofil** in der Datei:
-`aktive_je_stunde`, 24 Zaehler in Ortszeit. Gezaehlt wird, OB eine Massnahme in
+`aktive_je_stunde`, 24 Zaehler in Ortszeit, dazu dieselbe Zaehlung aufgegliedert
+nach Grund, anweisendem Betreiber, Erzeugungsart und Richtung sowie die Summe
+der Dauern (`stunden_je_grund`, `stunden_je_uenb`, `stunden_je_energieart`,
+`stunden_richtung`, `stunden_dauer_h`). Auf der Seite ist daraus EIN Block
+geworden -- "Wann und warum eingegriffen wurde": die Saeule zeigt wie viele,
+ihre Farbe warum, und beim Zeigen oeffnet sich eine echte Ablesung. Kein
+`title`-Attribut mehr; dort steht eine Zeile ohne Umbruch, ohne Farbe und ohne
+Tastaturzugang.
+
+**Was die Quelle nicht hat und was deshalb nirgends behauptet wird:** eine
+Stufe oder Prioritaet (kein solches Feld unter den 15) und einen Ort der
+betroffenen Anlage (`BETROFFENE_ANLAGE` ist eine Bezeichnung ohne Koordinate,
+76,9 % der Arbeit ohne Zuordnung). Das WO wird ueber den anweisenden Betreiber
+beantwortet -- das ist die Regelzone. Gezaehlt wird, OB eine Massnahme in
 dieser Stunde lief -- nicht, wie viel Arbeit auf sie entfiel. Eine Arbeit je
 Stunde gaebe es nur unter der Annahme gleichmaessiger Leistung, und genau die
 traegt nicht (siehe die Regel zu GESAMTE_ARBEIT_MWH). Gemessen ueber 2.052
@@ -444,6 +461,14 @@ Tage: Spitze um 11:00 mit im Mittel 17,9 gleichzeitigen Massnahmen, Tiefpunkt um
 `docs/beleg-redispatch.md`.
 
 Fuenf Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
+- **Keine Zeichenkette der Quelle wird auf Gleichheit geprueft.** Die Quelle
+  schreibt "Wirkleistungseinspeisung erhöhen" an einzelnen Saetzen mit
+  zerfallenem Umlaut ("erh¿hen", U+00BF). Ein `==` gegen den vollen Wortlaut
+  hat 6 Saetze und 5.905 MWh aus BEIDEN Summen fallen lassen -- gezaehlt wurden
+  sie trotzdem. `richtung()` sucht deshalb auf das, was den Zerfall ueberlebt,
+  und was uebrig bleibt, wird gezaehlt und bricht den Abruf ab. Dieselbe Regel
+  gilt fuer den anweisenden Betreiber: ein stilles `if x in liste` ist ein
+  stiller Verlust.
 - **Das Dezimaltrennzeichen ist ein Komma.** Siehe oben. `zahl()` in
   `fetch-redispatch.py` wandelt um; ein Tausenderpunkt waere vorher zu
   entfernen, sonst wird aus "1.306,25" die Zahl 1,30625.

@@ -67,8 +67,37 @@ PFAD = "data/Redispatch/{von}/{bis}"
 
 # Die vier Uebertragungsnetzbetreiber, wie sie in der Datei heissen.
 UENB = ("50Hertz", "Amprion", "TenneT DE", "TransnetBW")
-HOCH = "Wirkleistungseinspeisung erhöhen"
-RUNTER = "Wirkleistungseinspeisung reduzieren"
+HOCH = "hoch"
+RUNTER = "runter"
+
+
+def richtung(roh: str) -> str | None:
+    """"hoch", "runter" oder None -- und ausdruecklich NICHT ueber Gleichheit.
+
+    Am 31.08.2026 gefunden: die Quelle schreibt denselben Wert in zwei
+    verschiedenen Kodierungen. Meistens "Wirkleistungseinspeisung erhöhen" mit
+    richtigem ö (U+00F6), an einzelnen Saetzen aber "Wirkleistungseinspeisung
+    erh¿hen" -- an der Quelle ist der Umlaut zu U+00BF zerfallen. Am
+    22./23.04.2022 betraf das 3 von 104 Saetzen.
+
+    Bis dahin stand hier ein Vergleich auf Gleichheit mit dem vollen Wortlaut.
+    Die abweichend kodierten Saetze fielen dadurch aus BEIDEN Summen heraus:
+    ihre Arbeit landete weder unter erhoehen_mwh noch unter reduzieren_mwh und
+    fehlte damit auch in gesamt_mwh -- gezaehlt als Massnahme wurden sie
+    trotzdem. Dieselbe Fehlerklasse wie das Dezimalkomma: eine Zeichenkette der
+    Quelle wurde angenommen statt nachgesehen.
+
+    Deshalb wird jetzt auf das gesucht, was den Zerfall ueberlebt. "reduzieren"
+    ist reines ASCII und steht immer da; beim Gegenstueck traegt nur das "erh"
+    vor dem Umlaut. Wer nichts davon findet, wird gezaehlt und nicht
+    stillschweigend uebergangen.
+    """
+    s = (roh or "").strip().lower()
+    if "reduzieren" in s:
+        return RUNTER
+    if s.startswith("wirkleistungseinspeisung erh"):
+        return HOCH
+    return None
 
 
 # Dauerklassen. Die Quelle rastert auf Viertelstunden; feiner waere Schein-
@@ -110,6 +139,51 @@ def zahl(roh: str) -> float:
     return float(s)
 
 
+def stundenblock() -> dict:
+    """Ein leerer Satz Stundenzaehler fuer einen Tag.
+
+    24 Zaehler je Merkmal, in Ortszeit. Gezaehlt wird immer dasselbe: WIE VIELE
+    MASSNAHMEN liefen in dieser Stunde. Niemals Arbeit je Stunde -- die nennt
+    die Quelle nicht, und sie ueber das Fenster zu verteilen waere eine
+    Annahme, die bei 253 von 1.187 geprueften Saetzen nachweislich nicht
+    traegt.
+
+    Warum diese Merkmale und keine anderen:
+      gesamt         -- die Grundlinie.
+      hoch / runter  -- hochgefahren oder heruntergefahren.
+      dauer_h        -- Summe der GESAMTdauern der laufenden Massnahmen; durch
+                        ihre Anzahl geteilt ergibt das die mittlere Dauer.
+      je_grund       -- WARUM. Im Wortlaut der Quelle; gruppiert wird erst in
+                        der Anzeige.
+      je_uenb        -- WER angewiesen hat; das ist zugleich die Regelzone und
+                        damit die einzige belegbare Antwort auf das WO.
+      je_energieart  -- WAS fuer eine Anlage betroffen war.
+
+    Nicht dabei und auch nicht nachtragbar: eine Stufe oder Prioritaet (die
+    Quelle hat kein solches Feld) und der Ort der betroffenen Anlage (das Feld
+    BETROFFENE_ANLAGE ist eine Bezeichnung ohne Koordinate; 76,9 % der Arbeit
+    liessen sich nicht zuordnen -- siehe docs/beleg-redispatch.md).
+    """
+    return {
+        "gesamt": [0] * 24,
+        "hoch": [0] * 24,
+        "runter": [0] * 24,
+        "dauer_h": [0.0] * 24,
+        "je_grund": {},
+        "je_uenb": {},
+        "je_energieart": {},
+    }
+
+
+def reihe(karte: dict, schluessel: str) -> list:
+    """Die 24er-Reihe zu einem Schluessel, bei Bedarf angelegt.
+
+    Duenn besetzt: nur was an diesem Tag vorkam, steht in der Datei. Alle
+    vierzehn Gruende mal 24 Nullen je Tag waeren das Vielfache der Nutzlast.
+    """
+    return karte.setdefault(schluessel, [0] * 24)
+
+
 def stempel(datum: str, uhr: str, zone: str) -> dt.datetime:
     """Ein Zeitpunkt aus der Datei, als bewusst zonenbehaftete Zeit.
 
@@ -142,12 +216,16 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
     "arbeit_ueber_mitternacht_mwh".
     """
     tage: dict[str, dict] = {}
-    # Tag -> 24 Zaehler. Getrennt gefuehrt, weil eine Massnahme in Stunden
+    # Tag -> Stundenblock. Getrennt gefuehrt, weil eine Massnahme in Stunden
     # laufen kann, die auf einem anderen Tag liegen als ihr Beginn.
-    stunden_je_tag: dict[str, list[int]] = collections.defaultdict(
-        lambda: [0] * 24)
+    stunden_je_tag: dict[str, dict] = collections.defaultdict(stundenblock)
     ueber_mitternacht = 0.0
     unvollstaendig = 0
+    # Zaehler statt stillschweigendem Uebergehen -- beide sind neu, beide
+    # standen vorher als blosses "wenn es passt" im Code.
+    ohne_richtung = 0
+    ohne_richtung_mwh = 0.0
+    fremder_uenb: collections.Counter = collections.Counter()
     for s in saetze:
         try:
             a = stempel(s["BEGINN_DATUM"], s["BEGINN_UHRZEIT"], s["ZEITZONE_VON"])
@@ -184,18 +262,40 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
         # ihrer Arbeit beim ersten Tag (siehe oben), im Zeitprofil aber mit
         # zwei Stunden beim zweiten. Beides ist richtig, weil es zwei
         # verschiedene Fragen sind.
+        #
+        # Was je Stunde mitgezaehlt wird, steht im Kopf von stundenblock().
+        grund = (s.get("GRUND_DER_MASSNAHME") or "unbekannt").strip()
+        anweiser = (s.get("ANWEISENDER_UENB") or "unbekannt").strip()
+        art = (s.get("PRIMAERENERGIEART") or "unbekannt").strip()
+        r_richtung = richtung(s.get("RICHTUNG"))
+        dauer_h = (b - a).total_seconds() / 3600
         lauf = a.astimezone(TZ).replace(minute=0, second=0, microsecond=0)
         ende = b.astimezone(TZ)
         while lauf < ende:
-            stunden_je_tag[lauf.date().isoformat()][lauf.hour] += 1
+            blk = stunden_je_tag[lauf.date().isoformat()]
+            h = lauf.hour
+            blk["gesamt"][h] += 1
+            if r_richtung:
+                blk[r_richtung][h] += 1
+            blk["dauer_h"][h] += dauer_h
+            reihe(blk["je_grund"], grund)[h] += 1
+            reihe(blk["je_uenb"], anweiser)[h] += 1
+            reihe(blk["je_energieart"], art)[h] += 1
             lauf += dt.timedelta(hours=1)
-        if s.get("RICHTUNG") == HOCH:
+        if r_richtung == HOCH:
             e["erhoehen_mwh"] += arbeit
-        elif s.get("RICHTUNG") == RUNTER:
+        elif r_richtung == RUNTER:
             e["reduzieren_mwh"] += arbeit
+        else:
+            ohne_richtung += 1
+            ohne_richtung_mwh += arbeit
         u = (s.get("ANWEISENDER_UENB") or "").strip()
         if u in e["je_uenb"]:
             e["je_uenb"][u] += arbeit
+        else:
+            # Auch hier wurde bisher stillschweigend uebergangen, was nicht in
+            # die Liste der vier passte. Jetzt wird es gezaehlt.
+            fremder_uenb[u] += 1
         e["je_energieart"][(s.get("PRIMAERENERGIEART") or "unbekannt").strip()] += arbeit
 
         # --- die drei bisher ungenutzten Felder --------------------------
@@ -229,7 +329,16 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
     # Stunden noch dazukommen. Ortszeit: am Tag der Umstellung ist 02:00
     # doppelt belegt bzw. gar nicht, und das bleibt so stehen.
     for tag_s, e in tage.items():
-        e["aktive_je_stunde"] = stunden_je_tag.get(tag_s, [0] * 24)
+        blk = stunden_je_tag.get(tag_s) or stundenblock()
+        e["aktive_je_stunde"] = blk["gesamt"]
+        e["stunden_richtung"] = {"hoch": blk["hoch"], "runter": blk["runter"]}
+        # Summe der Dauern der in dieser Stunde laufenden Massnahmen. Geteilt
+        # durch die Zahl der Massnahmen ergibt das ihre mittlere Gesamtdauer --
+        # nicht, wie lange sie in DIESER Stunde liefen. Der Unterschied steht
+        # auf der Seite.
+        e["stunden_dauer_h"] = [round(x, 1) for x in blk["dauer_h"]]
+        for feld in ("je_grund", "je_uenb", "je_energieart"):
+            e["stunden_" + feld] = {k: v for k, v in sorted(blk[feld].items())}
 
     return {
         "tage": tage,
@@ -239,6 +348,11 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
         # damit man die Werteliste der Quelle sieht, ohne sie abzurufen.
         "gruende": sorted(gruende),
         "anfordernde": sorted(anfordernd),
+        # Was nicht eingeordnet werden konnte. Steht in der Datei, wird vom
+        # Waechter geprueft und von validate.py noch einmal nachgesehen.
+        "saetze_ohne_richtung": ohne_richtung,
+        "arbeit_ohne_richtung_mwh": round(ohne_richtung_mwh, 2),
+        "anweiser_ausserhalb_der_vier": dict(fremder_uenb),
     }
 
 
@@ -261,6 +375,20 @@ def waechter(saetze: list[dict], ergebnis: dict) -> None:
             "konnten nicht gelesen werden. Ueber 1 % heisst: die Quelle hat ihr "
             "Format geaendert oder der Leser ist falsch. Erst ansehen, dann "
             "weiterbauen -- nicht die Grenze anheben.")
+    # Dieselbe Regel fuer die Richtung. Sie darf gar nicht fehlen: jede
+    # Massnahme faehrt hoch oder runter, ein drittes gibt es nicht. Wenn hier
+    # etwas steht, hat die Quelle ihren Wortlaut geaendert.
+    if ergebnis["saetze_ohne_richtung"]:
+        raise SystemExit(
+            f"ABBRUCH: bei {ergebnis['saetze_ohne_richtung']} von "
+            f"{len(saetze)} Saetzen war die RICHTUNG nicht einzuordnen "
+            f"({ergebnis['arbeit_ohne_richtung_mwh']:,.0f} MWh). Nachsehen, "
+            "welchen Wortlaut die Quelle jetzt liefert -- nicht wegwerfen.")
+    fremd = ergebnis["anweiser_ausserhalb_der_vier"]
+    if fremd:
+        raise SystemExit(
+            f"ABBRUCH: unbekannter anweisender Betreiber {fremd}. Erwartet "
+            f"werden {UENB}. Erst nachsehen, dann die Liste erweitern.")
 
 
 def kopf(jahr: int) -> dict:
@@ -290,11 +418,18 @@ def kopf(jahr: int) -> dict:
             "Probestarts, Testfahrten und Funktionstests stehen unter je_grund "
             "und machten 2025 rund 4 % der Arbeit aus. aktive_je_stunde sind "
             "24 Zaehler in Ortszeit: wie viele Massnahmen liefen in dieser "
-            "Stunde des Tages. Gezaehlt wird AKTIV ODER NICHT, keine Arbeit je "
-            "Stunde -- die nennt die Quelle nicht, und sie gleichmaessig ueber "
-            "das Fenster zu verteilen waere eine Annahme, die nachweislich "
-            "nicht traegt. Eine Massnahme wird dabei auf dem Tag gezaehlt, auf "
-            "dem die Stunde liegt, nicht auf dem Tag ihres Beginns."
+            "Stunde des Tages. Dieselbe Zaehlung noch einmal aufgegliedert in "
+            "stunden_richtung (hoch/runter), stunden_je_grund, stunden_je_uenb "
+            "(der anweisende Betreiber, zugleich die Regelzone) und "
+            "stunden_je_energieart; stunden_dauer_h ist die Summe der "
+            "GESAMTdauern der in dieser Stunde laufenden Massnahmen, geteilt "
+            "durch ihre Anzahl also die mittlere Dauer. Gezaehlt wird ueberall "
+            "AKTIV ODER NICHT, keine Arbeit je Stunde -- die nennt die Quelle "
+            "nicht, und sie gleichmaessig ueber das Fenster zu verteilen waere "
+            "eine Annahme, die nachweislich nicht traegt. Eine Massnahme wird "
+            "dabei auf dem Tag gezaehlt, auf dem die Stunde liegt, nicht auf "
+            "dem Tag ihres Beginns. Was die Quelle NICHT hat: eine Stufe oder "
+            "Prioritaet, und einen Ort der betroffenen Anlage."
         ),
         "jahr": jahr,
         "abgerufen": dt.datetime.now(TZ).isoformat(timespec="seconds"),

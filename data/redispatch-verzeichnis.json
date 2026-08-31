@@ -1,5 +1,5 @@
 {
- "abgerufen": "2026-08-31T18:38:40+02:00",
+ "abgerufen": "2026-08-31T21:01:51+02:00",
  "hinweis": "Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null.",
  "jahre": [
   {
