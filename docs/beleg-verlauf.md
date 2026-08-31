@@ -153,3 +153,78 @@ python scripts/fetch-verlauf.py
 python scripts/validate.py
 python scripts/validate.py --negativtests
 ```
+
+
+## Nachtrag 31.08.2026 — Außenhandel je Stunde, und der Preis dazu
+
+Anlass war eine Frage von Immo: „Für welchen Preis exportieren wir und für
+welchen Preis kaufen wir Strom ein." Die erste Antwort stützte sich auf
+Tageswerte — und war deshalb ungenau. Immo hat genau darauf hingewiesen.
+
+### Warum Tageswerte dafür nicht taugen
+
+An einem Tag führt Deutschland zu teuren Stunden ein und zu billigen aus. Wer
+Tagesmittel des Preises gegen Tagessummen des Austauschs rechnet, mittelt das
+weg. Gemessen über 2023 bis 2026:
+
+| | Tagesnäherung | stündlich gewichtet |
+|---|---:|---:|
+| Einfuhr | 103,51 €/MWh | **102,53 €/MWh** |
+| Ausfuhr | 67,53 €/MWh | **77,65 €/MWh** |
+| Differenz | 35,98 | **24,88 €/MWh** |
+
+Die Näherung übertrieb den Abstand um mehr als zehn Euro je MWh.
+
+### Was jetzt in den Dateien steht
+
+`data/verlauf/*.json` führt zusätzlich `import_mwh` und `export_mwh` — die
+Summe über alle elf Nachbarländer, je Stunde, in MWh. Je Land und Stunde wären
+es 22 Reihen und die Dateien rund zweieinhalbmal so groß; die Aufteilung je
+Land steht weiterhin in den Tageswerten.
+
+**102.255 Stunden** wurden geholt, 610 Wochenblöcke, rund drei Minuten.
+
+### Gegenprobe: Stundensummen gegen Tageswerte
+
+Beide Reihen wurden unabhängig abgerufen (Auflösung `hour` gegen `day`), der
+Vergleich ist deshalb eine echte Gegenprobe der Abrufkette. Über **4.259 Tage**:
+
+- Median der Abweichung: **0,01 MWh**
+- über 1 MWh: **18 Tage (0,42 %)**
+- über 1.000 MWh: 10 Tage
+
+Die größte verbleibende Abweichung ist der 17.06.2023 mit 34.070 MWh beim
+Import — eine echte Unstimmigkeit der Quelle zwischen ihren eigenen beiden
+Auflösungen, nicht ein Fehler des Abrufs.
+
+### Ein unplausibler Wert, gefunden und benannt
+
+Die Gegenprobe deckte sofort den bekannten Fehlwert auf: **Schweiz-Import am
+09.02.2015 um 17:00 Uhr mit 25.000.468 MWh**. In den Tageswerten war er längst
+als fehlend geführt; in den Stundenwerten wäre er stehengeblieben.
+
+Die Grenze wurde aus den Daten bestimmt, nicht geraten: der größte tatsächlich
+beobachtete Stundenwert liegt bei **5.403 MWh/h** (Niederlande, Stichprobe über
+30 Wochen quer durch alle Jahre). Die Schranke steht bei 15.000 MWh/h — knapp
+das Dreifache, und immer noch das Sechzehnhundertstel des Fehlwerts. **Genau
+ein** Wert unter 102.255 Stunden fällt darunter. Er wird als fehlend geführt,
+nicht korrigiert; der Originalwert steht in der Monatsdatei unter
+`aussenhandel_auffaellig`.
+
+### Der abgeleitete Tagesbaustein
+
+`data/aussenhandel-preis.json` führt je Tag vier Summen über die Stunden:
+Preis × Einfuhr, Einfuhr, Preis × Ausfuhr, Ausfuhr. Der mengengewichtete Preis
+eines beliebigen Zeitraums ist die Summe der Zähler durch die Summe der
+Nenner — **exakt** dasselbe Ergebnis wie die Rechnung über alle Einzelstunden.
+Das ist keine Näherung, sondern Assoziativität. Die Seite kann damit jeden
+Zeitraum zeigen, ohne zwölf Monatsdateien zu laden. 2.892 Tage, 0,16 MB.
+
+### Was die Zahl NICHT ist
+
+Es ist der **deutsche Day-Ahead-Preis zur Stunde des Flusses**, nicht der
+Preis, zu dem an der Grenze abgerechnet wurde. Den führt die Quelle nicht; er
+wäre der Preis der jeweils gekoppelten Gebotszone. Die Differenz zwischen Ein-
+und Ausfuhrpreis ist deshalb **keine Handelsspanne**. Sie zeigt etwas anderes,
+und das ist die eigentliche Aussage: Strom fließt aus billigen in teure
+Stunden. Der Satz steht so auch auf der Seite.

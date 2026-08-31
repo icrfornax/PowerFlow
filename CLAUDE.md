@@ -276,9 +276,16 @@ Reihenfolge; was oben steht, traegt die Markierung "Als Naechstes".
    Beantwortet vermutlich Punkt 1 mit einem Klick.
 3. Methodik-PDF, das sich beim Bau selbst aus den Dateien neu rechnet.
 
-**Niedrig:** Gesamtlauf ueber alle Vergleichsjahre als CSV; Import und Export
-im Verlauf; Viertelstundenwerte (48 statt 12 MB, die jeder mitlaedt); die
-1.030 Windanlagen ohne Koordinate im Register.
+**Niedrig:** Gesamtlauf ueber alle Vergleichsjahre als CSV; Viertelstundenwerte
+(48 statt 12 MB, die jeder mitlaedt); die 1.030 Windanlagen ohne Koordinate im
+Register.
+
+**Erledigt am 31.08.2026:** Import und Export im Verlauf. `data/verlauf/*.json`
+fuehrt jetzt `import_mwh` und `export_mwh` je Stunde, summiert ueber alle elf
+Nachbarlaender. Anlass war die Frage nach dem Preis der Ein- und Ausfuhr --
+die MUSS stuendlich gewichtet werden, mit Tagesmitteln kommt etwas anderes
+heraus (67,53 statt 77,65 Euro je MWh fuer die Ausfuhr 2023-2026). Beleg:
+`docs/beleg-verlauf.md`.
 
 **Gestrichen:** kleine Windparks unter 5 MW; Solaranlagen. Beide Entscheidungen
 bleiben in `docs/beleg-mastr.md` belegt.

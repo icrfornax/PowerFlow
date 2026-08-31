@@ -361,6 +361,35 @@
     return (zo - de) / de * 100;
   }
 
+  /* Mengengewichteter Preis der Ein- und Ausfuhr im Zeitraum.
+
+     Gewichtet wird STUENDLICH, nicht ueber Tagesmittel. Der Unterschied ist
+     kein Detail: ueber 2023 bis 2026 ergab die Tagesnaeherung 67,53 Euro je
+     MWh fuer die Ausfuhr, stuendlich gerechnet sind es 77,65. An einem Tag
+     wird zu teuren Stunden eingefuehrt und zu billigen ausgefuehrt; im
+     Tagesmittel mittelt sich das weg.
+
+     Moeglich ist das ohne Nachladen der Stundendateien, weil je Tag vier
+     Summen vorliegen -- Preis mal Menge und Menge, je Richtung. Der
+     gewichtete Preis eines Zeitraums ist die Summe der Zaehler durch die
+     Summe der Nenner. Das ist keine Naeherung, sondern Assoziativitaet. */
+  function aussenhandelspreis(von, bis) {
+    var d = Z.ahPreis;
+    if (!d) { return null; }
+    var pEin = 0, ein = 0, pAus = 0, aus = 0, stunden = 0, tage = 0;
+    for (var i = 0; i < d.tage.length; i++) {
+      var tag = d.tage[i];
+      if (tag < von || tag > bis) { continue; }
+      pEin += d.p_ein[i]; ein += d.ein[i];
+      pAus += d.p_aus[i]; aus += d.aus[i];
+      stunden += d.stunden[i];
+      tage++;
+    }
+    if (!ein || !aus) { return null; }
+    return { ein: pEin / ein, aus: pAus / aus, menge_ein: ein, menge_aus: aus,
+             stunden: stunden, tage: tage };
+  }
+
   function laender(von, bis) {
     var d = Z.jahre[Number(von.slice(0, 4))];
     if (!d) { return []; }
@@ -2711,8 +2740,16 @@
        wie 2.388 GWh Wind. */
     fluss.appendChild(saeule("zufluss", "Zufluss · Erzeugung",
       gwh(k.erzeugung, 1) + " GWh", balkenliste(tr, null, maxZu, traegerFarbe)));
+    var ahp = aussenhandelspreis(von, bis);
+    var zuImport = el("div");
+    zuImport.appendChild(balkenliste(zu, "var(--teal)", maxZu));
+    if (ahp) {
+      zuImport.appendChild(el("p", { "class": "pf-bezug",
+        text: "Eingeführt zum mengengewichteten Preis von "
+          + nf2.format(ahp.ein) + " €/MWh." }));
+    }
     fluss.appendChild(saeule("zufluss", "Zufluss · Import je Nachbarland",
-      gwh(k.imp, 1) + " GWh", balkenliste(zu, "var(--teal)", maxZu)));
+      gwh(k.imp, 1) + " GWh", zuImport));
 
     var netzInhalt = el("div");
     var zz = zonen(von, bis).sort(function (a, b) { return b.saldo - a.saldo; });
@@ -2771,9 +2808,35 @@
       .map(function (a) { return { name: a.land, mwh: a.exp }; })
       .sort(function (a, b) { return b.mwh - a.mwh; });
     var maxAb = Math.max.apply(null, ab.map(function (e) { return e.mwh; }));
+    var abExport = el("div");
+    abExport.appendChild(balkenliste(ab, "var(--orange)", maxAb));
+    if (ahp) {
+      abExport.appendChild(el("p", { "class": "pf-bezug",
+        text: "Ausgeführt zum mengengewichteten Preis von "
+          + nf2.format(ahp.aus) + " €/MWh — "
+          + nf2.format(Math.abs(ahp.ein - ahp.aus))
+          + " €/MWh " + (ahp.aus < ahp.ein ? "unter" : "über")
+          + " dem Einfuhrpreis." }));
+    }
     fluss.appendChild(saeule("abfluss", "Abfluss · Export je Nachbarland",
-      gwh(k.exp, 1) + " GWh", balkenliste(ab, "var(--orange)", maxAb)));
+      gwh(k.exp, 1) + " GWh", abExport));
     neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh im Zeitraum)", fluss));
+    if (ahp) {
+      /* Der Vorbehalt gehoert dazu, sonst liest sich die Zahl als Handels-
+         spanne. Sie ist keine: es ist der deutsche Preis zur Stunde des
+         Flusses, nicht der Preis, zu dem an der Grenze abgerechnet wurde. */
+      neu.appendChild(el("p", { "class": "pf-bezug pf-ahp-hinweis",
+        text: "Beide Preise sind stündlich mengengewichtet, über "
+          + nf0.format(ahp.stunden) + " Stunden an " + nf0.format(ahp.tage)
+          + " Tagen. Ein Tagesmittel ergäbe etwas anderes, weil an einem Tag zu "
+          + "teuren Stunden eingeführt und zu billigen ausgeführt wird. "
+          + "WICHTIG: das ist der deutsche Day-Ahead-Preis zur Stunde des "
+          + "Flusses — nicht der Preis, zu dem an der Grenze abgerechnet wurde. "
+          + "Den führt die Quelle nicht; er wäre der Preis der jeweils "
+          + "gekoppelten Gebotszone. Die Differenz ist deshalb keine "
+          + "Handelsspanne, sondern zeigt, dass Strom aus billigen in teure "
+          + "Stunden fließt." }));
+    }
 
     // --- Regelzonen ---
     neu.appendChild(abschnitt("Regelzonen · Erzeugung nach Energieträger",
@@ -3350,13 +3413,17 @@
          eine Datei -- etwa weil ein Abruf im Workflow gescheitert ist --, wird
          die Ebene still weggelassen; alles andere steht trotzdem. Die
          Alternative waere eine weisse Seite wegen einiger Kartenmarken. */
-      netzLaden("mastrwind").catch(function () { Z.ebenen.mastrwind = false; })
+      netzLaden("mastrwind").catch(function () { Z.ebenen.mastrwind = false; }),
+      /* Bausteine fuer den mengengewichteten Aussenhandelspreis. 0,16 MB, und
+         die Seite laeuft auch ohne -- dann faellt nur die Preiszeile weg. */
+      hole("data/aussenhandel-preis.json").catch(function () { return null; })
     ]).then(function (teile) {
       Z.verzeichnis = teile[0];
       Z.grundkarte = teile[1];
       Z.kraftwerke = teile[2];
       Z.rdVerzeichnis = teile[3];
       Z.quellen = teile[4];
+      Z.ahPreis = teile[8] || null;
       var jahre = Z.verzeichnis.jahre;
       Z.minTag = jahre[0].erster_tag;
       var letzte = jahre[jahre.length - 1];

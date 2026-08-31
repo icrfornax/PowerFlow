@@ -5,6 +5,8 @@ Aufruf:  python scripts/fetch-verlauf.py             (alle Jahre ab 2015)
          python scripts/fetch-verlauf.py --wochen 4   (nur die letzten 4 Wochen)
          python scripts/fetch-verlauf.py --preise     (nur die Grosshandelspreise
                                                        nachtragen, rund 400 Abrufe)
+         python scripts/fetch-verlauf.py --aussenhandel  (Ein- und Ausfuhr je
+                                                       Stunde, rund 3 Minuten)
 
 Ein voller Lauf sind rund 8.000 Abrufe -- das ist ein Selten-Skript. Fuer den
 taeglichen Job gibt es --wochen N: dann werden nur die letzten N Wochenbloecke
@@ -53,6 +55,16 @@ ERSTES_JAHR = 2015
 PREIS_FILTER = 4169
 PREIS_AB = "2018-10-01"
 
+# Plausibilitaetsgrenze fuer einen einzelnen Stundenwert des Aussenhandels,
+# je Land und Richtung, in MWh. Der groesste tatsaechlich beobachtete Wert
+# liegt bei 5.403 MWh/h (Niederlande, Stichprobe ueber 30 Wochen quer durch
+# alle Jahre). 15.000 ist knapp das Dreifache -- weit genug fuer echte Spitzen
+# und eng genug fuer den bekannten Fehlwert der Quelle: Schweiz-Import am
+# 09.02.2015 mit 25.009.206 MWh, also dem Sechzehnhundertfachen. Derselbe Wert
+# ist in den Tageswerten laengst als fehlend gefuehrt; in den Stundenwerten
+# waere er sonst stehengeblieben.
+GRENZE_STUNDE_MWH = 15_000.0
+
 
 def marke(ms: int) -> str:
     """Lokale Stundenmarke JJJJ-MM-TTTHH.
@@ -81,6 +93,40 @@ def hole_jahr(filter_id: int, bloecke: list[int]) -> dict[int, float]:
     return werte
 
 
+def aussenhandel(bloecke: list[int]) -> tuple[dict, dict, dict]:
+    """Ein- und Ausfuhr je Stunde, ueber alle Nachbarlaender summiert.
+
+    Warum summiert und nicht je Land: je Land waeren es 22 Reihen statt zwei
+    und die Monatsdateien rund zweieinhalbmal so gross. Fuer die Frage, zu
+    welchem Preis Deutschland ein- und ausfuehrt, reicht die Summe -- die
+    Aufteilung je Land steht weiterhin in den Tageswerten.
+
+    Eine Stunde bekommt nur dann einen Wert, wenn mindestens ein Land einen
+    liefert. Dass frueher weniger Laender angeschlossen waren, ist kein Loch:
+    NordLink und ALEGrO gingen erst 2020 und 2021 ans Netz.
+    """
+    auftraege = [(land, richtung, ids[richtung])
+                 for land, ids in smard.AUSSENHANDEL.items()
+                 for richtung in ("import", "export")]
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        ergebnisse = list(pool.map(lambda a: hole_jahr(a[2], bloecke), auftraege))
+
+    summe: dict[str, dict[int, float]] = {"import_mwh": {}, "export_mwh": {}}
+    auffaellig: list[dict] = []
+    for (land, richtung, _), werte in zip(auftraege, ergebnisse):
+        ziel = summe["import_mwh" if richtung == "import" else "export_mwh"]
+        for ts, v in werte.items():
+            # Unplausible Werte werden als FEHLEND gefuehrt, nicht korrigiert
+            # und nicht geschaetzt. Der Originalwert bleibt in der Liste.
+            if not (0 <= v <= GRENZE_STUNDE_MWH):
+                auffaellig.append({"stunde": marke(ts), "land": land,
+                                   "richtung": richtung, "originalwert": v,
+                                   "grenze": [0, GRENZE_STUNDE_MWH]})
+                continue
+            ziel[ts] = ziel.get(ts, 0.0) + v
+    return summe["import_mwh"], summe["export_mwh"], auffaellig
+
+
 def pruefe_laengen(monat: str, doc: dict) -> None:
     """Jede Reihe je Stunde so lang wie die Stundenachse -- oder Abbruch.
 
@@ -92,7 +138,7 @@ def pruefe_laengen(monat: str, doc: dict) -> None:
     """
     n = len(doc["stunden"])
     schief = []
-    for name in ("netzlast", "preis_eur_mwh"):
+    for name in ("netzlast", "preis_eur_mwh", "import_mwh", "export_mwh"):
         if name in doc and len(doc[name]) != n:
             schief.append(f"{name}: {len(doc[name])}")
     for name, reihe in (doc.get("erzeugung") or {}).items():
@@ -124,6 +170,7 @@ def nachtragen(wochen: int) -> int:
     with ThreadPoolExecutor(max_workers=8) as pool:
         ergebnisse = list(pool.map(lambda r: hole_jahr(r[1], bloecke), reihen))
     daten = dict(zip((r[0] for r in reihen), ergebnisse))
+    daten["import_mwh"], daten["export_mwh"], _ = aussenhandel(bloecke)
 
     monate: dict[str, list[int]] = {}
     for ts in sorted(daten["netzlast"]):
@@ -154,6 +201,12 @@ def nachtragen(wochen: int) -> int:
             # auffuellen -- sonst rutscht alles um die Differenz.
             alt_p = alt_p + [None] * max(0, schnitt - len(alt_p))
             doc["preis_eur_mwh"] = alt_p[:schnitt] + preis_neu
+        for feld in ("import_mwh", "export_mwh"):
+            neu_sp = [daten[feld].get(ts) for ts in neue]
+            if any(v is not None for v in neu_sp) or feld in doc:
+                alt_sp = doc.get(feld, [])
+                alt_sp = alt_sp + [None] * max(0, schnitt - len(alt_sp))
+                doc[feld] = alt_sp[:schnitt] + neu_sp
         for _, name in sorted(smard.ERZEUGUNG.items()):
             spalte_neu = [daten[name].get(ts) for ts in neue]
             if not any(v is not None for v in spalte_neu) and name not in doc["erzeugung"]:
@@ -234,9 +287,166 @@ def preise_nachtragen() -> int:
     return 0
 
 
+def aussenhandel_nachtragen() -> int:
+    """Traegt Ein- und Ausfuhr je Stunde in die vorhandenen Monatsdateien nach.
+
+    Eigener Lauf aus demselben Grund wie bei den Preisen: ein voller Neulauf
+    ueber alle Reihen waere rund 8.000 Abrufe. Hier sind es 22 Reihen mal rund
+    620 Wochenbloecke, aber in acht Straengen -- gemessen rund drei Minuten.
+
+    WOZU. Die Frage "zu welchem Preis fuehrt Deutschland aus und ein" laesst
+    sich mit Tageswerten nur naehern: an einem Tag wird zu teuren Stunden
+    eingefuehrt und zu billigen ausgefuehrt, und das mittelt sich weg. Mit
+    Stundenwerten wird daraus eine mengengewichtete Rechnung ueber genau die
+    Stunden, in denen der Strom tatsaechlich floss.
+    """
+    bloecke = smard.wochenbloecke(smard.LAST_NETZLAST, smard.REGION_DE, smard.STUNDE)
+    print(f"  {len(bloecke)} Wochenbloecke, 22 Reihen je Block")
+    ein, aus, auffaellig = aussenhandel(bloecke)
+    print(f"  {len(ein):,} Stunden mit Einfuhr, {len(aus):,} mit Ausfuhr")
+    if auffaellig:
+        print(f"  {len(auffaellig)} unplausible Einzelwerte als fehlend gefuehrt:")
+        for a in auffaellig[:5]:
+            print(f"     {a['stunde']}  {a['land']}/{a['richtung']}  "
+                  f"{a['originalwert']:,.0f} MWh")
+
+    geaendert = 0
+    for pfad in sorted(ZIEL.glob("*.json")):
+        doc = json.loads(pfad.read_text(encoding="utf-8"))
+        # Wie bei den Preisen ueber die Reihenfolge zuordnen: die Marke ist am
+        # Tag der Rueckstellung mehrdeutig.
+        spalten = {}
+        for feld, werte in (("import_mwh", ein), ("export_mwh", aus)):
+            nach_marke: dict[str, list[float]] = {}
+            for ts in sorted(werte):
+                nach_marke.setdefault(marke(ts), []).append(werte[ts])
+            zaehler: dict[str, int] = {}
+            spalte = []
+            for m in doc["stunden"]:
+                i = zaehler.get(m, 0)
+                zaehler[m] = i + 1
+                liste = nach_marke.get(m)
+                spalte.append(liste[i] if liste and i < len(liste) else None)
+            spalten[feld] = spalte
+        if not any(v is not None for v in spalten["import_mwh"]):
+            continue
+        doc.update(spalten)
+        eigene = [a for a in auffaellig if a["stunde"][:7] == doc["monat"]]
+        if eigene:
+            doc["aussenhandel_auffaellig"] = eigene
+        doc["_aussenhandel_hinweis"] = (
+            "import_mwh und export_mwh sind die Summe ueber alle elf "
+            "Nachbarlaender, in MWh je Stunde, physikalischer Stromfluss. Die "
+            "Aufteilung je Land steht in den Tageswerten unter data/tage/ -- je "
+            "Land und Stunde waeren es 22 Reihen und die Datei zweieinhalbmal "
+            "so gross. Beide Richtungen koennen in derselben Stunde ungleich "
+            "null sein: Deutschland fuehrt zur selben Zeit aus einem Land ein "
+            "und in ein anderes aus."
+        )
+        pruefe_laengen(doc["monat"], doc)
+        pfad.write_text(json.dumps(doc, ensure_ascii=False,
+                                   separators=(",", ":")) + "\n",
+                        encoding="utf-8", newline="\n")
+        geaendert += 1
+    print(f"  {geaendert} Monatsdateien um den Aussenhandel ergaenzt")
+    return 0
+
+
+def preisgewicht() -> int:
+    """Rechnet je Tag die Bausteine fuer den mengengewichteten Preis aus.
+
+    WOZU. Die Frage "zu welchem Preis fuehrt Deutschland ein und aus" muss
+    STUENDLICH gewichtet werden. Mit Tagesmitteln kommt etwas anderes heraus:
+    ueber 2023 bis 2026 ergab die Tagesnaeherung 67,53 Euro je MWh fuer die
+    Ausfuhr, stuendlich gerechnet sind es 77,65. Die Naeherung lag um mehr als
+    zehn Euro daneben, weil an einem Tag zu teuren Stunden eingefuehrt und zu
+    billigen ausgefuehrt wird und sich das im Tagesmittel wegmittelt.
+
+    Damit die Seite trotzdem JEDEN Zeitraum exakt zeigen kann, ohne zwoelf
+    Monatsdateien zu laden, werden hier je Tag vier Summen abgelegt:
+
+        p_ein = Summe ueber die Stunden von Preis * Einfuhr
+        ein   = Summe der Einfuhr
+        p_aus = Summe ueber die Stunden von Preis * Ausfuhr
+        aus   = Summe der Ausfuhr
+
+    Der gewichtete Preis eines beliebigen Zeitraums ist dann die Summe der
+    Zaehler geteilt durch die Summe der Nenner -- exakt dasselbe Ergebnis wie
+    die Rechnung ueber alle Einzelstunden. Das ist keine Naeherung, sondern
+    Assoziativitaet.
+
+    Eine Stunde zaehlt nur mit, wenn Preis UND Aussenhandel vorliegen.
+    """
+    tage: dict[str, list[float]] = {}
+    stunden_gesamt = stunden_benutzt = 0
+    for pfad in sorted(ZIEL.glob("*.json")):
+        d = json.loads(pfad.read_text(encoding="utf-8"))
+        preis = d.get("preis_eur_mwh") or []
+        ein = d.get("import_mwh") or []
+        aus = d.get("export_mwh") or []
+        for i, m in enumerate(d["stunden"]):
+            stunden_gesamt += 1
+            if i >= len(preis) or preis[i] is None:
+                continue
+            if i >= len(ein) or ein[i] is None:
+                continue
+            p, e, a = preis[i], ein[i], (aus[i] if i < len(aus) and aus[i] is not None else 0.0)
+            z = tage.setdefault(m[:10], [0.0, 0.0, 0.0, 0.0, 0])
+            z[0] += p * e
+            z[1] += e
+            z[2] += p * a
+            z[3] += a
+            z[4] += 1
+            stunden_benutzt += 1
+
+    schluessel = sorted(tage)
+    doc = {
+        "_quelle": "SMARD, Bundesnetzagentur -- https://www.smard.de/",
+        "_lizenz": "CC BY 4.0",
+        "_namensnennung": "Bundesnetzagentur | SMARD.de",
+        "_hinweis": (
+            "SELBST GERECHNET aus den Stundenwerten unter data/verlauf/. Je Tag "
+            "vier Summen ueber die Stunden: Preis mal Einfuhr, Einfuhr, Preis "
+            "mal Ausfuhr, Ausfuhr. Der mengengewichtete Preis eines Zeitraums "
+            "ist die Summe der Zaehler durch die Summe der Nenner -- exakt "
+            "dasselbe Ergebnis wie die Rechnung ueber alle Einzelstunden. "
+            "WICHTIG: das ist der deutsche Day-Ahead-Preis zur Stunde des "
+            "Flusses, NICHT der Preis, zu dem an der Grenze abgerechnet wurde. "
+            "Den fuehrt die Quelle nicht; er waere der Preis der jeweils "
+            "gekoppelten Gebotszone."
+        ),
+        "formel": "gewichteter Preis = Summe(p_ein) / Summe(ein)",
+        "erzeugt_aus": "data/verlauf/*.json",
+        "stunden_benutzt": stunden_benutzt,
+        "stunden_gesamt": stunden_gesamt,
+        "tage": schluessel,
+        "p_ein": [round(tage[k][0], 1) for k in schluessel],
+        "ein": [round(tage[k][1], 1) for k in schluessel],
+        "p_aus": [round(tage[k][2], 1) for k in schluessel],
+        "aus": [round(tage[k][3], 1) for k in schluessel],
+        "stunden": [tage[k][4] for k in schluessel],
+    }
+    ziel = WURZEL / "data" / "aussenhandel-preis.json"
+    ziel.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
+                    encoding="utf-8", newline="\n")
+    gi = sum(doc["p_ein"]) / sum(doc["ein"]) if sum(doc["ein"]) else 0
+    ga = sum(doc["p_aus"]) / sum(doc["aus"]) if sum(doc["aus"]) else 0
+    print(f"  {len(schluessel)} Tage aus {stunden_benutzt:,} von "
+          f"{stunden_gesamt:,} Stunden")
+    print(f"  ueber alles: Einfuhr {gi:.2f}, Ausfuhr {ga:.2f} EUR/MWh")
+    print(f"  geschrieben: data/aussenhandel-preis.json "
+          f"({ziel.stat().st_size / 1e6:.2f} MB)")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     if "--preise" in argv:
         return preise_nachtragen()
+    if "--aussenhandel" in argv:
+        rc = aussenhandel_nachtragen()
+        return rc or preisgewicht()
+    if "--preisgewicht" in argv:
+        return preisgewicht()
     if "--wochen" in argv:
         i = argv.index("--wochen")
         return nachtragen(int(argv[i + 1]))
@@ -272,12 +482,17 @@ def main(argv: list[str]) -> int:
         if not bloecke:
             continue
 
-        reihen = [("netzlast", smard.LAST_NETZLAST)]
+        # ACHTUNG: hier muss JEDE Reihe stehen, die in einer Monatsdatei
+        # vorkommt. Der volle Lauf baut die Datei von Grund auf neu -- was hier
+        # fehlt, waere danach geloescht. Preis und Aussenhandel fehlten
+        # zeitweise und waeren bei einem vollen Lauf verschwunden.
+        reihen = [("netzlast", smard.LAST_NETZLAST), ("preis_eur_mwh", PREIS_FILTER)]
         reihen += [(name, fid) for fid, name in smard.ERZEUGUNG.items()]
 
         with ThreadPoolExecutor(max_workers=8) as pool:
             ergebnisse = list(pool.map(lambda r: hole_jahr(r[1], bloecke), reihen))
         daten = dict(zip((r[0] for r in reihen), ergebnisse))
+        daten["import_mwh"], daten["export_mwh"], _ = aussenhandel(bloecke)
 
         # Alle Zeitstempel dieses Jahres, aus der Netzlast. Sortiert wird ueber
         # den Zeitstempel; die Marke ist nur die Beschriftung.
@@ -316,6 +531,11 @@ def main(argv: list[str]) -> int:
                     if any(ts in daten[name] for ts in mm)
                 },
             }
+            for feld in ("preis_eur_mwh", "import_mwh", "export_mwh"):
+                spalte = [daten[feld].get(ts) for ts in mm]
+                if any(v is not None for v in spalte):
+                    doc[feld] = spalte
+            pruefe_laengen(monat, doc)
             pfad = ZIEL / f"{monat}.json"
             pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
                             encoding="utf-8", newline="\n")

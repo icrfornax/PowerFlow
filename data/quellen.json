@@ -101,7 +101,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 140,
-   "bytes": 12077258,
+   "bytes": 14033118,
    "zeitraum": "2015-01-01 bis 2026-08-31",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
@@ -192,6 +192,18 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
   },
   {
+   "titel": "Aussenhandel, mengengewichteter Preis",
+   "inhalt": "Je Tag vier Summen ueber die Stunden: Preis mal Einfuhr, Einfuhr, Preis mal Ausfuhr, Ausfuhr. Daraus laesst sich der mengengewichtete Preis jedes Zeitraums exakt bilden, ohne die Stundendateien zu laden. Selbst gerechnet aus data/verlauf/; die Formel steht im Kopf der Datei.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-verlauf.md",
+   "dateien": 1,
+   "bytes": 158658,
+   "zeitraum": null,
+   "muster": "data/aussenhandel-preis.json",
+   "abzug": "data/aussenhandel-preis.json",
+   "alle": null
+  },
+  {
    "titel": "Windparks ab 5 MW",
    "inhalt": "Ort, Nettonennleistung, Anzahl der Anlagen und Baujahr je Park, an Land und auf See. Einzelne Anlagen sind ueber die Betreiberangabe NameWindpark zusammengefasst; der Ort ist der Mittelwert der Anlagenorte. STAMMDATUM, keine Messung.",
    "quelle": "mastr",
@@ -221,13 +233,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 9270,
+   "bytes": 9846,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 169,
- "bytes_gesamt": 25647808
+ "dateien_gesamt": 170,
+ "bytes_gesamt": 27762902
 }

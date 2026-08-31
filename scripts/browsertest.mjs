@@ -668,6 +668,39 @@ try {
     "keine Abschnittsueberschrift 'Freie Variable' mehr");
   await schlafen(300);
 
+  /* Der mengengewichtete Aussenhandelspreis. Geprueft wird nicht nur, DASS er
+     dasteht, sondern dass der Vorbehalt mitsteht -- ohne ihn liest sich die
+     Differenz als Handelsspanne, und das waere falsch. */
+  const ahp = await js(`(function () {
+    const texte = [...document.querySelectorAll(".pf-saeule .pf-bezug")]
+      .map((x) => x.textContent);
+    const hinweis = document.querySelector(".pf-ahp-hinweis");
+    // Ohne regulaeren Ausdruck: in einem Template-Literal faellt jeder
+    // Backslash zusammen, und die Zeichenklasse ist danach kaputt. Das ist
+    // hier schon zweimal passiert.
+    const zahl = (s) => {
+      if (!s) { return null; }
+      const teil = s.split(" von ")[1] || s.split("von ")[1] || "";
+      const roh = teil.split(" ")[0].split(".").join("").replace(",", ".");
+      const w = parseFloat(roh);
+      return isNaN(w) ? null : w;
+    };
+    return {
+      ein: zahl(texte.find((x) => x.indexOf("Eingef") >= 0)),
+      aus: zahl(texte.find((x) => x.indexOf("Ausgef") >= 0)),
+      hinweis: hinweis ? hinweis.textContent : ""
+    };
+  })()`);
+  pruefe(ahp.ein !== null && ahp.aus !== null,
+    `Ein- und Ausfuhrpreis stehen da (${ahp.ein} / ${ahp.aus} EUR/MWh)`);
+  pruefe(ahp.ein > 0 && ahp.ein < 1000 && ahp.aus > -100 && ahp.aus < 1000,
+    "beide Preise liegen im moeglichen Bereich", `${ahp.ein} / ${ahp.aus}`);
+  pruefe(ahp.hinweis.indexOf("an der Grenze abgerechnet") >= 0,
+    "der Vorbehalt zum Grenzabrechnungspreis steht dabei",
+    ahp.hinweis.slice(0, 90));
+  pruefe(ahp.hinweis.indexOf("mengengewichtet") >= 0,
+    "und dass stuendlich gewichtet wird, nicht ueber Tagesmittel");
+
   /* Windparks aus dem Marktstammdatenregister. Auf der Karte steht bewusst
      eine AUSWAHL: alle Parks auf See und die 20 groessten an Land. Die Datei
      unter data/ bleibt vollstaendig. */

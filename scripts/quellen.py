@@ -120,6 +120,12 @@ GRUPPEN = [
      "Tagesaggregate: Arbeit nach Richtung, anweisendem Netzbetreiber und "
      "Primaerenergieart, in MWh.", "docs/beleg-redispatch.md",
      "redispatch-verzeichnis.json"),
+    ("aussenhandel-preis.json", "smard", "Aussenhandel, mengengewichteter Preis",
+     "Je Tag vier Summen ueber die Stunden: Preis mal Einfuhr, Einfuhr, Preis mal "
+     "Ausfuhr, Ausfuhr. Daraus laesst sich der mengengewichtete Preis jedes "
+     "Zeitraums exakt bilden, ohne die Stundendateien zu laden. Selbst gerechnet "
+     "aus data/verlauf/; die Formel steht im Kopf der Datei.",
+     "docs/beleg-verlauf.md", None),
     ("mastr-wind.json", "mastr", "Windparks ab 5 MW",
      "Ort, Nettonennleistung, Anzahl der Anlagen und Baujahr je Park, an Land und "
      "auf See. Einzelne Anlagen sind ueber die Betreiberangabe NameWindpark "
