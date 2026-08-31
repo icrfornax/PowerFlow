@@ -134,7 +134,9 @@ GROESSTE_ZONENABWEICHUNG_MWH = 50_000.0
 BEKANNT_AUFFAELLIG = ("2015-02-09", "aussenhandel/Schweiz/import")
 
 # Redispatch: Hoch- und Herunterfahren gleichen sich nicht vollstaendig aus.
-# Gemessen 2021 bis 2026: 3,6 bis 25,4 Prozent, hoch stets groesser. Grund
+# Nach der Berichtigung des Dezimalkommas am 31.08.2026 gemessen 2021 bis 2026:
+# 3,2 bis 18,1 Prozent, hoch stets groesser. (Mit den lueckenhaften Zahlen davor
+# waren es 3,6 bis 25,4 -- die Luecke hat die Asymmetrie uebertrieben.) Grund
 # laut Quelle: bei grenzueberschreitenden Massnahmen wird nur der deutsche
 # Teil veroeffentlicht. Die Grenze faengt grobe Fehler ab, nicht die bekannte
 # Asymmetrie.
@@ -650,6 +652,19 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # Zeilenenden des Arbeitsverzeichnisses, kann der Vergleich nie aufgehen.
     # Genau daran ist er sechs Laeufe lang gescheitert -- deshalb wird beides
     # jetzt schon hier geprueft, nicht erst auf dem Runner.
+    # Kein Redispatch-Satz darf still verloren gehen. Das Feld stand die ganze
+    # Zeit in den Dateien und wurde nie geprueft -- 22,7 % der Saetze fielen
+    # durch das Dezimalkomma heraus, ohne dass es jemand merkte.
+    verloren = []
+    for pf in sorted((WURZEL / "data" / "redispatch").glob("*.json")):
+        doc = json.loads(pf.read_text(encoding="utf-8"))
+        n = doc.get("unvollstaendige_saetze")
+        if n:
+            verloren.append(f"{pf.name}: {n}")
+    b.pruefe(not verloren,
+             "kein Redispatch-Satz wurde als unlesbar verworfen"
+             + (" -- " + ", ".join(verloren) if verloren else ""))
+
     b.pruefe("erzeugt" not in qv,
              "Quellenverzeichnis traegt keinen Zeitstempel (sonst nie reproduzierbar)")
 

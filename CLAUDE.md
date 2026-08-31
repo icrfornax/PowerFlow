@@ -186,6 +186,14 @@ die Regelzonenbilanz.
 
 ## Umgang mit Fehlern
 
+- **Jeder behobene Fehler bekommt eine Pruefung, nicht nur einen Flicken.**
+  Dreimal ist dieselbe Klasse wiedergekommen, weil nur die Fundstelle
+  repariert wurde: Textsuchen, die ueber eigene Kommentare stolperten;
+  Template-Literale, in denen `\.` zu `.` zerfaellt; und Schreibstellen ohne
+  `newline`, die unter Windows CRLF erzeugen. Erst als validate.py bzw. der
+  Browsertest die BEDINGUNG geprueft hat statt der Stelle, war es vorbei. Die
+  Frage nach jeder Behebung lautet deshalb: welche Pruefung haette das
+  gemeldet, und steht sie jetzt da?
 - Eigenen Fehler als solchen benennen und sagen, was ihn verursacht hat. Keine
   Beschoenigung.
 - Eine frueher aufgestellte Behauptung, die nach dem Nachrechnen nicht haelt,
@@ -350,13 +358,36 @@ Massnahmen, 14,80 TWh):
   13,3 % der Arbeit laufen ueber die "Boerse" und haben gar keinen Ort. Der
   offene Punkt auf der Seite sagt das jetzt mit Zahlen.
 
-Drei Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
+### ZURUECKGENOMMEN am 31.08.2026: die Redispatch-Zahlen waren zu niedrig
+
+**Das Dezimaltrennzeichen der Quelle ist ein KOMMA.** Bis zum 31.08.2026 stand
+im Abrufskript `float(s["GESAMTE_ARBEIT_MWH"])` ohne Umwandlung. Jeder Satz mit
+Nachkommastellen -- "1306,25" -- warf ValueError, wurde als "unvollstaendig"
+gezaehlt und mitsamt seiner Arbeit weggeworfen.
+
+Ueber 2025 gemessen: **4.374 von 19.257 Saetzen (22,7 %) und 5,529 von 20,324
+TWh (27,2 %)**. Die Seite hat monatelang zu niedrige Redispatch-Zahlen gezeigt.
+Alle sechs Jahresdateien sind neu abgerufen; die Werte lauten jetzt 15,42 (2021),
+22,05 (2022), 24,81 (2023), 22,28 (2024), 20,32 (2025) und 13,18 TWh (2026 bis
+30.08.).
+
+**Wie es unentdeckt bleiben konnte:** das Feld `unvollstaendige_saetze` stand
+die ganze Zeit in jeder Jahresdatei. Es hat nur niemand hineingesehen. Ein
+Zaehler, den keiner prueft, ist kein Zaehler. Deshalb jetzt zweifach geprueft:
+`fetch-redispatch.py` bricht ab, sobald ueber 1 % der Saetze unlesbar sind, und
+`validate.py` prueft, dass in keiner Jahresdatei ein verworfener Satz steht.
+
+Vier Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
+- **Das Dezimaltrennzeichen ist ein Komma.** Siehe oben. `zahl()` in
+  `fetch-redispatch.py` wandelt um; ein Tausenderpunkt waere vorher zu
+  entfernen, sonst wird aus "1.306,25" die Zahl 1,30625.
 - **Immer `GESAMTE_ARBEIT_MWH` summieren, nie Leistung mal Dauer.** Bei 253 von
   1.187 Saetzen des August 2026 ist die mittlere Leistung der Mittelwert ueber
   die tatsaechlich aktive Zeit, nicht ueber das genannte Fenster.
 - **Die Quelle liefert UTC.** Im Sommer zwei Stunden Unterschied. Das Feld
   ZEITZONE wird gelesen, nicht angenommen.
-- **Hoch ist stets groesser als runter**, 3,6 bis 25,4 Prozent ueber die Jahre.
+- **Hoch ist stets groesser als runter**, nach der Berichtigung 3,2 bis 18,1
+  Prozent ueber die Jahre (vorher mit den lueckenhaften Zahlen 3,6 bis 25,4).
   Kein Fehler: bei grenzueberschreitenden Massnahmen wird laut Quelle nur der
   deutsche Teil veroeffentlicht.
 

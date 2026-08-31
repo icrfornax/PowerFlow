@@ -336,3 +336,52 @@ Und die unscharfen Treffer sind teils **falsch**: „Obernburg" wäre „Bernbur
 geworden, „Gebersdorf" wäre „Ebersdorf" geworden — jeweils zwei verschiedene
 Orte. Eine Karte daraus wäre eine Behauptung. Der offene Punkt auf der Seite
 sagt das jetzt mit Zahlen statt „steht aus".
+
+
+## ZURÜCKGENOMMEN am 31.08.2026 — die Zahlen waren zu niedrig
+
+Beim Nachrechnen des Jahres 2025 fiel eine Lücke auf: die Seite zeigte 14.883
+Maßnahmen, der Rohabruf lieferte 19.257. Die Differenz von 4.374 stand als
+`unvollstaendige_saetze` in der Jahresdatei — seit Monaten, ungelesen.
+
+**Die Ursache: das Dezimaltrennzeichen der Quelle ist ein Komma.** Im
+Abrufskript stand `float(s["GESAMTE_ARBEIT_MWH"])` ohne Umwandlung. Ein Satz
+mit `1306,25` warf `ValueError`, wurde als unvollständig gezählt und mitsamt
+seiner Arbeit weggeworfen. Sätze mit glatten Werten (`7`, `29`) gingen durch —
+deshalb fiel es nicht auf.
+
+### Wie viel gefehlt hat
+
+| Jahr | vorher | berichtigt | Differenz |
+|---|---:|---:|---:|
+| 2021 | — | 15,419 TWh | |
+| 2022 | — | 22,051 TWh | |
+| 2023 | — | 24,809 TWh | |
+| 2024 | — | 22,277 TWh | |
+| **2025** | **14,796 TWh** | **20,324 TWh** | **+37,4 %** |
+| 2026 (bis 30.08.) | — | 13,180 TWh | |
+
+Für 2025 nachgemessen: **4.374 von 19.257 Sätzen (22,7 %)** und **5,529 von
+20,324 TWh (27,2 %)** fehlten. Die größte einzelne verlorene Maßnahme war
+26.101,10 MWh am 10.02.2025.
+
+Betroffen war auch die abgeleitete Aussage zur Asymmetrie: „hoch gegen runter"
+liegt nach der Berichtigung bei **3,2 bis 18,1 %** statt der früher genannten
+3,6 bis 25,4 %. Die Lücke hatte die Asymmetrie übertrieben.
+
+### Warum es unentdeckt blieb — und was sich dadurch ändert
+
+Der Zähler `unvollstaendige_saetze` war da. Er wurde nur nie geprüft. **Ein
+Zähler, den niemand prüft, ist kein Zähler.**
+
+Zwei Prüfungen stehen jetzt dort, wo vorher Vertrauen war:
+
+1. `scripts/fetch-redispatch.py` **bricht ab**, sobald mehr als 1 % der Sätze
+   unlesbar sind — mit dem ausdrücklichen Hinweis, die Grenze nicht anzuheben.
+2. `scripts/validate.py` prüft, dass in **keiner** Jahresdatei ein verworfener
+   Satz steht. Aktuell: null in allen sechs.
+
+Der Fehler gehört in dieselbe Reihe wie die Textsuchen über eigene Kommentare
+und die Zeilenenden: jedes Mal wurde die Fundstelle repariert und nicht die
+Bedingung geprüft. Die Regel steht jetzt in CLAUDE.md unter „Umgang mit
+Fehlern".

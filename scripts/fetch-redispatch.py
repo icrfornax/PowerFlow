@@ -88,6 +88,28 @@ def dauerklasse(stunden: float) -> str:
     return DAUERKLASSEN[3]
 
 
+def zahl(roh: str) -> float:
+    """Eine Zahl aus der Datei. Das Dezimaltrennzeichen ist ein KOMMA.
+
+    Das war ein schwerer Fehler und ist am 31.08.2026 behoben worden: bis
+    dahin stand hier float(s["GESAMTE_ARBEIT_MWH"]) ohne Umwandlung. Jeder
+    Satz mit Nachkommastellen -- "1306,25" -- warf ValueError, wurde als
+    "unvollstaendig" gezaehlt und mitsamt seiner Arbeit weggeworfen. Ueber
+    2025 gerechnet waren das 4.374 von 19.257 Saetzen (22,7 %) und 5,529 von
+    20,324 TWh (27,2 %). Die Seite hat monatelang zu niedrige Zahlen gezeigt.
+
+    Ein Tausenderpunkt ist in der Quelle nicht aufgetreten. Falls er doch
+    einmal kommt, wird er entfernt, bevor das Komma zum Punkt wird -- sonst
+    machte "1.306,25" aus 1306,25 die Zahl 1,30625.
+    """
+    s = (roh or "").strip()
+    if not s:
+        raise ValueError("leer")
+    if "," in s:
+        s = s.replace(".", "").replace(",", ".")
+    return float(s)
+
+
 def stempel(datum: str, uhr: str, zone: str) -> dt.datetime:
     """Ein Zeitpunkt aus der Datei, als bewusst zonenbehaftete Zeit.
 
@@ -126,7 +148,7 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
         try:
             a = stempel(s["BEGINN_DATUM"], s["BEGINN_UHRZEIT"], s["ZEITZONE_VON"])
             b = stempel(s["ENDE_DATUM"], s["ENDE_UHRZEIT"], s["ZEITZONE_BIS"])
-            arbeit = float(s["GESAMTE_ARBEIT_MWH"])
+            arbeit = zahl(s["GESAMTE_ARBEIT_MWH"])
         except (KeyError, ValueError):
             unvollstaendig += 1
             continue
@@ -192,6 +214,27 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
     }
 
 
+def waechter(saetze: list[dict], ergebnis: dict) -> None:
+    """Bricht ab, wenn nennenswert viele Saetze verworfen wurden.
+
+    Der Anlass ist ein eigener Fehler: das Dezimalkomma der Quelle liess
+    22,7 % der Saetze durch die Ausnahmebehandlung fallen. Das Feld
+    unvollstaendige_saetze stand die ganze Zeit in der Datei -- niemand hat
+    hineingesehen. Ein Zaehler, den keiner prueft, ist kein Zaehler. Also
+    prueft ihn jetzt das Skript selbst.
+    """
+    verworfen = ergebnis["unvollstaendige_saetze"]
+    if not saetze:
+        return
+    anteil = verworfen / len(saetze) * 100
+    if anteil > 1.0:
+        raise SystemExit(
+            f"ABBRUCH: {verworfen} von {len(saetze)} Saetzen ({anteil:.1f} %) "
+            "konnten nicht gelesen werden. Ueber 1 % heisst: die Quelle hat ihr "
+            "Format geaendert oder der Leser ist falsch. Erst ansehen, dann "
+            "weiterbauen -- nicht die Grenze anheben.")
+
+
 def kopf(jahr: int) -> dict:
     return {
         "_quelle": "netztransparenz.de -- die vier deutschen Uebertragungsnetzbetreiber",
@@ -230,6 +273,7 @@ def main(argv: list[str]) -> int:
         von, bis = argv[i + 1], argv[i + 2]
         saetze = hole_spanne(von, bis)
         e = auswerten(saetze, von, bis)
+        waechter(saetze, e)
         print(f"{von} bis {bis}: {len(saetze)} Saetze aus der API, "
               f"{sum(t['massnahmen'] for t in e['tage'].values())} nach eigenem Filter, "
               f"{len(e['tage'])} Tage")
@@ -261,7 +305,9 @@ def main(argv: list[str]) -> int:
             print(f"  {jahr}: vor {ERSTES_JAHR} liefert die API HTTP 400, uebersprungen")
             continue
         von, bis = f"{jahr}-01-01", f"{jahr}-12-31"
-        e = auswerten(hole_spanne(von, bis), von, bis)
+        saetze = hole_spanne(von, bis)
+        e = auswerten(saetze, von, bis)
+        waechter(saetze, e)
         doc = kopf(jahr)
         doc.update(e)
         pfad = ZIEL / f"{jahr}.json"
