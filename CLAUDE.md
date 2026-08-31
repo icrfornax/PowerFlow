@@ -169,6 +169,16 @@ die Regelzonenbilanz.
   Betreiber. Regelzonen faerben die Hoechstspannungsleitungen; die
   Strichstaerke folgt der Spannungsebene. Farbe sagt WER, Staerke sagt WELCHE
   SPANNUNG.
+- **Kein Balken ohne genannten Massstab.** Zwei Saeulen nebeneinander werden
+  verglichen, ob man will oder nicht. Getrennte Massstaebe machen daraus eine
+  Falschaussage: 170 GWh Einfuhr aus Frankreich standen als kurzer Strich neben
+  278 GWh Ausfuhr nach Oesterreich als vollem Balken -- das las sich wie ein
+  Vielfaches und ist das 1,6-fache. Seitdem gilt: Einfuhr und Ausfuhr teilen
+  einen Massstab (dieselbe Groesse, zwei Richtungen), die Energietraeger haben
+  einen eigenen (eine Groessenordnung groesser, sonst waere jedes Land
+  unsichtbar), und **jede Saeule schreibt ihren Massstab ueber die Liste** --
+  darueber, nicht darunter. Wer die Balken schon gelesen hat, liest den
+  Massstab zu spaet.
 - Dunkles Grundschema mit hellem Gegenstueck, beide gleichwertig gepflegt.
   Akzent Teal fuer Zufluss/positiv, Orange fuer Warnung und Luecke, Gruen fuer
   den Zielpfad, gedaempftes Violett fuer den Bestand. Semantische Farbe nie
@@ -424,7 +434,16 @@ Zaehler, den keiner prueft, ist kein Zaehler. Deshalb jetzt zweifach geprueft:
 `fetch-redispatch.py` bricht ab, sobald ueber 1 % der Saetze unlesbar sind, und
 `validate.py` prueft, dass in keiner Jahresdatei ein verworfener Satz steht.
 
-Vier Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
+Seit dem 31.08.2026 steht je Tag ein **Zeitprofil** in der Datei:
+`aktive_je_stunde`, 24 Zaehler in Ortszeit. Gezaehlt wird, OB eine Massnahme in
+dieser Stunde lief -- nicht, wie viel Arbeit auf sie entfiel. Eine Arbeit je
+Stunde gaebe es nur unter der Annahme gleichmaessiger Leistung, und genau die
+traegt nicht (siehe die Regel zu GESAMTE_ARBEIT_MWH). Gemessen ueber 2.052
+Tage: Spitze um 11:00 mit im Mittel 17,9 gleichzeitigen Massnahmen, Tiefpunkt um
+00:00 mit 9,5; an 65 % der Tage lief rund um die Uhr mindestens eine. Beleg:
+`docs/beleg-redispatch.md`.
+
+Fuenf Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
 - **Das Dezimaltrennzeichen ist ein Komma.** Siehe oben. `zahl()` in
   `fetch-redispatch.py` wandelt um; ein Tausenderpunkt waere vorher zu
   entfernen, sonst wird aus "1.306,25" die Zahl 1,30625.
@@ -433,6 +452,9 @@ Vier Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
   die tatsaechlich aktive Zeit, nicht ueber das genannte Fenster.
 - **Die Quelle liefert UTC.** Im Sommer zwei Stunden Unterschied. Das Feld
   ZEITZONE wird gelesen, nicht angenommen.
+- **Arbeit zaehlt zum Tag des Beginns, Stunden zum Tag, auf dem sie liegen.**
+  Das sind zwei verschiedene Fragen; sie werden getrennt beantwortet und nicht
+  vermischt.
 - **Hoch ist stets groesser als runter**, nach der Berichtigung 3,2 bis 18,1
   Prozent ueber die Jahre (vorher mit den lueckenhaften Zahlen 3,6 bis 25,4).
   Kein Fehler: bei grenzueberschreitenden Massnahmen wird laut Quelle nur der

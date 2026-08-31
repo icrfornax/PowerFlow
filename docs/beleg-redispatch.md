@@ -385,3 +385,68 @@ Der Fehler gehört in dieselbe Reihe wie die Textsuchen über eigene Kommentare
 und die Zeilenenden: jedes Mal wurde die Fundstelle repariert und nicht die
 Bedingung geprüft. Die Regel steht jetzt in CLAUDE.md unter „Umgang mit
 Fehlern".
+
+---
+
+## Zeitprofil über den Tag — belegt am 31.08.2026
+
+Bis hierher stand im ganzen Redispatch-Abschnitt keine einzige Uhrzeit. Man
+sah, **wie viel** eingegriffen wurde und **warum**, aber nicht **wann**. Die
+Quelle nennt zu jeder Maßnahme Beginn und Ende; daraus lässt sich ein
+Tagesprofil bilden, ohne etwas anzunehmen.
+
+### Was gezählt wird — und was ausdrücklich nicht
+
+Gezählt wird je Stunde des Tages, **ob** eine Maßnahme in dieser Stunde lief.
+Nicht gezählt wird, **wie viel Arbeit** auf diese Stunde entfiel.
+
+Der Unterschied ist der Kern der Sache. Die Quelle nennt je Maßnahme eine
+Gesamtarbeit und ein Fenster, nicht den Verlauf darin. Wer die Arbeit
+gleichmäßig über das Fenster verteilt, nimmt konstante Leistung an — und genau
+das ist nachweislich falsch: bei **253 von 1.187** geprüften Sätzen des August
+2026 ist `MITTLERE_LEISTUNG_MW` der Mittelwert über die tatsächlich aktive
+Zeit, nicht über das genannte Fenster (siehe oben in diesem Beleg). Eine
+Arbeitskurve über den Tag wäre also eine Grafik über eine Annahme.
+
+„Aktiv oder nicht aktiv" braucht diese Annahme nicht. Der Preis dafür: eine
+kurze Maßnahme über 15 Minuten zählt in dieser Stunde genauso wie eine, die
+sie ausfüllt. Das steht in der Bildunterschrift auf der Seite.
+
+### Gemessen über 2021 bis 2026 (2.052 Tage, 657.831 Maßnahmen-Stunden)
+
+| | Stunde | Anteil | im Mittel gleichzeitig |
+|---|---|---|---|
+| Höchstwert | 11:00 | 5,57 % | 17,9 Maßnahmen |
+| Tiefstwert | 00:00 | 2,98 % | 9,5 Maßnahmen |
+
+Das Verhältnis ist **1,87** — mittags läuft knapp doppelt so viel wie
+nachts. Der Verlauf ist eine glatte Glocke mit Scheitel zwischen 10 und 13 Uhr.
+Das passt zur Erzeugungsseite: die Mittagsspitze der Photovoltaik im Süden
+trifft auf einen Transportbedarf, den das Netz nicht trägt.
+
+An **1.335 von 2.052 Tagen (65 %)** lief in **allen 24 Stunden** mindestens
+eine Maßnahme. Je Stunde des Tages gilt das an 1.674 bis 1.940 Tagen. Redispatch
+ist also kein seltenes Ereignis, sondern Dauerbetrieb — die Frage ist nur, wie
+viel gleichzeitig läuft.
+
+### Zuordnung zum Kalendertag — zwei verschiedene Fragen
+
+Die **Arbeit** einer Maßnahme zählt zum Tag ihres Beginns; das ist die
+bekannte, im Ergebnis ausgewiesene Annahme (`arbeit_ueber_mitternacht_mwh`).
+Die **Stunden** zählen dagegen auf dem Kalendertag, auf dem sie liegen. Eine
+Maßnahme von 22 bis 02 Uhr steht mit ihrer Arbeit beim ersten Tag und mit zwei
+Stunden beim zweiten. Beides ist richtig, weil es zwei verschiedene Fragen sind.
+
+Ortszeit, wie überall auf dieser Seite. An den Umstellungstagen ist 02:00
+doppelt belegt oder gar nicht — das bleibt so stehen und wird nicht geglättet.
+
+### Prüfungen
+
+- `scripts/validate.py`: jeder Tag hat genau 24 Zähler; keine Stunde des Tages
+  ist über ein ganzes Jahr leer; die Summe der Maßnahmen-Stunden ist mindestens
+  so groß wie die Zahl der Maßnahmen. Die mittlere Prüfung fängt einen Fehler
+  ab, der beim Bauen tatsächlich auftrat: ein Zähler, der nur die Anfangsstunde
+  jeder Maßnahme sieht, lässt die Nacht leer aussehen.
+- `scripts/browsertest.mjs`: 24 Säulen, genau eine höchste, Profil nicht flach,
+  jede Säule nennt Mittelwert und Zahl der Tage, und die Unterschrift sagt, dass
+  keine Arbeit je Stunde gezeigt wird.

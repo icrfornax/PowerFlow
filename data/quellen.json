@@ -185,7 +185,7 @@
    "quelle": "netztransparenz",
    "beleg": "docs/beleg-redispatch.md",
    "dateien": 6,
-   "bytes": 1287269,
+   "bytes": 1453633,
    "zeitraum": "2021-01-01 bis 2026-08-31",
    "muster": "data/redispatch/*.json",
    "abzug": "data/redispatch-verzeichnis.json",
@@ -241,5 +241,5 @@
   }
  ],
  "dateien_gesamt": 170,
- "bytes_gesamt": 27763033
+ "bytes_gesamt": 27929397
 }

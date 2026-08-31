@@ -61,8 +61,9 @@
     var t = iso.split("-");
     return new Date(Number(t[0]), Number(t[1]) - 1, Number(t[2]));
   }
+  // Fuehrende Null. Gebraucht fuer Datumsteile und fuer Uhrzeiten.
+  function zwei(n) { return (n < 10 ? "0" : "") + n; }
   function nachIso(d) {
-    function zwei(n) { return (n < 10 ? "0" : "") + n; }
     return d.getFullYear() + "-" + zwei(d.getMonth() + 1) + "-" + zwei(d.getDate());
   }
   function datumLang(iso) {
@@ -554,10 +555,18 @@
     return liste;
   }
 
-  function saeule(rolle, titel, summeText, inhalt) {
+  /* massstab (optional) sagt, wie lang ein voller Balken in dieser Saeule ist.
+     Ohne diese Zeile ist eine Balkenlaenge nur innerhalb der Saeule lesbar --
+     und wer zwei Saeulen nebeneinander sieht, vergleicht sie trotzdem. Genau
+     das ist einmal schiefgegangen: 170 GWh Einfuhr aus Frankreich standen als
+     kurzer Strich neben 278 GWh Ausfuhr nach Oesterreich als vollem Balken. */
+  function saeule(rolle, titel, summeText, inhalt, massstab) {
     var s = el("div", { "class": "pf-saeule", "data-rolle": rolle });
     s.appendChild(el("h3", { text: titel }));
     s.appendChild(el("p", { "class": "pf-saeule-summe", text: summeText }));
+    if (massstab) {
+      s.appendChild(el("p", { "class": "pf-saeule-massstab", text: massstab }));
+    }
     s.appendChild(inhalt);
     return s;
   }
@@ -2034,6 +2043,13 @@
     var gesamt = 0, hoch = 0, runter = 0, massnahmen = 0;
     var jeUenb = {}, jeArt = {}, mitMassnahme = 0, belegteTage = 0, gefunden = false;
     var jeGrund = {}, jeGruppe = {}, jeAnfordernd = {}, jeDauer = {}, ausland = 0;
+    /* Zeitprofil: je Stunde des Tages die Summe der laufenden Massnahmen ueber
+       alle Tage (stunden) und die Zahl der Tage, an denen in dieser Stunde
+       ueberhaupt eine lief (stundenTage). Beides wird gebraucht: die erste
+       Reihe sagt WIE VIEL, die zweite WIE OFT. Ein hoher Mittelwert aus wenigen
+       Tagen mit vielen Massnahmen sieht sonst aus wie Dauerbetrieb. */
+    var stunden = [], stundenTage = [];
+    for (var si = 0; si < 24; si++) { stunden.push(0); stundenTage.push(0); }
     tageImZeitraum(von, bis).forEach(function (tag) {
       if (tag < REDISPATCH_AB) { return; }
       var d = Z.redispatch[Number(tag.slice(0, 4))];
@@ -2065,12 +2081,20 @@
       Object.keys(t.dauer_stunden || {}).forEach(function (d) {
         jeDauer[d] = (jeDauer[d] || 0) + t.dauer_stunden[d];
       });
+      var ajs = t.aktive_je_stunde;
+      if (ajs) {
+        for (var h = 0; h < 24; h++) {
+          stunden[h] += ajs[h];
+          if (ajs[h]) { stundenTage[h]++; }
+        }
+      }
     });
     if (!gefunden) { return null; }
     return { gesamt: gesamt, hoch: hoch, runter: runter, massnahmen: massnahmen,
              jeUenb: jeUenb, jeArt: jeArt, tageMitMassnahme: mitMassnahme,
              belegteTage: belegteTage, jeGrund: jeGrund, jeGruppe: jeGruppe,
-             jeAnfordernd: jeAnfordernd, jeDauer: jeDauer, ausland: ausland };
+             jeAnfordernd: jeAnfordernd, jeDauer: jeDauer, ausland: ausland,
+             stunden: stunden, stundenTage: stundenTage };
   }
 
   var QUELLE_RD = [
@@ -2109,6 +2133,63 @@
         + r.tageMitMassnahme + " von " + r.belegteTage + " Tagen"
         + (netzlast ? " · entspricht " + nf2.format(r.gesamt / netzlast * 100)
             + " % der Netzlast im Zeitraum" : "") }));
+
+    /* WANN eingegriffen wurde.
+
+       Bis hierher stand im ganzen Abschnitt keine einzige Uhrzeit -- man sah,
+       wie viel und warum, aber nicht wann. Gezeigt wird die Zahl der
+       gleichzeitig laufenden Massnahmen je Stunde des Tages, gemittelt ueber
+       die Tage des Zeitraums.
+
+       Was hier bewusst NICHT steht, ist die Arbeit je Stunde. Die Quelle nennt
+       je Massnahme eine Gesamtarbeit und ein Fenster, nicht den Verlauf darin.
+       Sie gleichmaessig zu verteilen waere eine Annahme, und sie traegt nicht:
+       bei 253 von 1.187 geprueften Saetzen ist die mittlere Leistung der
+       Mittelwert ueber die tatsaechlich aktive Zeit, nicht ueber das Fenster.
+       "Aktiv oder nicht" ist dagegen ablesbar, ohne etwas anzunehmen. */
+    if (r.stunden && r.belegteTage) {
+      var maxStd = Math.max.apply(null, r.stunden);
+      if (maxStd > 0) {
+        var uhr = el("div", { "class": "pf-rd-zeit" });
+        uhr.appendChild(el("h4", { text: "Wann eingegriffen wurde" }));
+        var gitter = el("div", { "class": "pf-rd-uhr" });
+        for (var h = 0; h < 24; h++) {
+          var mittel = r.stunden[h] / r.belegteTage;
+          var sp = el("div", { "class": "pf-rd-stunde",
+            title: zwei(h) + ":00 bis " + zwei((h + 1) % 24) + ":00 — im Mittel "
+              + nf1.format(mittel) + " gleichzeitig laufende Maßnahmen; an "
+              + r.stundenTage[h] + " von " + r.belegteTage + " Tagen lief in "
+              + "dieser Stunde mindestens eine" });
+          var saeuleEl = el("div", { "class": "pf-rd-saeule",
+            style: "height:" + (r.stunden[h] / maxStd * 100).toFixed(1) + "%;" });
+          sp.appendChild(saeuleEl);
+          gitter.appendChild(sp);
+        }
+        uhr.appendChild(gitter);
+        var achse = el("div", { "class": "pf-rd-uhr-achse" });
+        for (var hb = 0; hb < 24; hb++) {
+          achse.appendChild(el("span", { text: hb % 6 === 0 ? zwei(hb) : "" }));
+        }
+        uhr.appendChild(achse);
+        var spitze = 0, tief = 0;
+        for (var hc = 1; hc < 24; hc++) {
+          if (r.stunden[hc] > r.stunden[spitze]) { spitze = hc; }
+          if (r.stunden[hc] < r.stunden[tief]) { tief = hc; }
+        }
+        uhr.appendChild(el("p", { "class": "pf-bezug",
+          text: "Gleichzeitig laufende Maßnahmen je Stunde des Tages, gemittelt "
+            + "über " + r.belegteTage + " Tage (Ortszeit). Am meisten um "
+            + zwei(spitze) + ":00 mit im Mittel "
+            + nf1.format(r.stunden[spitze] / r.belegteTage) + ", am wenigsten um "
+            + zwei(tief) + ":00 mit " + nf1.format(r.stunden[tief] / r.belegteTage)
+            + ". Gezählt wird, ob eine Maßnahme in der Stunde lief — nicht, wie "
+            + "viel Arbeit auf sie entfiel. Die Quelle nennt je Maßnahme eine "
+            + "Gesamtarbeit und ein Fenster, keinen Verlauf darin; sie "
+            + "gleichmäßig zu verteilen wäre eine Annahme, die nachweislich "
+            + "nicht trägt." }));
+        huelle.appendChild(uhr);
+      }
+    }
 
     function balken(titel, werte, farbe) {
       var box = el("div", { "class": "pf-rd-gruppe" });
@@ -2727,8 +2808,29 @@
     var zu = ll.filter(function (a) { return a.imp > 0; })
       .map(function (a) { return { name: a.land, mwh: a.imp }; })
       .sort(function (a, b) { return b.mwh - a.mwh; });
-    var maxZu = Math.max.apply(null, tr.map(function (e) { return e.mwh; })
-      .concat(zu.map(function (e) { return e.mwh; })));
+    var ab = ll.filter(function (a) { return a.exp > 0; })
+      .map(function (a) { return { name: a.land, mwh: a.exp }; })
+      .sort(function (a, b) { return b.mwh - a.mwh; });
+
+    /* ZWEI MASSSTAEBE, nicht vier und nicht einer.
+
+       Vorher hatte jede Saeule ihren eigenen: die Einfuhr aus Frankreich mit
+       170 GWh war ein kurzer Strich, die Ausfuhr nach Oesterreich mit 278 GWh
+       ein voller Balken. Nebeneinander gelesen hiess das: Oesterreich ist ein
+       Vielfaches von Frankreich. Es ist das 1,6-fache.
+
+       Einfuhr und Ausfuhr sind dieselbe Groesse in zwei Richtungen und teilen
+       sich deshalb jetzt einen Massstab. Die Energietraeger behalten einen
+       eigenen -- sie sind eine Groessenordnung groesser, und mit einem
+       gemeinsamen Massstab waeren saemtliche Laenderbalken unsichtbar. Damit
+       niemand ueber die Saeulengrenze hinweg vergleicht, was nicht
+       vergleichbar ist, nennt jede Saeule ihren Massstab. */
+    var maxTr = Math.max.apply(null, tr.map(function (e) { return e.mwh; }));
+    var maxHandel = Math.max.apply(null,
+      zu.map(function (e) { return e.mwh; })
+        .concat(ab.map(function (e) { return e.mwh; })).concat([0]));
+    var massstabHandel = "Balken bis " + gwh(maxHandel, 1)
+      + " GWh — gemeinsamer Maßstab für Import und Export";
 
     /* Vier Saeulen, nicht drei: der Import ist ein eigener Vorgang und kein
        Anhaengsel der Erzeugung. Energietraeger und Nachbarlaender in eine Liste
@@ -2739,17 +2841,12 @@
        Massstab je Saeule liesse 170 GWh Import aus Frankreich so lang aussehen
        wie 2.388 GWh Wind. */
     fluss.appendChild(saeule("zufluss", "Zufluss · Erzeugung",
-      gwh(k.erzeugung, 1) + " GWh", balkenliste(tr, null, maxZu, traegerFarbe)));
+      gwh(k.erzeugung, 1) + " GWh", balkenliste(tr, null, maxTr, traegerFarbe),
+      "Balken bis " + gwh(maxTr, 1) + " GWh — eigener Maßstab"));
     var ahp = aussenhandelspreis(von, bis);
-    var zuImport = el("div");
-    zuImport.appendChild(balkenliste(zu, "var(--teal)", maxZu));
-    if (ahp) {
-      zuImport.appendChild(el("p", { "class": "pf-bezug",
-        text: "Eingeführt zum mengengewichteten Preis von "
-          + nf2.format(ahp.ein) + " €/MWh." }));
-    }
     fluss.appendChild(saeule("zufluss", "Zufluss · Import je Nachbarland",
-      gwh(k.imp, 1) + " GWh", zuImport));
+      gwh(k.imp, 1) + " GWh", balkenliste(zu, "var(--teal)", maxHandel),
+      massstabHandel));
 
     var netzInhalt = el("div");
     var zz = zonen(von, bis).sort(function (a, b) { return b.saldo - a.saldo; });
@@ -2804,28 +2901,38 @@
     fluss.appendChild(saeule("netz", "Netz · Regelzonen", gwh(k.netzlast, 1) + " GWh Netzlast",
       netzInhalt));
 
-    var ab = ll.filter(function (a) { return a.exp > 0; })
-      .map(function (a) { return { name: a.land, mwh: a.exp }; })
-      .sort(function (a, b) { return b.mwh - a.mwh; });
-    var maxAb = Math.max.apply(null, ab.map(function (e) { return e.mwh; }));
-    var abExport = el("div");
-    abExport.appendChild(balkenliste(ab, "var(--orange)", maxAb));
-    if (ahp) {
-      abExport.appendChild(el("p", { "class": "pf-bezug",
-        text: "Ausgeführt zum mengengewichteten Preis von "
-          + nf2.format(ahp.aus) + " €/MWh — "
-          + nf2.format(Math.abs(ahp.ein - ahp.aus))
-          + " €/MWh " + (ahp.aus < ahp.ein ? "unter" : "über")
-          + " dem Einfuhrpreis." }));
-    }
     fluss.appendChild(saeule("abfluss", "Abfluss · Export je Nachbarland",
-      gwh(k.exp, 1) + " GWh", abExport));
-    neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh im Zeitraum)", fluss));
+      gwh(k.exp, 1) + " GWh", balkenliste(ab, "var(--orange)", maxHandel),
+      massstabHandel));
+    var flussblock = el("div");
+    flussblock.appendChild(fluss);
+    if (ahp) {
+      /* Der Preis steht als EIGENE ZEILE unter dem ganzen Block, nicht als
+         Fussnote in zwei Saeulen. Er gehoert zu beiden Richtungen zugleich:
+         die interessante Zahl ist nicht der eine Preis, sondern der Abstand
+         zwischen ihnen. Zwei getrennte Zeilen in zwei Spalten haben genau
+         diesen Vergleich verhindert. */
+      var pz = el("div", { "class": "pf-preiszeile" });
+      var diff = ahp.ein - ahp.aus;
+      [["Eingeführt zu", nf2.format(ahp.ein), "teal"],
+       ["Ausgeführt zu", nf2.format(ahp.aus), "orange"],
+       [diff >= 0 ? "Einfuhr teurer um" : "Ausfuhr teurer um",
+        nf2.format(Math.abs(diff)), "violett"]].forEach(function (z) {
+        var f = el("div", { "class": "pf-preisfeld", "data-akzent": z[2] });
+        f.appendChild(el("span", { "class": "pf-titel", text: z[0] }));
+        var w = el("p", { "class": "pf-wert", text: z[1] });
+        w.appendChild(el("span", { "class": "pf-einheit", text: "€/MWh" }));
+        f.appendChild(w);
+        pz.appendChild(f);
+      });
+      flussblock.appendChild(pz);
+    }
+    neu.appendChild(abschnitt("Zufluss · Netz · Abfluss (GWh im Zeitraum)", flussblock));
     if (ahp) {
       /* Der Vorbehalt gehoert dazu, sonst liest sich die Zahl als Handels-
          spanne. Sie ist keine: es ist der deutsche Preis zur Stunde des
          Flusses, nicht der Preis, zu dem an der Grenze abgerechnet wurde. */
-      neu.appendChild(el("p", { "class": "pf-bezug pf-ahp-hinweis",
+      flussblock.appendChild(el("p", { "class": "pf-bezug pf-ahp-hinweis",
         text: "Beide Preise sind stündlich mengengewichtet, über "
           + nf0.format(ahp.stunden) + " Stunden an " + nf0.format(ahp.tage)
           + " Tagen. Ein Tagesmittel ergäbe etwas anderes, weil an einem Tag zu "

@@ -352,6 +352,7 @@ try {
     "der Probebetrieb wird ausdruecklich vom Notfall getrennt",
     rd.warnung.slice(0, 90));
   await foto("redispatch", ".pf-rd-kopf");
+  await foto("redispatch-zeit", ".pf-rd-zeit");
 
   // --- Waagerechter Ueberlauf, drei Breiten ---
   for (const [name, breite, hoehe, mobil] of [
@@ -672,27 +673,46 @@ try {
      dasteht, sondern dass der Vorbehalt mitsteht -- ohne ihn liest sich die
      Differenz als Handelsspanne, und das waere falsch. */
   const ahp = await js(`(function () {
-    const texte = [...document.querySelectorAll(".pf-saeule .pf-bezug")]
-      .map((x) => x.textContent);
+    // Die Preise stehen als EIGENE Zeile unter dem ganzen Flussblock, nicht
+    // mehr als Fussnote in zwei Saeulen. Sie standen dort nebeneinander, ohne
+    // vergleichbar zu sein -- deswegen wurden sie herausgeloest.
+    const felder = [...document.querySelectorAll(".pf-preisfeld")];
     const hinweis = document.querySelector(".pf-ahp-hinweis");
     // Ohne regulaeren Ausdruck: in einem Template-Literal faellt jeder
     // Backslash zusammen, und die Zeichenklasse ist danach kaputt. Das ist
     // hier schon zweimal passiert.
-    const zahl = (s) => {
-      if (!s) { return null; }
-      const teil = s.split(" von ")[1] || s.split("von ")[1] || "";
-      const roh = teil.split(" ")[0].split(".").join("").replace(",", ".");
-      const w = parseFloat(roh);
-      return isNaN(w) ? null : w;
+    const zahl = (f) => {
+      if (!f) { return null; }
+      const w = f.querySelector(".pf-wert");
+      if (!w) { return null; }
+      const roh = w.textContent.split("€")[0].trim()
+        .split(".").join("").replace(",", ".");
+      const x = parseFloat(roh);
+      return isNaN(x) ? null : x;
     };
+    const nach = (s) => felder.find(
+      (f) => (f.querySelector(".pf-titel") || {}).textContent
+        && f.querySelector(".pf-titel").textContent.indexOf(s) >= 0);
+    const flussblock = document.querySelector(".pf-fluss");
     return {
-      ein: zahl(texte.find((x) => x.indexOf("Eingef") >= 0)),
-      aus: zahl(texte.find((x) => x.indexOf("Ausgef") >= 0)),
+      felder: felder.length,
+      ein: zahl(nach("Eingef")),
+      aus: zahl(nach("Ausgef")),
+      // Steht die Zeile wirklich UNTER dem Block und nicht darin?
+      inSaeule: felder.some((f) => f.closest(".pf-saeule") !== null),
+      unterBlock: flussblock && felder.length
+        ? flussblock.getBoundingClientRect().bottom
+          <= felder[0].getBoundingClientRect().top + 1
+        : false,
       hinweis: hinweis ? hinweis.textContent : ""
     };
   })()`);
   pruefe(ahp.ein !== null && ahp.aus !== null,
     `Ein- und Ausfuhrpreis stehen da (${ahp.ein} / ${ahp.aus} EUR/MWh)`);
+  pruefe(ahp.felder === 3,
+    "drei Preisfelder: Einfuhr, Ausfuhr, Abstand", String(ahp.felder));
+  pruefe(!ahp.inSaeule && ahp.unterBlock,
+    "die Preiszeile steht unter dem ganzen Block, nicht in einer Saeule");
   pruefe(ahp.ein > 0 && ahp.ein < 1000 && ahp.aus > -100 && ahp.aus < 1000,
     "beide Preise liegen im moeglichen Bereich", `${ahp.ein} / ${ahp.aus}`);
   pruefe(ahp.hinweis.indexOf("an der Grenze abgerechnet") >= 0,
@@ -700,6 +720,75 @@ try {
     ahp.hinweis.slice(0, 90));
   pruefe(ahp.hinweis.indexOf("mengengewichtet") >= 0,
     "und dass stuendlich gewichtet wird, nicht ueber Tagesmittel");
+
+  /* DER MASSSTAB DER SAEULEN. Anlass ist ein echter Fehler: Import und Export
+     hatten getrennte Massstaebe, und 170 GWh aus Frankreich standen als
+     kurzer Strich neben 278 GWh nach Oesterreich als vollem Balken. Geprueft
+     wird beides -- dass jede Saeule ihren Massstab nennt, und dass Import und
+     Export denselben haben. */
+  const skala = await js(`(function () {
+    const s = [...document.querySelectorAll(".pf-saeule")];
+    const nimm = (t) => s.find(
+      (x) => x.querySelector("h3").textContent.indexOf(t) >= 0);
+    const txt = (x) => {
+      const m = x && x.querySelector(".pf-saeule-massstab");
+      return m ? m.textContent : "";
+    };
+    const laenge = (x) => {
+      const f = x && x.querySelector(".pf-fuellung");
+      return f ? parseFloat(f.style.width) : null;
+    };
+    const imp = nimm("Import"), exp = nimm("Export"), erz = nimm("Erzeugung");
+    return {
+      imp: txt(imp), exp: txt(exp), erz: txt(erz),
+      // Der laengste Balken in genau einer der beiden Handelssaeulen muss auf
+      // 100 % stehen -- in der anderen kuerzer. Bei getrennten Massstaeben
+      // waeren es zwei Hundertprozenter.
+      impErster: laenge(imp), expErster: laenge(exp)
+    };
+  })()`);
+  pruefe(skala.erz && skala.imp && skala.exp,
+    "jede Saeule nennt ihren Massstab", skala.imp);
+  pruefe(skala.imp === skala.exp && skala.imp.indexOf("gemeinsamer") >= 0,
+    "Import und Export teilen einen Massstab", `${skala.imp} | ${skala.exp}`);
+  pruefe(skala.erz !== skala.imp,
+    "die Erzeugung hat einen eigenen -- sonst waeren alle Laender unsichtbar");
+  pruefe(Math.abs(Math.max(skala.impErster, skala.expErster) - 100) < 0.5
+    && Math.min(skala.impErster, skala.expErster) < 100,
+    "genau einer der beiden laengsten Laenderbalken fuellt die Schiene",
+    `${skala.impErster} / ${skala.expErster}`);
+
+  /* DAS ZEITPROFIL DES REDISPATCH. Vorher stand im ganzen Abschnitt keine
+     einzige Uhrzeit. Geprueft wird, dass 24 Saeulen dastehen, dass sie nicht
+     alle gleich hoch sind (das waere ein Rechenfehler) und dass die
+     Bildunterschrift sagt, was gezaehlt wird und was NICHT. */
+  const rdzeit = await js(`(function () {
+    const saeulen = [...document.querySelectorAll(".pf-rd-saeule")];
+    const h = saeulen.map((x) => parseFloat(x.style.height));
+    const p = document.querySelector(".pf-rd-zeit .pf-bezug");
+    const s0 = document.querySelector(".pf-rd-stunde");
+    return {
+      n: saeulen.length,
+      voll: h.filter((x) => x > 99.5).length,
+      spanne: h.length ? Math.max.apply(null, h) - Math.min.apply(null, h) : 0,
+      titel: s0 ? s0.getAttribute("title") : "",
+      text: p ? p.textContent : ""
+    };
+  })()`);
+  pruefe(rdzeit.n === 24, "24 Saeulen -- eine je Stunde des Tages",
+    String(rdzeit.n));
+  pruefe(rdzeit.voll === 1 && rdzeit.spanne > 5,
+    "genau eine Stunde ist die hoechste, und das Profil ist nicht flach",
+    `voll ${rdzeit.voll}, Spanne ${rdzeit.spanne}`);
+  pruefe(rdzeit.titel.indexOf("gleichzeitig") >= 0
+    && rdzeit.titel.indexOf("von") >= 0,
+    "jede Stunde nennt Mittelwert und Zahl der Tage", rdzeit.titel.slice(0, 80));
+  pruefe(rdzeit.text.indexOf("nicht, wie") >= 0
+    && rdzeit.text.indexOf("Annahme") >= 0,
+    "und die Unterschrift sagt, dass keine Arbeit je Stunde gezeigt wird");
+
+  await foto("fluss", ".pf-fluss");
+  await foto("fluss-preis", ".pf-preiszeile");
 
   /* Windparks aus dem Marktstammdatenregister. Auf der Karte steht bewusst
      eine AUSWAHL: alle Parks auf See und die 20 groessten an Land. Die Datei

@@ -309,6 +309,38 @@ body {
 .pf-saeule[data-rolle="abfluss"] { border-left: 3px solid var(--orange); }
 .pf-saeule[data-rolle="abfluss"] .pf-saeule-summe { color: var(--orange); }
 
+/* Wie lang ein voller Balken in dieser Saeule ist. Steht ueber der Liste,
+   nicht darunter -- wer die Balken schon gelesen hat, liest den Massstab zu
+   spaet. */
+.pf-saeule-massstab {
+  margin: -8px 0 12px; font-size: 0.74rem; color: var(--schrift-still);
+  border-bottom: 1px dotted var(--linie); padding-bottom: 8px;
+}
+
+/* Die beiden Aussenhandelspreise als eigene Zeile unter dem ganzen Block.
+   Sie gehoeren zu Import UND Export zugleich; als Fussnote in je einer Saeule
+   standen sie nebeneinander, ohne vergleichbar zu sein. */
+.pf-preiszeile {
+  display: flex; flex-wrap: wrap; gap: 12px 44px; margin: 20px 0 0;
+  padding: 14px 16px; border: 1px solid var(--linie); border-radius: 8px;
+  background: var(--flaeche);
+}
+.pf-preisfeld .pf-titel {
+  display: block; font-size: 0.75rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still);
+}
+.pf-preisfeld .pf-wert {
+  font-family: var(--schrift-zahl); font-size: 1.35rem; margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.pf-preisfeld .pf-einheit {
+  font-size: 0.8rem; color: var(--schrift-leise); margin-left: 4px;
+}
+.pf-preisfeld[data-akzent="teal"] .pf-wert { color: var(--teal); }
+.pf-preisfeld[data-akzent="orange"] .pf-wert { color: var(--orange); }
+.pf-preisfeld[data-akzent="violett"] .pf-wert { color: var(--violett); }
+.pf-ahp-hinweis { margin-top: 10px; }
+
 .pf-balken { display: grid; gap: 5px; margin: 0; }
 .pf-balken .pf-zeile {
   display: grid; grid-template-columns: 1fr auto; gap: 8px;
@@ -782,6 +814,32 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-rd-zahl[data-akzent="teal"] .pf-wert { color: var(--teal); }
 .pf-rd-zahl[data-akzent="orange"] .pf-wert { color: var(--orange); }
 .pf-rd-zahl[data-akzent="violett"] .pf-wert { color: var(--violett); }
+
+/* ---------- Redispatch: Zeitprofil ----------
+   24 Saeulen, eine je Stunde des Tages. Keine Werteachse: die Zahl steht im
+   Titel jeder Saeule und in der Bildunterschrift. Eine Achse mit
+   Nachkommastellen an einem 90 px hohen Bild waere Schmuck. */
+.pf-rd-zeit { margin-top: 20px; }
+.pf-rd-zeit > h4 {
+  margin: 0 0 8px; font-size: 0.78rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still); font-weight: 600;
+}
+.pf-rd-uhr {
+  display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px;
+  align-items: end; height: 92px; padding: 0 0 2px;
+  border-bottom: 1px solid var(--linie);
+}
+.pf-rd-stunde { height: 100%; display: flex; align-items: flex-end; }
+.pf-rd-saeule {
+  width: 100%; min-height: 2px; border-radius: 3px 3px 0 0;
+  background: var(--violett);
+}
+.pf-rd-stunde:hover .pf-rd-saeule { background: var(--teal); }
+.pf-rd-uhr-achse {
+  display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px;
+  font-size: 0.7rem; color: var(--schrift-still); margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---------- Redispatch: Grund, Anforderer, Dauer ---------- */
 

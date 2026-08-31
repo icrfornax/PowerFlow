@@ -660,6 +660,31 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  f"{eintrag['jahr']}: hoch gegen runter {schief:.1f} % schief "
                  f"(Budget {GRENZE_REDISPATCH_SCHIEF_PROZENT:.0f} %)")
 
+        # Das Zeitprofil. Geprueft wird dreierlei: dass es ueberhaupt da ist,
+        # dass jeder Tag genau 24 Zaehler hat, und dass in jeder Stunde des
+        # Tages etwas passiert ist. Der letzte Punkt faengt einen Fehler ab,
+        # den ich beim Bauen tatsaechlich hatte: ein Zaehler, der nur die
+        # Anfangsstunde jeder Massnahme sieht, laesst die Nacht leer aussehen.
+        fehlt = [tag for tag, x in d["tage"].items()
+                 if len(x.get("aktive_je_stunde") or []) != 24]
+        b.pruefe(not fehlt,
+                 f"{eintrag['jahr']}: jeder Tag hat 24 Stundenzaehler"
+                 + (f" -- {len(fehlt)} ohne" if fehlt else ""))
+        je_stunde = [0] * 24
+        for x in d["tage"].values():
+            for i, v in enumerate(x.get("aktive_je_stunde") or []):
+                je_stunde[i] += v
+        leer = [i for i, v in enumerate(je_stunde) if not v]
+        b.pruefe(not leer,
+                 f"{eintrag['jahr']}: keine Stunde des Tages ist leer"
+                 + (f" -- {leer}" if leer else ""))
+        # Und die Summe muss zur Zahl der Massnahmen passen: jede Massnahme
+        # laeuft mindestens eine angefangene Stunde, viele laufen laenger.
+        n_massnahmen = sum(x["massnahmen"] for x in d["tage"].values())
+        b.pruefe(sum(je_stunde) >= n_massnahmen,
+                 f"{eintrag['jahr']}: {sum(je_stunde):,} Massnahmen-Stunden zu "
+                 f"{n_massnahmen:,} Massnahmen -- mindestens eine je Massnahme")
+
     # --- Quellenverzeichnis ---
     # Der eigentliche Waechter steckt in scripts/quellen.py: es bricht ab,
     # sobald eine Datei unter data/ keiner Quelle zugeordnet ist. Hier wird

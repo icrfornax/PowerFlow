@@ -142,6 +142,10 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
     "arbeit_ueber_mitternacht_mwh".
     """
     tage: dict[str, dict] = {}
+    # Tag -> 24 Zaehler. Getrennt gefuehrt, weil eine Massnahme in Stunden
+    # laufen kann, die auf einem anderen Tag liegen als ihr Beginn.
+    stunden_je_tag: dict[str, list[int]] = collections.defaultdict(
+        lambda: [0] * 24)
     ueber_mitternacht = 0.0
     unvollstaendig = 0
     for s in saetze:
@@ -167,6 +171,24 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
             "dauer_stunden": collections.defaultdict(float),
         })
         e["massnahmen"] += 1
+        # Zu welcher Tageszeit lief die Massnahme? Gezaehlt wird, OB sie in
+        # einer Stunde lief -- nicht, wie viel Arbeit auf diese Stunde entfiel.
+        # Das ist bewusst so: die Quelle nennt eine Gesamtarbeit und ein
+        # Fenster, nicht den Verlauf darin. Eine Arbeit je Stunde gaebe es nur
+        # unter der Annahme gleichmaessiger Leistung, und genau die ist bei 253
+        # von 1.187 geprueften Saetzen nachweislich falsch (siehe Kopf). Aktiv
+        # oder nicht aktiv braucht dagegen keine Annahme.
+        #
+        # Gezaehlt wird auf dem Kalendertag, auf dem die Stunde LIEGT -- nicht
+        # auf dem Tag des Beginns. Eine Massnahme von 22 bis 02 Uhr steht mit
+        # ihrer Arbeit beim ersten Tag (siehe oben), im Zeitprofil aber mit
+        # zwei Stunden beim zweiten. Beides ist richtig, weil es zwei
+        # verschiedene Fragen sind.
+        lauf = a.astimezone(TZ).replace(minute=0, second=0, microsecond=0)
+        ende = b.astimezone(TZ)
+        while lauf < ende:
+            stunden_je_tag[lauf.date().isoformat()][lauf.hour] += 1
+            lauf += dt.timedelta(hours=1)
         if s.get("RICHTUNG") == HOCH:
             e["erhoehen_mwh"] += arbeit
         elif s.get("RICHTUNG") == RUNTER:
@@ -202,6 +224,12 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
             e[feld] = {k: round(v, 2) for k, v in sorted(e[feld].items()) if v}
         gruende.update(e["je_grund"].keys())
         anfordernd.update(e["je_anfordernd"].keys())
+
+    # Das Zeitprofil erst hier anhaengen -- vorher steht nicht fest, welche
+    # Stunden noch dazukommen. Ortszeit: am Tag der Umstellung ist 02:00
+    # doppelt belegt bzw. gar nicht, und das bleibt so stehen.
+    for tag_s, e in tage.items():
+        e["aktive_je_stunde"] = stunden_je_tag.get(tag_s, [0] * 24)
 
     return {
         "tage": tage,
@@ -260,7 +288,13 @@ def kopf(jahr: int) -> dict:
             "gruppiert wird erst in der Anzeige. Wichtig dabei: nicht jede "
             "Massnahme ist ein Eingriff im Notfall -- Probefahrten, "
             "Probestarts, Testfahrten und Funktionstests stehen unter je_grund "
-            "und machten 2025 rund 4 % der Arbeit aus."
+            "und machten 2025 rund 4 % der Arbeit aus. aktive_je_stunde sind "
+            "24 Zaehler in Ortszeit: wie viele Massnahmen liefen in dieser "
+            "Stunde des Tages. Gezaehlt wird AKTIV ODER NICHT, keine Arbeit je "
+            "Stunde -- die nennt die Quelle nicht, und sie gleichmaessig ueber "
+            "das Fenster zu verteilen waere eine Annahme, die nachweislich "
+            "nicht traegt. Eine Massnahme wird dabei auf dem Tag gezaehlt, auf "
+            "dem die Stunde liegt, nicht auf dem Tag ihres Beginns."
         ),
         "jahr": jahr,
         "abgerufen": dt.datetime.now(TZ).isoformat(timespec="seconds"),
