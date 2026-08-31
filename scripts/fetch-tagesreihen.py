@@ -229,7 +229,7 @@ def preise_nachtragen() -> int:
         doc["auffaellig"] = doc.get("auffaellig", []) + auffaellig
         belegt = sum(1 for v in doc["preis_eur_mwh"] if v is not None)
         pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                        encoding="utf-8")
+                        encoding="utf-8", newline="\n")
         print(f"  {jahr}: {belegt} Tagespreise" + (f", {len(auffaellig)} auffaellig"
                                                    if auffaellig else ""))
     return 0
@@ -250,7 +250,7 @@ def main(argv: list[str]) -> int:
         doc = jahr_bauen(jahr, bloecke[jahr])
         pfad = ZIEL / f"{jahr}.json"
         pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                        encoding="utf-8")
+                        encoding="utf-8", newline="\n")
         belegt = sum(1 for v in doc["netzlast"] if v is not None)
         print(f"  {jahr}: {len(doc['tage'])} Tage, davon {belegt} mit Netzlast, "
               f"{len(doc['nicht_vorhanden'])} Reihen nicht vorhanden, "

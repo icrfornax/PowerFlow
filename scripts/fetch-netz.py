@@ -230,7 +230,7 @@ def schreibe(schluessel: str, eintraege: list, verworfen: dict) -> None:
     }
     pfad = DATA / a["datei"]
     pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                    encoding="utf-8")
+                    encoding="utf-8", newline="\n")
     print(f"    geschrieben: data/{a['datei']}  ({pfad.stat().st_size:,} Bytes, "
           f"{len(eintraege):,} Objekte, verworfen: {verworfen})")
 

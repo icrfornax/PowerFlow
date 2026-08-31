@@ -218,7 +218,7 @@ def main(argv: list[str]) -> int:
         doc.update(e)
         pfad = ZIEL / f"{jahr}.json"
         pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                        encoding="utf-8")
+                        encoding="utf-8", newline="\n")
         print(f"  {jahr}: {len(e['tage'])} Tage, {pfad.stat().st_size:,} Bytes")
 
     # Verzeichnis immer aus den Dateien auf der Platte bauen, damit ein

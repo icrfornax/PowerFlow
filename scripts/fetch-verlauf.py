@@ -130,7 +130,7 @@ def nachtragen(wochen: int) -> int:
         doc.setdefault("_namensnennung", "Bundesnetzagentur | SMARD.de")
         doc["abgerufen"] = dt.datetime.now(smard.TZ).isoformat(timespec="seconds")
         pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                        encoding="utf-8")
+                        encoding="utf-8", newline="\n")
         print(f"  {monat}: {len(neue)} Stunden nachgetragen ab Stelle {schnitt}, "
               f"jetzt {len(doc['stunden'])} Stunden")
 
@@ -189,7 +189,7 @@ def preise_nachtragen() -> int:
                 "Preis nicht. Negative Werte sind echt und kein Fehler."
             )
             pfad.write_text(json.dumps(doc, ensure_ascii=False,
-                                       separators=(",", ":")) + "\n", encoding="utf-8")
+                                       separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
             geaendert += 1
     print(f"  {geaendert} Monatsdateien um den Preis ergaenzt")
     return 0
@@ -279,7 +279,7 @@ def main(argv: list[str]) -> int:
             }
             pfad = ZIEL / f"{monat}.json"
             pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                            encoding="utf-8")
+                            encoding="utf-8", newline="\n")
             verzeichnis.append({"monat": monat, "datei": f"data/verlauf/{monat}.json",
                                 "stunden": len(mm)})
         groesse = sum((ZIEL / f"{m}.json").stat().st_size for m in monate)

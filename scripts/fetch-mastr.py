@@ -228,7 +228,7 @@ def schreiben(pfad, titel, was, parks, kennzahlen, url, schwelle, verfahren):
         "objekte": parks,
     }
     pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                    encoding="utf-8")
+                    encoding="utf-8", newline="\n")
     print(f"  geschrieben: {pfad.relative_to(WURZEL)} "
           f"({pfad.stat().st_size / 1e6:.2f} MB, {len(parks)} Objekte, "
           f"{doc['leistung_gw']} GW)")

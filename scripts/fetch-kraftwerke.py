@@ -106,7 +106,7 @@ def main() -> int:
     }
     DATA.mkdir(exist_ok=True)
     (DATA / "kraftwerke.json").write_text(
-        json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
 
     groesse = (DATA / "kraftwerke.json").stat().st_size
     print(f"  geschrieben: data/kraftwerke.json  ({groesse:,} Bytes)")

@@ -302,7 +302,7 @@ def main(nur_pruefen: bool = False) -> int:
                   "die Hoehe ist immer die Rasterweite",
     }
     ZIEL.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                    encoding="utf-8")
+                    encoding="utf-8", newline="\n")
     print(f"\n  geschrieben: {ZIEL.relative_to(WURZEL)} "
           f"({ZIEL.stat().st_size / 1e6:.2f} MB)")
     return 0

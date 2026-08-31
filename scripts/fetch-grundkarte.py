@@ -153,7 +153,7 @@ def main() -> int:
         "nachbarn": sorted(nachbarn, key=lambda x: x["name"]),
     }
     ZIEL.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
-                    encoding="utf-8")
+                    encoding="utf-8", newline="\n")
 
     punkte_l = sum(len(r) for b in bundeslaender for r in b["ringe"])
     punkte_n = sum(len(r) for b in nachbarn for r in b["ringe"])

@@ -176,7 +176,7 @@ def negativtest() -> int:
     abbricht -- danach wird sie wieder entfernt.
     """
     probe = DATA / "_negativtest-ohne-quelle.json"
-    probe.write_text("{}\n", encoding="utf-8")
+    probe.write_text("{}\n", encoding="utf-8", newline="\n")
     try:
         code = main(still=True)
     finally:
@@ -258,7 +258,7 @@ def main(still: bool = False) -> int:
     # Tuersteher, der das Verzeichnis neu erzeugt und vergleicht, nie aufgehen.
     def schreibe():
         ziel.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n",
-                        encoding="utf-8")
+                        encoding="utf-8", newline="\n")
 
     schreibe()
     for _ in range(5):
