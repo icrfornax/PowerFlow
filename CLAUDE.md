@@ -320,6 +320,28 @@ Ob Redispatch auf dieser Liste steht, ist NICHT geprueft -- die Seite antwortet
 mit HTTP 403. Veroeffentlicht werden deshalb nur Tagesaggregate, keine Kopie
 der Messwertliste. Wer daran etwas aendert, liest zuerst den Beleg.
 
+**Am 31.08.2026 nachgesehen, was die Quelle sonst noch liefert.** Sie hat 15
+Felder; genutzt werden bisher sieben. Die Befunde ueber das Jahr 2025 (19.257
+Massnahmen, 14,80 TWh):
+
+- **GRUND_DER_MASSNAHME**, 14 Werte, bisher ungenutzt und der groesste Gewinn:
+  Strombedingter Redispatch 77,6 % der Arbeit, **Countertrade an der daenischen
+  Grenze 16,9 %**, Spannungsbedingter Redispatch 1,2 %, und **889 Massnahmen
+  mit 4,1 % der Arbeit sind Probefahrten und Tests** -- also gerade KEIN
+  Eingriff im Notfall. Die Seite nennt Redispatch bisher pauschal "Eingriff ins
+  Netz"; das ist fuer diesen Teil falsch.
+- **ANFORDERNDER_UENB** (wer das Problem hatte) gegen ANWEISENDER_UENB (wer
+  handelte): 12.659 Massnahmen fordern alle vier gemeinsam an, TenneT allein
+  3.976 TWh... und es tauchen **auslaendische Betreiber auf**: RTE, APG,
+  swissgrid, EnDK Ost. Deutschland greift auf Anforderung der Nachbarn ein.
+- **Dauer**: Median 4 Stunden, laengste 25 (Zeitumstellung), 18,4 % hoechstens
+  eine Stunde -- aber nur 1,4 % der Arbeit.
+- **BETROFFENE_ANLAGE ist fuer eine Karte NICHT brauchbar.** 404 Bezeichnungen,
+  gegen 596 Kraftwerke und 5.259 Umspannwerke geprueft: 76,9 % der Arbeit ohne
+  Ort, und unscharfe Treffer sind teils falsch ("Obernburg" gegen "Bernburg").
+  13,3 % der Arbeit laufen ueber die "Boerse" und haben gar keinen Ort. Der
+  offene Punkt auf der Seite sagt das jetzt mit Zahlen.
+
 Drei Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
 - **Immer `GESAMTE_ARBEIT_MWH` summieren, nie Leistung mal Dauer.** Bei 253 von
   1.187 Saetzen des August 2026 ist die mittlere Leistung der Mittelwert ueber

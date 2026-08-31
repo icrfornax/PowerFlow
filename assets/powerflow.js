@@ -2636,7 +2636,24 @@
     var kzur = el("button", { "class": "pf-zuruecksetzen", type: "button",
       text: "Ansicht zurücksetzen" });
     kzur.addEventListener("click", function () {
+      /* "Ansicht zuruecksetzen" hat frueher nur den Ausschnitt zurueckgesetzt.
+         Eine hervorgehobene Regelzone oder ein hervorgehobener Energietraeger
+         blieben stehen, und eine angeklickte Anlage blieb ausgewaehlt -- die
+         Karte sah danach anders aus als beim ersten Seitenaufruf, obwohl der
+         Knopf genau das verspricht.
+
+         NICHT zurueckgesetzt werden die Ebenen. Sie sind keine Ansicht,
+         sondern eine Auswahl des Inhalts, und sie stehen als Haekchen
+         sichtbar daneben. Wer 5,9 MB Hochspannungsnetz geladen hat, soll es
+         nicht durch einen Klick auf "Ansicht" wieder verlieren. */
       K.sichtSetzen({ x: 0, y: 0, w: K.breite, h: K.hoehe });
+      hervorheben(null);
+      traegerHervor(null);
+      Z.karte.auswahl = null;
+      auswahlZeigen();
+      K.svg.querySelectorAll("[data-gewaehlt]").forEach(function (x) {
+        x.removeAttribute("data-gewaehlt");
+      });
     });
     kbed.appendChild(kzur);
     kbed.appendChild(el("span", { "class": "pf-kartenhinweis",
@@ -2958,10 +2975,17 @@
         + "docs/beleg-mastr.md.",
       "1.030 Windenergieanlagen in Betrieb haben im Register keine Koordinate und "
         + "fehlen auf der Karte. Das ist eine Lücke der Quelle, keine Auswahl.",
-      "Eine Regelzone je Wind- oder Solarpark. Das Register führt sie nicht; die "
-        + "Parks bleiben deshalb ohne Zonenfarbe.",
-      "Redispatch auf der Karte. Das Feld BETROFFENE_ANLAGE nennt teilweise "
-        + "Blocknamen; die Zuordnung zu den Kraftwerkskoordinaten steht aus.",
+      "Eine Regelzone je Windpark. Das Register führt sie nicht; die Parks "
+        + "bleiben deshalb ohne Zonenfarbe und treten zurück, wenn eine Zone "
+        + "hervorgehoben wird — statt eine Zugehörigkeit vorzutäuschen.",
+      "Redispatch auf der Karte. Geprüft und vorerst verworfen: das Feld "
+        + "BETROFFENE_ANLAGE nennt 404 verschiedene Bezeichnungen, aber nur ein "
+        + "kleiner Teil lässt sich einem Ort zuordnen. Gegen die 596 Kraftwerke "
+        + "und 5.259 Umspannwerke geprüft bleiben 76,9 % der Arbeit ohne Ort, und "
+        + "die unscharfen Treffer sind teils falsch — „Obernburg“ wäre "
+        + "„Bernburg“ geworden, zwei verschiedene Orte. Eine Karte daraus wäre "
+        + "eine Behauptung. 13,3 % der Arbeit laufen ohnehin über die Börse und "
+        + "haben gar keinen Ort.",
       "Zugang zur ENTSO-E Transparency Platform ist beantragt. Damit ließe sich die "
         + "Lizenzkette des Redispatch von einer Argumentation zu einer Zusage machen.",
       "Ob Redispatch auf der Liste frei weiterverwendbarer ENTSO-E-Daten steht, ist "

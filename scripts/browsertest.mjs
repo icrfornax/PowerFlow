@@ -713,6 +713,44 @@ try {
     .find((x) => /zur/i.test(x.textContent)).click()`);
   await schlafen(400);
 
+  /* "Ansicht zuruecksetzen" muss ALLES zuruecksetzen, was die Ansicht
+     ausmacht -- Ausschnitt, hervorgehobene Zone, hervorgehobener Traeger und
+     die Auswahl. Frueher blieb alles ausser dem Ausschnitt stehen. */
+  const ansichtZurueck = await js(`(function () {
+    const svg = document.querySelector(".pf-karte");
+    document.querySelector('.pf-zonenknopf[data-zone="TenneT"]').click();
+    document.querySelector(".pf-geo-anlage circle").dispatchEvent(
+      new MouseEvent("click", { bubbles: true }));
+    const t = [...document.querySelectorAll(".pf-zonenknopf[data-traeger]")][0];
+    if (t) { t.click(); }
+    const vorher = {
+      zone: svg.getAttribute("data-hervor"),
+      traeger: svg.getAttribute("data-traeger-hervor"),
+      gewaehlt: svg.querySelectorAll("[data-gewaehlt]").length,
+      kasten: !document.getElementById("pf-auswahl").hidden
+    };
+    [...document.querySelectorAll(".pf-kartenbedienung button")]
+      .find((x) => /Ansicht/.test(x.textContent)).click();
+    return { vorher: vorher, nachher: {
+      zone: svg.getAttribute("data-hervor"),
+      traeger: svg.getAttribute("data-traeger-hervor"),
+      gewaehlt: svg.querySelectorAll("[data-gewaehlt]").length,
+      kasten: !document.getElementById("pf-auswahl").hidden,
+      sicht: svg.getAttribute("viewBox")
+    } };
+  })()`);
+  pruefe(ansichtZurueck.vorher.zone || ansichtZurueck.vorher.traeger || ansichtZurueck.vorher.gewaehlt,
+    "Voraussetzung: vor dem Zuruecksetzen ist etwas hervorgehoben oder gewaehlt",
+    JSON.stringify(ansichtZurueck.vorher));
+  pruefe(!ansichtZurueck.nachher.zone && !ansichtZurueck.nachher.traeger,
+    "Zuruecksetzen loescht Regelzone und Energietraeger",
+    JSON.stringify(ansichtZurueck.nachher));
+  pruefe(ansichtZurueck.nachher.gewaehlt === 0 && !ansichtZurueck.nachher.kasten,
+    "Zuruecksetzen hebt auch die Auswahl auf", JSON.stringify(ansichtZurueck.nachher));
+  pruefe(ansichtZurueck.nachher.sicht === "0 0 1000 780",
+    `Zuruecksetzen stellt den Ausschnitt her (${ansichtZurueck.nachher.sicht})`);
+  await schlafen(300);
+
   const ebene = await js(`(function () {
     const b = document.getElementById("pf-ebene-kraftwerke");
     b.click();
