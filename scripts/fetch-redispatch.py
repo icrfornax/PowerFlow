@@ -71,6 +71,23 @@ HOCH = "Wirkleistungseinspeisung erhöhen"
 RUNTER = "Wirkleistungseinspeisung reduzieren"
 
 
+# Dauerklassen. Die Quelle rastert auf Viertelstunden; feiner waere Schein-
+# genauigkeit. Gemessen ueber 2025: Median vier Stunden, 18,4 % der Massnahmen
+# hoechstens eine -- aber nur 1,4 % der Arbeit. Kurz heisst also nicht wenig
+# Aufwand, sondern wenig Menge, und genau das soll man sehen koennen.
+DAUERKLASSEN = ("bis 1 h", "1 bis 4 h", "4 bis 12 h", "ueber 12 h")
+
+
+def dauerklasse(stunden: float) -> str:
+    if stunden <= 1:
+        return DAUERKLASSEN[0]
+    if stunden <= 4:
+        return DAUERKLASSEN[1]
+    if stunden <= 12:
+        return DAUERKLASSEN[2]
+    return DAUERKLASSEN[3]
+
+
 def stempel(datum: str, uhr: str, zone: str) -> dt.datetime:
     """Ein Zeitpunkt aus der Datei, als bewusst zonenbehaftete Zeit.
 
@@ -123,6 +140,9 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
             "erhoehen_mwh": 0.0, "reduzieren_mwh": 0.0, "massnahmen": 0,
             "je_uenb": {u: 0.0 for u in UENB},
             "je_energieart": collections.defaultdict(float),
+            "je_grund": collections.defaultdict(float),
+            "je_anfordernd": collections.defaultdict(float),
+            "dauer_stunden": collections.defaultdict(float),
         })
         e["massnahmen"] += 1
         if s.get("RICHTUNG") == HOCH:
@@ -134,18 +154,41 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
             e["je_uenb"][u] += arbeit
         e["je_energieart"][(s.get("PRIMAERENERGIEART") or "unbekannt").strip()] += arbeit
 
+        # --- die drei bisher ungenutzten Felder --------------------------
+        # Der Grund wird ROH gespeichert, nicht schon hier gruppiert. Die
+        # Gruppierung ist eine Anzeigeentscheidung und gehoert in die Seite;
+        # in der Datei bleibt stehen, was die Quelle sagt.
+        e["je_grund"][(s.get("GRUND_DER_MASSNAHME") or "unbekannt").strip()] += arbeit
+        # Wer das Problem hatte, ist nicht immer der, der gehandelt hat.
+        # Darin stehen auch auslaendische Betreiber -- RTE, APG, swissgrid.
+        e["je_anfordernd"][(s.get("ANFORDERNDER_UENB") or "unbekannt").strip()] += arbeit
+        # Dauer aus Beginn und Ende. Die Klassen sind grob, weil die Quelle
+        # ohnehin auf Viertelstunden rastert.
+        stunden = (b - a).total_seconds() / 3600
+        e["dauer_stunden"][dauerklasse(stunden)] += arbeit
+
+    gruende = collections.Counter()
+    anfordernd = collections.Counter()
     for e in tage.values():
-        e["je_energieart"] = dict(e["je_energieart"])
         for k in ("erhoehen_mwh", "reduzieren_mwh"):
             e[k] = round(e[k], 2)
         e["gesamt_mwh"] = round(e["erhoehen_mwh"] + e["reduzieren_mwh"], 2)
         e["je_uenb"] = {k: round(v, 2) for k, v in e["je_uenb"].items()}
-        e["je_energieart"] = {k: round(v, 2) for k, v in e["je_energieart"].items()}
+        # Nur belegte Schluessel behalten -- eine Null je Tag und Grund waere
+        # bei vierzehn Gruenden das Vielfache der Nutzlast.
+        for feld in ("je_energieart", "je_grund", "je_anfordernd", "dauer_stunden"):
+            e[feld] = {k: round(v, 2) for k, v in sorted(e[feld].items()) if v}
+        gruende.update(e["je_grund"].keys())
+        anfordernd.update(e["je_anfordernd"].keys())
 
     return {
         "tage": tage,
         "arbeit_ueber_mitternacht_mwh": round(ueber_mitternacht, 2),
         "unvollstaendige_saetze": unvollstaendig,
+        # Was in diesem Zeitraum ueberhaupt vorkam. Steht mit in der Datei,
+        # damit man die Werteliste der Quelle sieht, ohne sie abzurufen.
+        "gruende": sorted(gruende),
+        "anfordernde": sorted(anfordernd),
     }
 
 
@@ -169,7 +212,12 @@ def kopf(jahr: int) -> dict:
             "ueber das genannte Fenster. Die Quelle liefert UTC; hier ist auf "
             "Europe/Berlin umgerechnet. Eine Massnahme zaehlt zum Tag ihres "
             "Beginns -- eine Annahme, deren Groesse in "
-            "arbeit_ueber_mitternacht_mwh steht."
+            "arbeit_ueber_mitternacht_mwh steht. je_grund, je_anfordernd und "
+            "dauer_stunden stehen ROH so da, wie die Quelle sie nennt; "
+            "gruppiert wird erst in der Anzeige. Wichtig dabei: nicht jede "
+            "Massnahme ist ein Eingriff im Notfall -- Probefahrten, "
+            "Probestarts, Testfahrten und Funktionstests stehen unter je_grund "
+            "und machten 2025 rund 4 % der Arbeit aus."
         ),
         "jahr": jahr,
         "abgerufen": dt.datetime.now(TZ).isoformat(timespec="seconds"),
@@ -237,7 +285,7 @@ def main(argv: list[str]) -> int:
                     "Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage "
                     "ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null."),
         "jahre": verzeichnis,
-    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     print(f"  geschrieben: data/redispatch-verzeichnis.json ({len(verzeichnis)} Jahre)")
     return 0
 

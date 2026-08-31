@@ -312,16 +312,45 @@ try {
       kachel: k.includes("Redispatch"),
       abschnitt: abschnitte.some((x) => /Redispatch/.test(x)),
       zahlen: document.querySelectorAll(".pf-rd-zahl").length,
-      gruppen: document.querySelectorAll(".pf-rd-gruppe").length,
-      uenb: [...document.querySelectorAll(".pf-rd-gruppe .pf-name")].map((x) => x.textContent)
+      gruppen: [...document.querySelectorAll(".pf-rd-gruppe")].map(
+        (g) => g.querySelector("h4").textContent),
+      angewiesen: [...document.querySelectorAll(".pf-rd-gruppe")]
+        .filter((g) => /Angewiesen/.test(g.querySelector("h4").textContent))
+        .flatMap((g) => [...g.querySelectorAll(".pf-name")].map((x) => x.textContent)),
+      grundgruppen: [...document.querySelectorAll(".pf-rd-grund .pf-name")]
+        .map((x) => x.textContent),
+      streifen: document.querySelectorAll(".pf-rd-streifen span").length,
+      roh: [...document.querySelectorAll(".pf-rd-roh")].map((x) => x.textContent),
+      warnung: [...document.querySelectorAll(".pf-rd-gruende .pf-karte-warnung")]
+        .map((x) => x.textContent).join(" "),
+      ausland: [...document.querySelectorAll(".pf-verlauf .pf-bezug")]
+        .map((x) => x.textContent).filter((x) => /ausl/i.test(x)).join(" ")
     };
   })()`);
   pruefe(rd.kachel, "Redispatch-Kachel vorhanden");
   pruefe(rd.abschnitt, "Redispatch-Abschnitt vorhanden");
   pruefe(rd.zahlen === 3, `drei Redispatch-Kennzahlen (${rd.zahlen})`);
-  pruefe(rd.gruppen === 2, `zwei Balkengruppen (${rd.gruppen})`);
-  pruefe(rd.uenb.filter((x) => /50Hertz|Amprion|TenneT|TransnetBW/.test(x)).length === 4,
-    `alle vier UeNB im Redispatch (${rd.uenb.join(", ")})`);
+  pruefe(rd.gruppen.length === 4, `vier Balkengruppen (${rd.gruppen.join(" | ")})`);
+  pruefe(rd.angewiesen.filter((x) => /^(50Hertz|Amprion|TenneT DE|TransnetBW)$/.test(x)).length === 4,
+    `alle vier UeNB unter "Angewiesen von" (${rd.angewiesen.join(", ")})`);
+  pruefe(rd.gruppen.some((x) => /Angefordert/.test(x))
+    && rd.gruppen.some((x) => /Dauer/.test(x)),
+    "Angefordert-von und Dauer sind eigene Gruppen", rd.gruppen.join(" | "));
+
+  /* Die Trennung des Probebetriebs ist der Kern dieser Ergaenzung: nicht jede
+     Redispatch-Massnahme ist ein Eingriff im Notfall. Geprueft wird, dass die
+     Gruppe da ist, dass der Streifen die Anteile zeigt und dass der Wortlaut
+     der Quelle mitsteht -- ohne den waere die Einteilung eine Behauptung. */
+  pruefe(rd.grundgruppen.length >= 2,
+    `Gruende sind aufgegliedert (${rd.grundgruppen.join(" | ")})`);
+  pruefe(rd.streifen === rd.grundgruppen.length,
+    `der Streifen zeigt jede Gruppe (${rd.streifen} zu ${rd.grundgruppen.length})`);
+  pruefe(rd.roh.length === rd.grundgruppen.length
+    && rd.roh.every((x) => /In der Quelle:/.test(x)),
+    "jede Gruppe nennt den Wortlaut der Quelle", rd.roh[0]);
+  pruefe(/Probebetrieb ist kein Notfall|keinen Probebetrieb/.test(rd.warnung),
+    "der Probebetrieb wird ausdruecklich vom Notfall getrennt",
+    rd.warnung.slice(0, 90));
   await foto("redispatch", ".pf-rd-kopf");
 
   // --- Waagerechter Ueberlauf, drei Breiten ---

@@ -782,6 +782,50 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-rd-zahl[data-akzent="teal"] .pf-wert { color: var(--teal); }
 .pf-rd-zahl[data-akzent="orange"] .pf-wert { color: var(--orange); }
 .pf-rd-zahl[data-akzent="violett"] .pf-wert { color: var(--violett); }
+
+/* ---------- Redispatch: Grund, Anforderer, Dauer ---------- */
+
+.pf-rd-gruende { margin-top: 18px; }
+.pf-rd-gruende > h4 {
+  margin: 0 0 8px; font-size: 0.78rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still); font-weight: 600;
+}
+/* Ein Streifen ueber die volle Breite: die Anteile stehen nebeneinander und
+   ergeben zusammen die ganze Arbeit. Ein Balken je Gruppe untereinander
+   liesse das nicht sehen. */
+.pf-rd-streifen {
+  display: flex; height: 14px; border-radius: 3px; overflow: hidden;
+  background: var(--grund); margin-bottom: 12px;
+}
+.pf-rd-streifen span { display: block; height: 100%; }
+.pf-rd-streifen span + span { box-shadow: inset 1px 0 0 var(--flaeche); }
+.pf-rd-grundliste { display: grid; gap: 12px; }
+@media (min-width: 820px) { .pf-rd-grundliste { grid-template-columns: 1fr 1fr; } }
+.pf-rd-grund {
+  background: var(--flaeche-hoch); border: 1px solid var(--linie);
+  border-radius: var(--radius); padding: 10px 12px;
+}
+.pf-rd-grund .pf-zeile {
+  display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+}
+.pf-rd-grund .pf-name {
+  display: inline-flex; align-items: center; gap: 7px;
+  color: var(--schrift); font-weight: 600; font-size: 0.9rem;
+}
+.pf-rd-grund .pf-name i {
+  width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none;
+}
+.pf-rd-grund .pf-zahl {
+  font-family: var(--schrift-zahl); font-variant-numeric: tabular-nums;
+  color: var(--schrift-leise); font-size: 0.85rem; white-space: nowrap;
+}
+.pf-rd-grund .pf-bezug { margin: 6px 0 0; }
+/* Der Wortlaut der Quelle. Bewusst klein und leise: er belegt die Einteilung,
+   ist aber nicht die Aussage. */
+.pf-rd-roh {
+  margin: 6px 0 0; font-size: 0.74rem; color: var(--schrift-still);
+  font-family: var(--schrift-zahl); overflow-wrap: anywhere;
+}
 .pf-rd-spalten { display: grid; gap: 12px 28px; margin-top: 14px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .pf-rd-gruppe h4 { margin: 0 0 8px; font-size: 0.75rem; letter-spacing: 0.05em;

@@ -249,3 +249,90 @@ Geplant: eine eigene Kachel, ein Balken je ÜNB, und — weil
 `BETROFFENE_ANLAGE` teilweise Blocknamen nennt — der Versuch, sie den
 Kraftwerkskoordinaten aus `data/kraftwerke.json` zuzuordnen. Das wäre eine
 Karte der tatsächlichen Eingriffe. Erst nach der Lizenzklärung.
+
+
+## Nachtrag 31.08.2026 — die drei bisher ungenutzten Felder
+
+Die Schnittstelle liefert **15 Felder**; bis zu diesem Tag wurden sieben
+gelesen. Nachgesehen wurde über das Jahr 2025 (19.257 Maßnahmen, 14,80 TWh).
+
+### GRUND_DER_MASSNAHME — 14 Werte
+
+| Grund | Maßnahmen | Arbeit | Anteil |
+|---|---:|---:|---:|
+| Strombedingter Redispatch | 17.177 | 11,485 TWh | 77,6 % |
+| Strombedingter Countertrade DE-DK1 | 258 | 2,497 TWh | 16,9 % |
+| Probefahrt | 377 | 0,346 TWh | 2,3 % |
+| Probestart (NetzRes) | 215 | 0,214 TWh | 1,4 % |
+| Spannungsbedingter Redispatch | 201 | 0,171 TWh | 1,2 % |
+| Testfahrt (bnBm) | 203 | 0,026 TWh | 0,2 % |
+| Strombedingter Countertrade DE-DK2 | 232 | 0,025 TWh | 0,2 % |
+| Strom- und Spannungsbedingter RD | 484 | 0,016 TWh | 0,1 % |
+| Testfahrt (KapRes) | 81 | 0,009 TWh | 0,1 % |
+| übrige (kurativ, Probeabruf, Funktionstest, DE-NO2) | 29 | 0,004 TWh | 0,0 % |
+
+**Zusammen sind 889 Maßnahmen mit 4,1 % der Arbeit Probebetrieb** — angemeldete
+Probefahrten, Probestarts, Testfahrten, Probeabrufe, Funktionstests. Das ist
+kein Eingriff im Notfall. Die Seite nannte Redispatch vorher pauschal „Eingriff
+ins Netz"; für diesen Teil war das falsch und ist korrigiert.
+
+**Und 16,9 % der Arbeit sind Countertrade** — ein Gegengeschäft über eine
+Kuppelstelle, kein Eingriff an einer Anlage im Inland.
+
+Gruppiert wird **in der Anzeige, nicht im Abrufskript**: `data/redispatch/*.json`
+führt unter `je_grund` den Wortlaut der Quelle. Die Zuordnung steht in
+`assets/powerflow.js` unter `RD_GRUNDGRUPPEN` und wird auf der Seite je Gruppe
+mit dem Originalwortlaut belegt. Eine Entscheidung dabei: „Strom- und
+Spannungsbedingter RD" zählt zur Spannungshaltung, nicht zum Engpass — das
+betrifft 0,1 % der Arbeit.
+
+### ANFORDERNDER_UENB — wer das Problem hatte
+
+Angewiesen hat immer einer der vier deutschen Betreiber. **Angefordert** haben
+2025 **27 verschiedene Stellen**, darunter ausländische Übertragungsnetz-
+betreiber: RTE (Frankreich), APG (Österreich), swissgrid, CEPS (Tschechien),
+Statnett (Norwegen), TenneT NL, Energinet (EnDK Ost und West) — und zwei
+Verteilnetzbetreiber (50H VNB Mitnetz, WEMAG Netz).
+
+| Anforderer | Maßnahmen | Arbeit |
+|---|---:|---:|
+| 50Hertz & Amprion & TenneT DE & TransnetBW | 12.659 | 9,161 TWh |
+| TenneT DE | 3.489 | 3,976 TWh |
+| 50Hertz | 735 | 0,252 TWh |
+| Amprion & RTE | 326 | 0,190 TWh |
+
+**Mehrfachnennungen werden nicht aufgeteilt.** Die Quelle sagt nicht, welcher
+Anteil auf wen entfällt; eine Aufteilung wäre geraten. Gezählt wird die
+Zeichenkette als Ganzes.
+
+### Dauer
+
+Aus BEGINN und ENDE gerechnet. Median **4 Stunden**, kürzeste 0,25 h, längste
+25 h (Tag der Zeitumstellung — die Quelle liefert UTC, gerechnet wird lokal).
+
+| Dauer | Maßnahmen | Anteil der Arbeit |
+|---|---:|---:|
+| bis 1 h | 3.542 (18,4 %) | 1,4 % |
+| bis 4 h | 9.665 (50,2 %) | 12,3 % |
+| bis 12 h | 16.021 (83,2 %) | 48,1 % |
+| bis 24 h | 19.248 (100,0 %) | 99,9 % |
+
+Kurz heißt also nicht wenig Menge: fast jede fünfte Maßnahme dauert höchstens
+eine Stunde, trägt aber zusammen nur 1,4 % der Arbeit.
+
+### BETROFFENE_ANLAGE — für eine Karte nicht brauchbar
+
+404 verschiedene Bezeichnungen. Gegen die 596 Kraftwerke aus den
+SMARD-Stammdaten **und** die 5.259 Umspannwerke aus OpenStreetMap abgeglichen:
+
+| Zuordnung | Maßnahmen | Anteil der Arbeit |
+|---|---:|---:|
+| nicht zuordenbar | 10.685 | 76,9 % |
+| „Börse" (kein Ort) | 1.192 | 13,3 % |
+| Kraftwerk | 1.419 | 8,4 % |
+| Umspannwerk | 417 | 1,2 % |
+
+Und die unscharfen Treffer sind teils **falsch**: „Obernburg" wäre „Bernburg"
+geworden, „Gebersdorf" wäre „Ebersdorf" geworden — jeweils zwei verschiedene
+Orte. Eine Karte daraus wäre eine Behauptung. Der offene Punkt auf der Seite
+sagt das jetzt mit Zahlen statt „steht aus".

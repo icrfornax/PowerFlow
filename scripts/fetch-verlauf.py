@@ -144,7 +144,7 @@ def nachtragen(wochen: int) -> int:
         "hinweis": ("Verzeichnis der Monatsdateien mit Stundenwerten. Die Seite "
                     "laedt den Monat des gewaehlten Tages."),
         "monate": verzeichnis,
-    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     print(f"  Verzeichnis mit {len(verzeichnis)} Monaten geschrieben")
     return 0
 
@@ -292,7 +292,7 @@ def main(argv: list[str]) -> int:
             "hinweis": ("Verzeichnis der Monatsdateien mit Stundenwerten. Die Seite "
                         "laedt den Monat des gewaehlten Tages."),
             "monate": sorted(verzeichnis, key=lambda x: x["monat"]),
-        }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
         print("  geschrieben: data/verlauf-verzeichnis.json")
     return 0
 

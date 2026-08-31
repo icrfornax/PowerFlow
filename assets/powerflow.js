@@ -1958,9 +1958,53 @@
   /* Summiert die Tagesaggregate ueber den Zeitraum. Tage ohne Massnahme fehlen
      in der Quelle -- das ist kein Loch, sondern eine Null, und wird auch so
      gezaehlt. */
+  /* Die vierzehn Gruende der Quelle auf vier lesbare Gruppen. Die Zuordnung
+     steht HIER und nicht im Abrufskript: die Datei behaelt den Wortlaut der
+     Quelle, gruppiert wird erst fuer die Anzeige. Wer die Einteilung nicht
+     teilt, sieht in data/redispatch/*.json unter je_grund das Original.
+
+     Die Reihenfolge ist die der Gruppen weiter unten -- geprueft wird von
+     oben nach unten, der erste Treffer gewinnt. "Strom- und Spannungsbedingter
+     RD" faellt deshalb unter Spannungshaltung und nicht unter Engpass; das ist
+     eine Entscheidung und keine Messung, sie betrifft 0,1 % der Arbeit. */
+  var RD_GRUNDGRUPPEN = [
+    { name: "Probebetrieb", token: "--tr-sonst",
+      trifft: function (g) { return /probe|test/i.test(g); },
+      was: "Probefahrten, Probestarts, Testfahrten, Funktionstests. Geplanter "
+        + "Betrieb, kein Eingriff im Notfall." },
+    { name: "Countertrade an der Grenze", token: "--teal",
+      trifft: function (g) { return /countertrade/i.test(g); },
+      was: "Gegengeschäft über eine Kuppelstelle statt eines Eingriffs an einer "
+        + "Anlage im Inland." },
+    { name: "Spannungshaltung", token: "--violett",
+      trifft: function (g) { return /spannung/i.test(g); },
+      was: "Die Spannung im Netz läuft aus dem Band, nicht die Leistung über "
+        + "eine Grenze." },
+    { name: "Netzengpass", token: "--orange",
+      trifft: function () { return true; },
+      was: "Strombedingter Redispatch: das Netz trägt den geplanten Transport "
+        + "nicht. Das ist der Regelfall." }
+  ];
+
+  function rdGruppe(grund) {
+    for (var i = 0; i < RD_GRUNDGRUPPEN.length; i++) {
+      if (RD_GRUNDGRUPPEN[i].trifft(grund)) { return RD_GRUNDGRUPPEN[i]; }
+    }
+    return RD_GRUNDGRUPPEN[RD_GRUNDGRUPPEN.length - 1];
+  }
+
+  /* Wer die Massnahme angefordert hat. Die Quelle nennt teils mehrere
+     zugleich ("50Hertz & Amprion & TenneT DE & TransnetBW") und teils
+     auslaendische Betreiber. Beides wird NICHT aufgeloest -- eine Aufteilung
+     der Arbeit auf mehrere Anforderer waere geraten. Stattdessen wird die
+     Zeichenkette als Ganzes gezaehlt und nur danach sortiert, ob ein
+     auslaendischer Betreiber darin vorkommt. */
+  var RD_AUSLAND = /RTE|APG|swissgrid|CEPS|Statnett|EnDK|TenneT NL/i;
+
   function redispatch(von, bis) {
     var gesamt = 0, hoch = 0, runter = 0, massnahmen = 0;
     var jeUenb = {}, jeArt = {}, mitMassnahme = 0, belegteTage = 0, gefunden = false;
+    var jeGrund = {}, jeGruppe = {}, jeAnfordernd = {}, jeDauer = {}, ausland = 0;
     tageImZeitraum(von, bis).forEach(function (tag) {
       if (tag < REDISPATCH_AB) { return; }
       var d = Z.redispatch[Number(tag.slice(0, 4))];
@@ -1980,11 +2024,24 @@
       Object.keys(t.je_energieart).forEach(function (a) {
         jeArt[a] = (jeArt[a] || 0) + t.je_energieart[a];
       });
+      Object.keys(t.je_grund || {}).forEach(function (g) {
+        jeGrund[g] = (jeGrund[g] || 0) + t.je_grund[g];
+        var name = rdGruppe(g).name;
+        jeGruppe[name] = (jeGruppe[name] || 0) + t.je_grund[g];
+      });
+      Object.keys(t.je_anfordernd || {}).forEach(function (a) {
+        jeAnfordernd[a] = (jeAnfordernd[a] || 0) + t.je_anfordernd[a];
+        if (RD_AUSLAND.test(a)) { ausland += t.je_anfordernd[a]; }
+      });
+      Object.keys(t.dauer_stunden || {}).forEach(function (d) {
+        jeDauer[d] = (jeDauer[d] || 0) + t.dauer_stunden[d];
+      });
     });
     if (!gefunden) { return null; }
     return { gesamt: gesamt, hoch: hoch, runter: runter, massnahmen: massnahmen,
              jeUenb: jeUenb, jeArt: jeArt, tageMitMassnahme: mitMassnahme,
-             belegteTage: belegteTage };
+             belegteTage: belegteTage, jeGrund: jeGrund, jeGruppe: jeGruppe,
+             jeAnfordernd: jeAnfordernd, jeDauer: jeDauer, ausland: ausland };
   }
 
   var QUELLE_RD = [
@@ -2046,14 +2103,114 @@
       return box;
     }
 
+    /* GRUND DER MASSNAHME -- die wichtigste der drei Ergaenzungen.
+
+       Bis hierher hiess Redispatch auf dieser Seite pauschal "Eingriff ins
+       Netz". Das stimmt fuer den Regelfall, aber nicht fuer alles: ein Teil
+       der Massnahmen sind angemeldete Probefahrten, und ein weiterer Teil ist
+       gar kein Eingriff an einer Anlage, sondern ein Gegengeschaeft ueber eine
+       Kuppelstelle. Beides steht jetzt getrennt da. */
+    var gruppen = RD_GRUNDGRUPPEN.filter(function (g) { return r.jeGruppe[g.name]; });
+    if (gruppen.length) {
+      var gkasten = el("div", { "class": "pf-rd-gruende" });
+      gkasten.appendChild(el("h4", { text: "Warum eingegriffen wurde" }));
+      var streifen = el("div", { "class": "pf-rd-streifen" });
+      gruppen.slice().sort(function (a, b) {
+        return r.jeGruppe[b.name] - r.jeGruppe[a.name];
+      }).forEach(function (g) {
+        var anteil = r.jeGruppe[g.name] / r.gesamt * 100;
+        streifen.appendChild(el("span", {
+          style: "width:" + anteil.toFixed(2) + "%;background:var(" + g.token + ");",
+          title: g.name + ": " + gwh(r.jeGruppe[g.name], 1) + " GWh · "
+            + nf1.format(anteil) + " %"
+        }));
+      });
+      gkasten.appendChild(streifen);
+      var gliste = el("div", { "class": "pf-rd-grundliste" });
+      gruppen.slice().sort(function (a, b) {
+        return r.jeGruppe[b.name] - r.jeGruppe[a.name];
+      }).forEach(function (g) {
+        var z = el("div", { "class": "pf-rd-grund" });
+        var kopf2 = el("div", { "class": "pf-zeile" });
+        var name = el("span", { "class": "pf-name" });
+        name.appendChild(el("i", { style: "background:var(" + g.token + ");" }));
+        name.appendChild(document.createTextNode(g.name));
+        kopf2.appendChild(name);
+        kopf2.appendChild(el("span", { "class": "pf-zahl",
+          text: gwh(r.jeGruppe[g.name], 1) + " GWh · "
+            + nf1.format(r.jeGruppe[g.name] / r.gesamt * 100) + " %" }));
+        z.appendChild(kopf2);
+        z.appendChild(el("p", { "class": "pf-bezug", text: g.was }));
+        // Der Wortlaut der Quelle, damit die Einteilung nachvollziehbar ist.
+        var roh = Object.keys(r.jeGrund).filter(function (x) {
+          return rdGruppe(x).name === g.name && r.jeGrund[x];
+        }).sort(function (a, b) { return r.jeGrund[b] - r.jeGrund[a]; });
+        z.appendChild(el("p", { "class": "pf-rd-roh",
+          text: "In der Quelle: " + roh.join(" · ") }));
+        gliste.appendChild(z);
+      });
+      gkasten.appendChild(gliste);
+      var probe = r.jeGruppe["Probebetrieb"] || 0;
+      gkasten.appendChild(el("p", { "class": "pf-karte-warnung",
+        text: probe
+          ? "Der Probebetrieb ist kein Notfall. " + gwh(probe, 1) + " GWh — "
+            + nf1.format(probe / r.gesamt * 100) + " % der Arbeit in diesem "
+            + "Zeitraum — entfallen auf angemeldete Probefahrten, Probestarts, "
+            + "Testfahrten und Funktionstests. Wer die Redispatch-Menge als Maß "
+            + "für Netzstress liest, muss diesen Teil abziehen."
+          : "In diesem Zeitraum gab es keinen Probebetrieb; die gesamte Arbeit "
+            + "entfällt auf Eingriffe." }));
+      huelle.appendChild(gkasten);
+    }
+
+    var spalten2 = el("div", { "class": "pf-rd-spalten" });
+    /* WER ANGEFORDERT HAT gegen WER ANGEWIESEN HAT. Die Quelle fuehrt beides
+       getrennt, und es ist nicht dasselbe: angewiesen hat immer einer der vier
+       deutschen Betreiber, angefordert haben teils mehrere zugleich und teils
+       auslaendische. Mehrfachnennungen werden NICHT aufgeteilt -- welcher
+       Anteil auf wen entfaellt, sagt die Quelle nicht. */
+    if (Object.keys(r.jeAnfordernd).length) {
+      var top = Object.keys(r.jeAnfordernd)
+        .sort(function (a, b) { return r.jeAnfordernd[b] - r.jeAnfordernd[a]; });
+      var gezeigt = {};
+      var rest = 0;
+      top.forEach(function (a, i) {
+        if (i < 8) { gezeigt[a] = r.jeAnfordernd[a]; } else { rest += r.jeAnfordernd[a]; }
+      });
+      if (rest) { gezeigt["übrige " + (top.length - 8) + " Anforderer"] = rest; }
+      spalten2.appendChild(balken("Angefordert von", gezeigt, "var(--gruen)"));
+    }
+    if (Object.keys(r.jeDauer).length) {
+      var dsort = {};
+      ["bis 1 h", "1 bis 4 h", "4 bis 12 h", "ueber 12 h"].forEach(function (k) {
+        if (r.jeDauer[k]) { dsort[k === "ueber 12 h" ? "über 12 h" : k] = r.jeDauer[k]; }
+      });
+      spalten2.appendChild(balken("Dauer der Maßnahme", dsort, "var(--violett)"));
+    }
+    if (spalten2.childNodes.length) { huelle.appendChild(spalten2); }
+
+    if (r.ausland) {
+      huelle.appendChild(el("p", { "class": "pf-bezug",
+        text: "Auf Anforderung eines ausländischen Betreibers: "
+          + gwh(r.ausland, 1) + " GWh · " + nf1.format(r.ausland / r.gesamt * 100)
+          + " % der Arbeit. In der Quelle stehen unter anderem RTE (Frankreich), "
+          + "APG (Österreich), swissgrid, CEPS (Tschechien), Statnett (Norwegen), "
+          + "TenneT NL und Energinet. Deutschland greift also auch dann ein, wenn "
+          + "das Problem nicht im eigenen Netz liegt. Bei Mehrfachnennungen zählt "
+          + "die ganze Maßnahme — die Quelle sagt nicht, welcher Anteil auf wen "
+          + "entfällt." }));
+    }
+
     var spalten = el("div", { "class": "pf-rd-spalten" });
     spalten.appendChild(balken("Angewiesen von", r.jeUenb, "var(--violett)"));
     spalten.appendChild(balken("Betroffene Erzeugung", r.jeArt, "var(--teal)"));
     huelle.appendChild(spalten);
 
     huelle.appendChild(el("p", { "class": "pf-karte-warnung",
-      text: "Redispatch heißt: ein Netzbetreiber greift in den Kraftwerkseinsatz ein, "
-        + "weil das Netz den geplanten Transport nicht trägt. Es sagt, WO das Netz an "
+      text: "Redispatch heißt im Regelfall: ein Netzbetreiber greift in den "
+        + "Kraftwerkseinsatz ein, weil das Netz den geplanten Transport nicht trägt. "
+        + "Nicht jede Maßnahme ist das — siehe die Aufgliederung oben. "
+        + "Es sagt, WO das Netz an "
         + "seine Grenze kommt — nicht, wie viel Strom über eine einzelne Leitung "
         + "fließt. Das wird nach § 23c Abs. 2 EnWG nicht veröffentlicht." }));
 
@@ -2438,15 +2595,18 @@
         titel: "Redispatch", wert: gwh(rd.gesamt, 1), einheit: "GWh",
         bezug: nf2.format(rd.gesamt / k.netzlast * 100) + " % der Netzlast · "
           + bezugstext(rd.gesamt, rdV && rdV.gesamt, vv, vb),
-        marke: "Eingriff ins Netz — kein Lastfluss",
+        marke: "Eingriffe und Probebetrieb — kein Lastfluss",
         info: {
           wert: "Summe der Redispatch-Arbeit aus " + rd.massnahmen.toLocaleString("de-DE")
             + " Maßnahmen der vier Übertragungsnetzbetreiber.",
           grenzenTitel: "Was die Zahl bedeutet",
-          grenzen: "Redispatch heißt: ein Netzbetreiber greift in den Kraftwerkseinsatz "
-            + "ein, weil das Netz den geplanten Transport nicht trägt. Die Zahl sagt, "
-            + "wie viel Energie dafür verschoben wurde — nicht, wie viel über eine "
-            + "einzelne Leitung floss. Die Reihe beginnt 2021.",
+          grenzen: "Redispatch heißt im Regelfall: ein Netzbetreiber greift in den "
+            + "Kraftwerkseinsatz ein, weil das Netz den geplanten Transport nicht "
+            + "trägt. Die Zahl sagt, wie viel Energie dafür verschoben wurde — "
+            + "nicht, wie viel über eine einzelne Leitung floss. Sie umfasst ALLE "
+            + "Gründe, die die Quelle nennt, auch angemeldete Probefahrten und "
+            + "Gegengeschäfte über eine Kuppelstelle. Der Abschnitt weiter unten "
+            + "gliedert das auf. Die Reihe beginnt 2021.",
           quellen: QUELLE_RD,
           messung: "Messung. Die Zuordnung zum Kalendertag ist eine benannte Annahme."
         }

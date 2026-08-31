@@ -73,7 +73,9 @@ PFLICHT_IN_JS = [
     "Als Tabelle anzeigen",           # Tabellenansicht des Diagramms
     "die einzige freie Variable",     # Kennzeichnung des Reglers
     "netztransparenz.de",             # Namensnennung Redispatch
-    "Eingriff ins Netz",              # Redispatch ist kein Lastfluss
+    "Eingriffe und Probebetrieb",     # Redispatch ist kein Lastfluss -- und
+                                      # nicht jede Massnahme ist ein Notfall
+    "Probebetrieb ist kein Notfall",  # die Trennung muss auf der Seite stehen
     "Unterdeckung",                   # Luecke zwischen Erzeugung und Last
     "Day-Ahead",                      # Herkunft des Preises
 ]
@@ -650,6 +652,22 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # jetzt schon hier geprueft, nicht erst auf dem Runner.
     b.pruefe("erzeugt" not in qv,
              "Quellenverzeichnis traegt keinen Zeitstempel (sonst nie reproduzierbar)")
+
+    # Jede Schreibstelle in scripts/ muss das Zeilenende ausdruecklich auf LF
+    # setzen. Python uebersetzt sonst unter Windows zu CRLF, die Datei wird
+    # groesser als auf dem Linux-Runner, und der Vergleich des Verzeichnisses
+    # geht nicht auf. Beim ersten Umbau sind drei mehrzeilige Aufrufe
+    # uebersehen worden -- deshalb zaehlt das hier und verlaesst sich nicht
+    # auf Sorgfalt.
+    ohne_lf = []
+    for skript in sorted((WURZEL / "scripts").glob("*.py")):
+        quelle = skript.read_text(encoding="utf-8")
+        offen = quelle.count("write_text(") - quelle.count("newline=")
+        if offen > 0:
+            ohne_lf.append(f"{skript.name}: {offen}")
+    b.pruefe(not ohne_lf,
+             "jede Schreibstelle setzt newline (sonst CRLF unter Windows)"
+             + (" -- " + ", ".join(ohne_lf) if ohne_lf else ""))
     falsch = []
     for d in qv["datensaetze"]:
         muster = d["muster"].split("/", 1)[1]

@@ -289,7 +289,8 @@ def main(argv: list[str]) -> int:
                 "hinweis": ("Verzeichnis der Jahresdateien. Die Seite laedt das Jahr des "
                             "gewaehlten Tages und das Vorjahr fuer den Vergleichswert."),
                 "jahre": verzeichnis,
-            }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+            }, ensure_ascii=False, indent=1) + "\n",
+            encoding="utf-8", newline="\n")
         print("  geschrieben: data/tage-verzeichnis.json")
     return 0
 

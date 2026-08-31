@@ -320,6 +320,14 @@ Ob Redispatch auf dieser Liste steht, ist NICHT geprueft -- die Seite antwortet
 mit HTTP 403. Veroeffentlicht werden deshalb nur Tagesaggregate, keine Kopie
 der Messwertliste. Wer daran etwas aendert, liest zuerst den Beleg.
 
+**Am 31.08.2026 eingebaut: Grund, Anforderer und Dauer.** Die Aufgliederung
+nach dem Grund ist die wichtigste davon, weil sie eine falsche Aussage der
+Seite korrigiert: Redispatch hiess dort pauschal "Eingriff ins Netz", obwohl
+rund 4 % der Arbeit angemeldeter Probebetrieb sind. Gruppiert wird IN DER
+ANZEIGE (`RD_GRUNDGRUPPEN` in `assets/powerflow.js`), die Datei behaelt den
+Wortlaut der Quelle unter `je_grund`; jede Gruppe nennt ihr Original auf der
+Seite. Wer daran etwas aendert, laesst diese Belegkette stehen.
+
 **Am 31.08.2026 nachgesehen, was die Quelle sonst noch liefert.** Sie hat 15
 Felder; genutzt werden bisher sieben. Die Befunde ueber das Jahr 2025 (19.257
 Massnahmen, 14,80 TWh):
