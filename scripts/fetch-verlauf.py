@@ -81,6 +81,30 @@ def hole_jahr(filter_id: int, bloecke: list[int]) -> dict[int, float]:
     return werte
 
 
+def pruefe_laengen(monat: str, doc: dict) -> None:
+    """Jede Reihe je Stunde so lang wie die Stundenachse -- oder Abbruch.
+
+    Anlass: der taegliche Nachtrag verlaengerte "stunden", liess aber
+    "preis_eur_mwh" stehen. Die Datei war danach in sich widerspruechlich, und
+    gemerkt hat es erst der Tuersteher auf dem Runner. Eine Datei, die das
+    Skript selbst nicht prueft, muss jemand anders pruefen -- und der merkt es
+    zu spaet.
+    """
+    n = len(doc["stunden"])
+    schief = []
+    for name in ("netzlast", "preis_eur_mwh"):
+        if name in doc and len(doc[name]) != n:
+            schief.append(f"{name}: {len(doc[name])}")
+    for name, reihe in (doc.get("erzeugung") or {}).items():
+        if len(reihe) != n:
+            schief.append(f"erzeugung/{name}: {len(reihe)}")
+    if schief:
+        raise SystemExit(
+            f"ABBRUCH: In {monat} passen Reihen nicht zur Stundenachse ({n} "
+            f"Stunden): {', '.join(schief)}. Nicht auffuellen, sondern "
+            "nachsehen, welche Reihe beim Nachtragen vergessen wurde.")
+
+
 def nachtragen(wochen: int) -> int:
     """Holt nur die letzten N Wochenbloecke und arbeitet sie ein.
 
@@ -91,7 +115,11 @@ def nachtragen(wochen: int) -> int:
     """
     alle = smard.wochenbloecke(smard.LAST_NETZLAST, smard.REGION_DE, smard.STUNDE)
     bloecke = alle[-wochen:]
-    reihen = [("netzlast", smard.LAST_NETZLAST)]
+    # Der Grosshandelspreis MUSS mitgeholt werden. Er stand hier lange nicht
+    # drin, und das war ein Fehler: der Nachtrag verlaengerte "stunden", der
+    # Preis blieb kurz, und der Tuersteher lief in einen IndexError -- nur auf
+    # dem Runner, weil lokal der Preis von Hand nachgezogen worden war.
+    reihen = [("netzlast", smard.LAST_NETZLAST), ("preis_eur_mwh", PREIS_FILTER)]
     reihen += [(name, fid) for fid, name in smard.ERZEUGUNG.items()]
     with ThreadPoolExecutor(max_workers=8) as pool:
         ergebnisse = list(pool.map(lambda r: hole_jahr(r[1], bloecke), reihen))
@@ -119,6 +147,13 @@ def nachtragen(wochen: int) -> int:
             schnitt = doc["stunden"].index(neue_marken[0])
         doc["stunden"] = doc["stunden"][:schnitt] + neue_marken
         doc["netzlast"] = doc["netzlast"][:schnitt] + [daten["netzlast"].get(ts) for ts in neue]
+        preis_neu = [daten["preis_eur_mwh"].get(ts) for ts in neue]
+        if any(v is not None for v in preis_neu) or "preis_eur_mwh" in doc:
+            alt_p = doc.get("preis_eur_mwh", [])
+            # Falls die Reihe frueher kuerzer war, erst bis zur Schnittstelle
+            # auffuellen -- sonst rutscht alles um die Differenz.
+            alt_p = alt_p + [None] * max(0, schnitt - len(alt_p))
+            doc["preis_eur_mwh"] = alt_p[:schnitt] + preis_neu
         for _, name in sorted(smard.ERZEUGUNG.items()):
             spalte_neu = [daten[name].get(ts) for ts in neue]
             if not any(v is not None for v in spalte_neu) and name not in doc["erzeugung"]:
@@ -129,10 +164,14 @@ def nachtragen(wochen: int) -> int:
         doc.setdefault("_lizenz", "CC BY 4.0")
         doc.setdefault("_namensnennung", "Bundesnetzagentur | SMARD.de")
         doc["abgerufen"] = dt.datetime.now(smard.TZ).isoformat(timespec="seconds")
+        # Jede Reihe je Stunde MUSS so lang sein wie die Stundenachse. Genau
+        # das war nicht der Fall, und geprueft hat es niemand.
+        pruefe_laengen(monat, doc)
         pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
                         encoding="utf-8", newline="\n")
         print(f"  {monat}: {len(neue)} Stunden nachgetragen ab Stelle {schnitt}, "
-              f"jetzt {len(doc['stunden'])} Stunden")
+              f"jetzt {len(doc['stunden'])} Stunden, "
+              f"{sum(1 for v in doc.get('preis_eur_mwh') or [] if v is not None)} Preise")
 
     verzeichnis = []
     for pfad in sorted(ZIEL.glob("*.json")):

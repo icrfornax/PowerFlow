@@ -499,6 +499,33 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              f"Preise im plausiblen Rahmen ({min(alle_preise):.0f} bis "
              f"{max(alle_preise):.0f} EUR/MWh)")
 
+    # JEDE Reihe je Stunde bzw. je Tag muss so lang sein wie ihre Achse. Das
+    # klingt selbstverstaendlich und war es nicht: der taegliche Nachtrag
+    # verlaengerte "stunden", liess "preis_eur_mwh" aber stehen. Aufgefallen ist
+    # es erst als IndexError im Tuersteher auf dem Runner -- lokal nicht, weil
+    # der Preis dort von Hand nachgezogen worden war.
+    schief = []
+    for monat, d in sorted(verlauf.items()):
+        n = len(d["stunden"])
+        for name in ("netzlast", "preis_eur_mwh"):
+            if name in d and len(d[name]) != n:
+                schief.append(f"{monat}/{name}: {len(d[name])} statt {n}")
+        for name, reihe in (d.get("erzeugung") or {}).items():
+            if len(reihe) != n:
+                schief.append(f"{monat}/erzeugung/{name}: {len(reihe)} statt {n}")
+    for jahr, d in sorted(jahre.items()):
+        n = len(d["tage"])
+        for name in ("netzlast", "residuallast", "pumpspeicherverbrauch",
+                     "preis_eur_mwh"):
+            if name in d and len(d[name]) != n:
+                schief.append(f"{jahr}/{name}: {len(d[name])} statt {n}")
+        for name, reihe in (d.get("erzeugung") or {}).items():
+            if len(reihe) != n:
+                schief.append(f"{jahr}/erzeugung/{name}: {len(reihe)} statt {n}")
+    b.pruefe(not schief,
+             "jede Reihe ist so lang wie ihre Zeitachse"
+             + (" -- " + ", ".join(schief[:4]) if schief else ""))
+
     # Gegenprobe: der Tagespreis ist das MITTEL der Stundenpreise, nicht ihre
     # Summe. Geprueft am 24.08.2026: 143,18 gegen 143,18.
     abw = []
