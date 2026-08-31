@@ -665,6 +665,40 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              "kein Redispatch-Satz wurde als unlesbar verworfen"
              + (" -- " + ", ".join(verloren) if verloren else ""))
 
+    # Dasselbe fuer die uebrigen Quellen, die Text in Zahlen verwandeln. Jede
+    # Lesestelle zaehlt mit, was sie nicht lesen konnte; hier wird der Zaehler
+    # in der fertigen Datei noch einmal geprueft. Ein Zaehler, den niemand
+    # prueft, ist kein Zaehler.
+    zaehler = [
+        ("data/mastr-wind.json", "beim_lesen_aufgefallen", ("unlesbar", "komma")),
+        ("data/netz-hoechstspannung.json", "verworfen", ("ohne_spannung",)),
+        ("data/netz-hochspannung.json", "verworfen", ("ohne_spannung",)),
+        ("data/netz-umspannwerke.json", "verworfen", ("ohne_spannung",)),
+    ]
+    stumm = []
+    for name, feld, schluessel in zaehler:
+        pf = WURZEL / name
+        if not pf.exists():
+            continue
+        doc = json.loads(pf.read_text(encoding="utf-8"))
+        werte = doc.get(feld)
+        if werte is None:
+            stumm.append(f"{name}: Feld {feld} fehlt")
+            continue
+        for k in schluessel:
+            if werte.get(k):
+                stumm.append(f"{name}/{k}: {werte[k]}")
+    b.pruefe(not stumm,
+             "keine Quelle hat Zahlen still verworfen"
+             + (" -- " + ", ".join(stumm) if stumm else ""))
+
+    # Die Vorlage muss jeden Schluessel nennen, den ein Skript erwartet --
+    # sonst sucht jemand vergeblich, wo er seinen Zugang eintragen soll.
+    vorlage = (WURZEL / ".env.beispiel").read_text(encoding="utf-8")
+    for schluessel in ("NT_CLIENT_ID", "NT_CLIENT_SECRET", "ENTSOE_TOKEN"):
+        b.pruefe(schluessel + "=" in vorlage,
+                 f".env.beispiel nennt {schluessel}")
+
     b.pruefe("erzeugt" not in qv,
              "Quellenverzeichnis traegt keinen Zeitstempel (sonst nie reproduzierbar)")
 

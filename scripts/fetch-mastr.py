@@ -136,11 +136,39 @@ def katalog(z: zipfile.ZipFile) -> dict:
     return werte
 
 
+# Was beim Lesen nicht aufging. Ein stiller Ausfall ist der gefaehrlichste
+# Fehler dieser Art: bei Redispatch hat ein "return 0.0" im Ausnahmefall
+# 27 % der Arbeit verschwinden lassen, ohne dass es jemand merkte. Hier wird
+# deshalb gezaehlt, und main() bricht ab, wenn die Zahl nicht winzig ist.
+UNLESBAR = collections.Counter()
+
+
 def zahl(x) -> float:
-    try:
-        return float(x)
-    except (TypeError, ValueError):
+    """Eine Zahl aus dem Export. Das Trennzeichen ist dort ein PUNKT.
+
+    Nachgesehen und nicht angenommen: "3000.000" fuer eine 3-MW-Anlage,
+    "9.739374" fuer einen Laengengrad -- anders als bei netztransparenz.de, wo
+    ein Komma steht. Ein Komma wird hier trotzdem behandelt, falls die Quelle
+    ihr Format aendert. Aber es wird MITGEZAEHLT, damit die Aenderung
+    auffaellt, statt still durchzugehen.
+    """
+    if x is None or (isinstance(x, str) and not x.strip()):
+        UNLESBAR["leer"] += 1
         return 0.0
+    s = x.strip() if isinstance(x, str) else x
+    try:
+        return float(s)
+    except (TypeError, ValueError):
+        pass
+    if isinstance(s, str) and "," in s:
+        try:
+            wert = float(s.replace(".", "").replace(",", "."))
+            UNLESBAR["komma"] += 1
+            return wert
+        except ValueError:
+            pass
+    UNLESBAR["unlesbar"] += 1
+    return 0.0
 
 
 def wind(z, werte, betrieb):
@@ -223,6 +251,8 @@ def schreiben(pfad, titel, was, parks, kennzahlen, url, schwelle, verfahren):
         "abgerufen": __import__("datetime").datetime.now().astimezone().isoformat(
             timespec="seconds"),
         "kennzahlen": kennzahlen,
+        # Was beim Lesen der Zahlen aufgefallen ist. Leer heisst: nichts.
+        "beim_lesen_aufgefallen": dict(UNLESBAR),
         "anzahl": len(parks),
         "leistung_gw": round(sum(p["kw"] for p in parks) / 1e6, 2),
         "objekte": parks,
@@ -276,6 +306,17 @@ def main(pruefen: bool) -> int:
                   "Einzelne Anlagen sind ueber die Betreiberangabe NameWindpark zu "
                   "Parks zusammengefasst; der Ort eines Parks ist der Mittelwert der "
                   "Anlagenorte. Anlagen ohne Koordinate fehlen.")
+
+    # Waechter: was nicht gelesen werden konnte, darf nicht still verschwinden.
+    if UNLESBAR:
+        print(f"\n  beim Lesen aufgefallen: {dict(UNLESBAR)}")
+    schlimm = UNLESBAR["unlesbar"] + UNLESBAR["komma"]
+    if schlimm > max(10, kw["einheiten_gesamt"] * 0.001):
+        raise SystemExit(
+            f"ABBRUCH: {schlimm} Zahlen liessen sich nicht wie erwartet lesen. "
+            "Der Export benutzt einen PUNKT als Dezimaltrennzeichen; weicht das "
+            "ab, hat die Quelle ihr Format geaendert. Erst ansehen, dann "
+            "weiterbauen -- nicht die Grenze anheben.")
 
     print(f"\n  uebertragen: {fern.geholt / 1e6:.1f} MB von {groesse / 1e9:.2f} GB")
     return 0

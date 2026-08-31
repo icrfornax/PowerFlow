@@ -159,12 +159,31 @@ def wochenbloecke(filter_id: int, region: str, aufloesung: str) -> list[int]:
 
 
 def reihe(filter_id: int, region: str, aufloesung: str, block: int) -> list[list]:
-    """Rohe [Zeitstempel, Wert]-Paare eines Wochenblocks."""
+    """Rohe [Zeitstempel, Wert]-Paare eines Wochenblocks.
+
+    SMARD liefert ECHTE JSON-Zahlen -- nachgesehen und nicht angenommen:
+    [1704150000000, 1271127.25], Typ int und float. Kein Text, also auch kein
+    Dezimaltrennzeichen, das falsch gelesen werden koennte.
+
+    Das wird hier geprueft und nicht geglaubt. Bei netztransparenz.de steht ein
+    KOMMA im Text, und weil float("1306,25") scheitert und die Ausnahme still
+    verschluckt wurde, sind dort 27 % der Redispatch-Arbeit verschwunden. Sollte
+    SMARD je auf Text umstellen, bricht der Abruf hier ab, statt es
+    weiterzureichen.
+    """
     pfad = (
         f"/chart_data/{filter_id}/{region}/"
         f"{filter_id}_{region}_{aufloesung}_{block}.json"
     )
-    return _hole(pfad)["series"]
+    serie = _hole(pfad)["series"]
+    for zeitpunkt, wert in serie[:50]:
+        if not isinstance(zeitpunkt, (int, float)) or not isinstance(
+                wert, (int, float, type(None))):
+            raise SystemExit(
+                f"ABBRUCH: {pfad} liefert Werte als {type(wert).__name__} statt "
+                "als Zahl. Die Quelle hat ihr Format geaendert -- erst ansehen, "
+                "besonders auf das Dezimaltrennzeichen, dann weiterbauen.")
+    return serie
 
 
 def tagesgrenzen(tag: _dt.date) -> tuple[int, int]:

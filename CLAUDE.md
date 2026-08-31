@@ -113,6 +113,26 @@ die Regelzonenbilanz.
 - **Zahlformate:** Anzeige deutsch ueber `Intl.NumberFormat("de-DE")`, CSV
   maschinenlesbar mit Punkt als Dezimaltrennzeichen. Den Unterschied im
   Dateikopf erklaeren.
+- **Das Dezimaltrennzeichen jeder neuen Quelle wird NACHGESEHEN, nicht
+  angenommen** -- und das Ergebnis als Kommentar an die Lesestelle geschrieben.
+  Es hat einmal 27 % der Redispatch-Arbeit gekostet: netztransparenz.de
+  schreibt `1306,25`, `float()` warf ValueError, die Ausnahme wurde still
+  verschluckt. Stand der Pruefung vom 31.08.2026:
+
+  | Quelle | Format | Lesestelle |
+  |---|---|---|
+  | SMARD | echte JSON-Zahlen, kein Text | `smard.py::reihe` prueft den Typ |
+  | netztransparenz.de | CSV, **Komma** | `fetch-redispatch.py::zahl` |
+  | Marktstammdatenregister | XML, **Punkt** | `fetch-mastr.py::zahl` |
+  | OpenStreetMap | Text, `voltage` mit `;` | `fetch-netz.py::spannung` |
+  | Natural Earth | GeoJSON-Zahlen | keine Umwandlung |
+
+- **Ein `except: return 0` oder `continue` beim Zahlenlesen ist verboten, wenn
+  niemand mitzaehlt.** Genau so verschwand die Redispatch-Arbeit. Jede
+  Lesestelle zaehlt, was sie nicht lesen konnte, schreibt den Zaehler in die
+  Datei, und das Abrufskript BRICHT AB, wenn er ueber ein enges Budget steigt.
+  `validate.py` prueft die Zaehler in den fertigen Dateien noch einmal nach.
+  Ein Zaehler, den niemand prueft, ist kein Zaehler.
 - **Keine Zahl ohne Herkunft.** Durchgesetzt durch `scripts/quellen.py`: es
   ordnet jede Datei unter `data/` einer Quelle zu und **bricht ab**, wenn eine
   ohne Zuordnung auftaucht. Das Ergebnis steht als Tabelle am Seitenende.

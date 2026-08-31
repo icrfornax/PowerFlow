@@ -197,7 +197,7 @@
    "quelle": "mastr",
    "beleg": "docs/beleg-mastr.md",
    "dateien": 1,
-   "bytes": 382203,
+   "bytes": 382231,
    "zeitraum": null,
    "muster": "data/mastr-wind.json",
    "abzug": "data/mastr-wind.json",
@@ -229,5 +229,5 @@
   }
  ],
  "dateien_gesamt": 169,
- "bytes_gesamt": 25645119
+ "bytes_gesamt": 25645147
 }
