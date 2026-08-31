@@ -17,6 +17,7 @@ on:
       - "data/**"
       - "scripts/**"
       - "LIZENZ-DATEN.md"
+      - "methodik.pdf"
       - ".github/workflows/**"
   pull_request:
     paths:
@@ -26,6 +27,7 @@ on:
       - "data/**"
       - "scripts/**"
       - "LIZENZ-DATEN.md"
+      - "methodik.pdf"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -50,6 +52,13 @@ jobs:
           python scripts/quellen.py
           python scripts/quellen.py --negativtest
           git diff --exit-code -- data/quellen.json
+
+      - name: Methodik-PDF neu bauen und vergleichen
+        # Das Papier rechnet seine Zahlen aus den Dateien. Wird es hier neu
+        # gebaut und weicht ab, ist es zu den Daten nicht mehr aktuell.
+        run: |
+          python scripts/methodik.py
+          git diff --stat --exit-code -- methodik.pdf
 
       - name: Negativtests
         # Eine Pruefung, die nie hat fehlschlagen sehen, ist keine Pruefung.

@@ -21,6 +21,7 @@ import json
 import pathlib
 import re
 import sys
+import zlib
 
 WURZEL = pathlib.Path(__file__).resolve().parent.parent
 
@@ -43,6 +44,9 @@ PFLICHTDATEIEN = [
     ".github/workflows/pruefen.yml",
     "scripts/browsertest.mjs",
     "scripts/quellen.py",
+    "scripts/methodik.py",
+    "scripts/pdf.py",
+    "methodik.pdf",
     # Ohne .nojekyll laeuft die Auslieferung auf GitHub Pages durch Jekyll.
     # Die Seite ist reines statisches HTML; Jekyll bringt nichts und kann
     # Dateien unterschlagen. Die Datei ist leer und muss leer bleiben duerfen.
@@ -688,6 +692,33 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         for k in schluessel:
             if werte.get(k):
                 stumm.append(f"{name}/{k}: {werte[k]}")
+    # Das Methodikpapier. Es muss ein PDF sein, mehrere Seiten haben und den
+    # aktuellen Datenstand nennen -- sonst haengt es der Wirklichkeit
+    # hinterher, und genau das soll es nicht.
+    roh = (WURZEL / "methodik.pdf").read_bytes()
+    b.pruefe(roh.startswith(b"%PDF-"), "methodik.pdf ist ein PDF")
+    b.pruefe(roh.rstrip().endswith(b"%%EOF"), "methodik.pdf ist vollstaendig geschrieben")
+    b.pruefe(roh.count(b"/Type /Page ") >= 3,
+             f"methodik.pdf hat mehrere Seiten ({roh.count(b'/Type /Page ')})")
+    letzter = json.loads((WURZEL / "data" / "tage-verzeichnis.json")
+                         .read_text(encoding="utf-8"))["jahre"][-1]
+    stand = letzter.get("letzter_belegter_tag") or letzter["letzter_tag"]
+    # Die Seiteninhalte sind Flate-gepackt; der Text steht nicht im Klartext
+    # in der Datei. Zum Pruefen werden die Stroeme entpackt.
+    klartext = b""
+    for stueck in roh.split(b"stream\n")[1:]:
+        daten = stueck.split(b"\nendstream")[0]
+        try:
+            klartext += zlib.decompress(daten)
+        except zlib.error:
+            pass
+    b.pruefe(stand.encode() in klartext,
+             f"methodik.pdf nennt den aktuellen Datenstand {stand}")
+    b.pruefe(b"Leitfrage" in klartext and b"freie Variable" in klartext,
+             "methodik.pdf nennt Leitfrage und freie Variable")
+    b.pruefe(b"gegl" in klartext or b"Bilanzrest" in klartext,
+             "methodik.pdf erklaert den Bilanzrest")
+
     b.pruefe(not stumm,
              "keine Quelle hat Zahlen still verworfen"
              + (" -- " + ", ".join(stumm) if stumm else ""))

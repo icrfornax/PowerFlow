@@ -857,6 +857,31 @@ try {
     && /Redispatch auf der Karte/.test(offen.grenzen),
     "die zwei verschobenen Punkte stehen jetzt unter Grenzen");
 
+  /* Das Methodikpapier muss von der Seite aus erreichbar sein -- und
+     erreichbar heisst: der Server liefert es wirklich aus, nicht nur der
+     Verweis steht da. */
+  const methodik = await js(`(async function () {
+    const a = [...document.querySelectorAll(".pf-abzug")].find(
+      (x) => /Methodik/.test(x.textContent));
+    if (!a) { return { fehlt: true }; }
+    const antwort = await fetch(a.getAttribute("href"));
+    const kopf = await antwort.clone().arrayBuffer();
+    return {
+      text: a.textContent, ziel: a.getAttribute("href"),
+      status: antwort.status,
+      typ: antwort.headers.get("content-type"),
+      bytes: kopf.byteLength,
+      magisch: new TextDecoder().decode(new Uint8Array(kopf).slice(0, 5))
+    };
+  })()`);
+  pruefe(!methodik.fehlt, "Verweis auf das Methodik-PDF vorhanden");
+  pruefe(methodik.status === 200,
+    `das PDF wird ausgeliefert (HTTP ${methodik.status})`, methodik.ziel);
+  pruefe(methodik.magisch === "%PDF-",
+    "und ist wirklich ein PDF", String(methodik.magisch));
+  pruefe(methodik.bytes > 4000,
+    `${methodik.bytes} Bytes -- kein leeres Papier`);
+
   pruefe(qu.quellen.length === 7, `sieben Quellen genannt: ${qu.quellen.join(" | ")}`);
   // Die abgeleitete Flaeche muss im Verzeichnis als solche kenntlich sein und
   // darf nicht neben den Messungen stehen.

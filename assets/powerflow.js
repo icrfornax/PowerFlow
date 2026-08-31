@@ -2558,10 +2558,18 @@
     kacheln.appendChild(kachel({
       titel: "Außensaldo", wert: vz(k.saldo, 1), einheit: "GWh",
       akzent: k.saldo >= 0 ? "teal" : "orange",
-      bezug: (k.saldo >= 0 ? "Netto-Zufluss" : "Netto-Abfluss") + " · "
-        + bezugstext(k.saldo, v.saldo, vv, vb),
+      /* Die Vorzeichenregel steht AN der Zahl, nicht nur im Popover. Ein
+         Minus bei "Außensaldo" liest sich wie ein Mangel, gemeint ist das
+         Gegenteil: mehr ausgefuehrt als eingefuehrt. Die ausgeschriebene
+         Rechnung raeumt das in einer Zeile aus. */
+      bezug: (k.saldo >= 0 ? "Netto-Zufluss" : "Netto-Abfluss")
+        + ": Import − Export = " + gwh(k.imp, 1) + " − " + gwh(k.exp, 1)
+        + " · " + bezugstext(k.saldo, v.saldo, vv, vb),
       info: {
-        wert: "Import minus Export über alle Nachbarländer im Zeitraum.",
+        wert: "Import minus Export über alle Nachbarländer im Zeitraum. "
+          + "Das Vorzeichen folgt daraus: ein MINUS heißt, dass mehr ausgeführt "
+          + "als eingeführt wurde — Deutschland war in diesem Zeitraum "
+          + "Nettoexporteur. Ein Plus heiße Nettoimport.",
         grenzenTitel: "Was der Saldo nicht sagt",
         grenzen: "Der Saldo sagt nichts darüber, welchen Weg der Strom im deutschen Netz "
           + "genommen hat. Flüsse zwischen den vier Regelzonen werden nicht veröffentlicht.",
@@ -3089,6 +3097,18 @@
     });
     btab.appendChild(btb); brt.appendChild(btab);
     beginn.appendChild(brt);
+    /* Das obere Ende der Reichweite setzt NICHT diese Seite, sondern die
+       Quelle. Ohne diesen Satz liest sich ein fehlender Vortag wie ein
+       Versaeumnis des Abrufs -- gemessen am 31.08.2026 fehlten in der
+       Netzlast des 30.08. vierzehn von vierundzwanzig Stunden, waehrend der
+       Grosshandelspreis desselben Tages vollstaendig vorlag. */
+    beginn.appendChild(el("p", { "class": "pf-bezug",
+      text: "Das obere Ende steht bei " + datumLang(Z.maxTag) + ". Es wird nicht "
+        + "hier gesetzt, sondern von der Quelle: die Tageswerte entstehen erst, "
+        + "wenn alle Stunden eines Tages vorliegen, und SMARD meldet einzelne "
+        + "Stunden verspätet nach. Ein fehlender Vortag ist deshalb in aller Regel "
+        + "eine Lücke der Quelle und kein ausgefallener Abruf. Geholt wird täglich "
+        + "um 07:12 Uhr; was dann noch fehlt, kommt am nächsten Tag mit." }));
     neu.appendChild(abschnitt("Zeitliche Reichweite", beginn));
 
     // --- Bekannte Maengel der Daten ---
@@ -3239,6 +3259,14 @@
     csvKnopf.appendChild(el("span", { text: "CSV" }));
     csvKnopf.addEventListener("click", function () { csvHerunterladen(von, bis); });
     abzuege.appendChild(csvKnopf);
+    /* Das Methodikpapier. Es wird beim Bau aus denselben Dateien neu gerechnet,
+       die hier zum Abzug stehen -- eine von Hand gepflegte Fassung liefe der
+       Wirklichkeit hinterher. */
+    var pdfLink = el("a", { "class": "pf-abzug", href: "methodik.pdf?v=" + VERSION,
+      target: "_blank", rel: "noopener",
+      text: "Methodik: Leitfrage, Quellen, Formeln, was nicht aufgeht" });
+    pdfLink.appendChild(el("span", { text: "PDF" }));
+    abzuege.appendChild(pdfLink);
     qhuelle.appendChild(abzuege);
     neu.appendChild(abschnitt("Quellen und Downloads", qhuelle));
 

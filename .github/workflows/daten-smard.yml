@@ -61,6 +61,10 @@ jobs:
           fi
           python scripts/fetch-redispatch.py --lizenz-geklaert "$(date -u +%Y)"
 
+      - name: Methodik-PDF neu rechnen
+        # Es traegt Zahlen aus den Daten; aendern die sich, aendert es sich mit.
+        run: python scripts/methodik.py
+
       - name: Quellenverzeichnis neu bauen
         # Muss VOR dem Tuersteher laufen: er prueft, dass das Verzeichnis alle
         # Dateien zaehlt. Und quellen.py bricht selbst ab, wenn eine Datei
