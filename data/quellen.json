@@ -101,7 +101,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 140,
-   "bytes": 14033118,
+   "bytes": 14033248,
    "zeitraum": "2015-01-01 bis 2026-08-31",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
@@ -197,7 +197,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 1,
-   "bytes": 158658,
+   "bytes": 158659,
    "zeitraum": null,
    "muster": "data/aussenhandel-preis.json",
    "abzug": "data/aussenhandel-preis.json",
@@ -241,5 +241,5 @@
   }
  ],
  "dateien_gesamt": 170,
- "bytes_gesamt": 27762902
+ "bytes_gesamt": 27763033
 }
