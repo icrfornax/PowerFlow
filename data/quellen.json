@@ -101,7 +101,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 140,
-   "bytes": 14033248,
+   "bytes": 14034000,
    "zeitraum": "2015-01-01 bis 2026-08-31",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
@@ -241,5 +241,5 @@
   }
  ],
  "dateien_gesamt": 170,
- "bytes_gesamt": 30131017
+ "bytes_gesamt": 30131769
 }
