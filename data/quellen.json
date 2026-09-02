@@ -77,7 +77,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3126142,
+   "bytes": 3126248,
    "zeitraum": "2015-01-01 bis 2026-08-29",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
@@ -89,7 +89,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 1,
-   "bytes": 12914,
+   "bytes": 13003,
    "zeitraum": null,
    "muster": "data/verlauf-verzeichnis.json",
    "abzug": "data/verlauf-verzeichnis.json",
@@ -100,9 +100,9 @@
    "inhalt": "Netzlast, Erzeugung nach Energietraeger und Grosshandelspreis, ein Wert je Stunde, in MWh bzw. Euro je MWh.",
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
-   "dateien": 140,
-   "bytes": 14034000,
-   "zeitraum": "2015-01-01 bis 2026-08-31",
+   "dateien": 141,
+   "bytes": 14034622,
+   "zeitraum": "2015-01-01 bis 2026-09-01",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
@@ -240,6 +240,6 @@
    "alle": null
   }
  ],
- "dateien_gesamt": 170,
- "bytes_gesamt": 30131769
+ "dateien_gesamt": 171,
+ "bytes_gesamt": 30132586
 }
