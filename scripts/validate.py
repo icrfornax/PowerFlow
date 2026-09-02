@@ -736,6 +736,35 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  + (f" -- {len(schief)} Abweichungen, z.B. {schief[:3]}"
                     if schief else ""))
 
+    # Die Spanne der Redispatch-Schieflage steht als ZAHL im Seitentext. Eine
+    # Zahl in Prosa veraltet still: sie stand dort erst mit 3,6 bis 25,4 %
+    # (aus den durch das Dezimalkomma lueckenhaften Werten) und danach mit
+    # "in jedem Jahr groesser" -- was 2026 nicht mehr galt. Beides ist niemandem
+    # aufgefallen, weil niemand nachgerechnet hat. Jetzt rechnet der Tuersteher.
+    schieflagen = []
+    for eintrag in rdv["jahre"]:
+        d = json.loads(lade(eintrag["datei"]))
+        h = sum(x["erhoehen_mwh"] for x in d["tage"].values())
+        r = sum(x["reduzieren_mwh"] for x in d["tage"].values())
+        if h + r:
+            schieflagen.append((h - r) / (h + r) * 100)
+    if schieflagen:
+        def de(x: float) -> str:
+            return f"{x:.1f}".replace(".", ",")
+        erwartet = (f"zwischen −{de(abs(min(schieflagen)))} und "
+                    f"+{de(max(schieflagen))} %")
+        # Die Meldung selbst bleibt in ASCII: die Konsole unter Windows kann
+        # das Minuszeichen U+2212 nicht ausgeben und wirft sonst mitten im
+        # Lauf eine UnicodeEncodeError.
+        b.pruefe(erwartet in js,
+                 "der Seitentext nennt die gemessene Schieflage ("
+                 + erwartet.replace("−", "-") + ")")
+        # Und die Richtung der Aussage: "meist groesser" nur, solange es
+        # ueberhaupt Jahre mit umgekehrtem Vorzeichen gibt.
+        b.pruefe(("in jedem Jahr größer" in js)
+                 == all(x > 0 for x in schieflagen),
+                 "die Aussage 'in jedem Jahr' steht nur da, wenn sie stimmt")
+
     # --- Quellenverzeichnis ---
     # Der eigentliche Waechter steckt in scripts/quellen.py: es bricht ab,
     # sobald eine Datei unter data/ keiner Quelle zugeordnet ist. Hier wird
@@ -1028,6 +1057,10 @@ def negativtests() -> int:
          lambda: {"netz": _netz_gedreht(basis["netz"])}),
         # Eine Farbe als Schriftfamilie. Sieht im Quelltext richtig aus, ist
         # ungueltig und faellt stillschweigend auf die geerbte Schrift zurueck.
+        # Eine Zahl in der Prosa, die nicht mehr zu den Daten passt. Genau so
+        # ist die Schieflage zweimal veraltet, ohne dass es auffiel.
+        ("Spanne der Redispatch-Schieflage im Text verstellt",
+         lambda: {"js": basis["js"].replace("und +18,1 %", "und +25,4 %")}),
         ("Farb-Token als Schriftfamilie eingesetzt",
          lambda: {"css": basis["css"]
                   + chr(10) + ".pf-probe { font-family: var(--schrift); }" + chr(10)}),

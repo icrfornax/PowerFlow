@@ -522,3 +522,30 @@ Was jetzt dort steht:
    `anweiser_ausserhalb_der_vier` mit, und auch das bricht ab.
 4. `scripts/validate.py` prüft beide Zähler in den fertigen Dateien nach.
 
+
+---
+
+## Nachtrag 02.09.2026: die Schieflage kippt
+
+Die Aussage „das Hochfahren ist in jedem Jahr größer als das Herunterfahren"
+gilt nicht mehr. Über die sechs Jahre gemessen:
+
+| Jahr | hoch | runter | Schieflage |
+|---|---|---|---|
+| 2021 | 9,106 TWh | 6,313 TWh | +18,1 % |
+| 2022 | 11,503 | 10,554 | +4,3 % |
+| 2023 | 13,980 | 10,829 | +12,7 % |
+| 2024 | 12,179 | 10,097 | +9,4 % |
+| 2025 | 11,267 | 9,057 | +10,9 % |
+| **2026** (bis 31.08.) | **6,392** | **6,820** | **−3,2 %** |
+
+Der Seitentext nannte die Spanne zweimal falsch — erst mit 3,6 bis 25,4 % aus
+den durch das Dezimalkomma lückenhaften Zahlen, danach mit „in jedem Jahr",
+was für 2026 nicht mehr stimmt. Beides fiel niemandem auf, weil die Zahl in
+Prosa stand und niemand nachrechnete.
+
+`scripts/validate.py` rechnet die Spanne jetzt bei jedem Lauf aus den
+Jahresdateien nach und vergleicht sie mit dem Wortlaut der Seite; ein
+Negativtest verstellt sie absichtlich und muss anschlagen. Der Satz „in jedem
+Jahr größer" darf nur dann dort stehen, wenn kein Jahr ein negatives Vorzeichen
+hat.

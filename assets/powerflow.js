@@ -3472,9 +3472,16 @@
       "Ein Wert der Quelle ist falsch: der Schweiz-Import am 09.02.2015 steht mit "
         + "25.009.206 MWh in den Rohdaten — 25 TWh an einem Tag. Er wird als fehlend "
         + "geführt, nicht korrigiert; der Originalwert bleibt in den Dateien sichtbar.",
-      "Beim Redispatch ist das Hochfahren in jedem Jahr größer als das "
-        + "Herunterfahren, um 3,6 bis 25,4 %. Kein Fehler: bei grenzüberschreitenden "
-        + "Maßnahmen wird nur der deutsche Teil veröffentlicht.",
+      /* Die Spanne wird von validate.py gegen die Jahresdateien nachgerechnet.
+         Sie stand hier zweimal falsch: erst mit 3,6 bis 25,4 % aus den durch
+         das Dezimalkomma lueckenhaften Zahlen, dann mit 3,2 bis 18,1 % und dem
+         Satz "in jedem Jahr" -- der 2026 nicht mehr galt. Wer sie aendert,
+         rechnet nach; wer sie nicht aendert, wird vom Tuersteher erinnert. */
+      "Beim Redispatch ist das Hochfahren meist größer als das Herunterfahren — "
+        + "über die sechs Jahre zwischen −3,2 und +18,1 % der gesamten Arbeit. "
+        + "Im laufenden Jahr 2026 ist es bislang umgekehrt. Kein Fehler: bei "
+        + "grenzüberschreitenden Maßnahmen wird nur der deutsche Teil "
+        + "veröffentlicht.",
       "Eine Redispatch-Maßnahme zählt zum Tag ihres Beginns. Im August 2026 lagen "
         + "22,2 % der Arbeit in Maßnahmen über Mitternacht. Das ist eine Annahme, "
         + "keine Messung.",

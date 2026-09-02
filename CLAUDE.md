@@ -480,10 +480,14 @@ Fuenf Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
 - **Arbeit zaehlt zum Tag des Beginns, Stunden zum Tag, auf dem sie liegen.**
   Das sind zwei verschiedene Fragen; sie werden getrennt beantwortet und nicht
   vermischt.
-- **Hoch ist stets groesser als runter**, nach der Berichtigung 3,2 bis 18,1
-  Prozent ueber die Jahre (vorher mit den lueckenhaften Zahlen 3,6 bis 25,4).
-  Kein Fehler: bei grenzueberschreitenden Massnahmen wird laut Quelle nur der
-  deutsche Teil veroeffentlicht.
+- **Hoch ist MEIST groesser als runter** -- ueber die sechs Jahre zwischen
+  -3,2 % (2026, bis 31.08.) und +18,1 % (2021). Kein Fehler: bei
+  grenzueberschreitenden Massnahmen wird laut Quelle nur der deutsche Teil
+  veroeffentlicht. Der Satz stand zweimal falsch auf der Seite: erst mit
+  3,6 bis 25,4 % aus den lueckenhaften Zahlen, dann mit "in jedem Jahr
+  groesser", was 2026 nicht mehr gilt. **Eine Zahl in Prosa veraltet still.**
+  `validate.py` rechnet die Spanne jetzt aus den Jahresdateien nach und
+  vergleicht sie mit dem Seitentext; ein Negativtest verstellt sie absichtlich.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
