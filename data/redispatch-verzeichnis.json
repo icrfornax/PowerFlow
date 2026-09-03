@@ -1,5 +1,5 @@
 {
- "abgerufen": "2026-08-31T21:01:51+02:00",
+ "abgerufen": "2026-09-03T18:38:51+02:00",
  "hinweis": "Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null.",
  "jahre": [
   {
@@ -41,8 +41,8 @@
    "jahr": 2026,
    "datei": "data/redispatch/2026.json",
    "erster_tag": "2026-01-01",
-   "letzter_tag": "2026-08-31",
-   "tage_mit_massnahmen": 243
+   "letzter_tag": "2026-09-03",
+   "tage_mit_massnahmen": 246
   }
  ]
 }

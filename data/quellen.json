@@ -77,7 +77,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3126745,
+   "bytes": 3126859,
    "zeitraum": "2015-01-01 bis 2026-09-02",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
@@ -101,7 +101,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 141,
-   "bytes": 14041287,
+   "bytes": 14042891,
    "zeitraum": "2015-01-01 bis 2026-09-03",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
@@ -185,8 +185,8 @@
    "quelle": "netztransparenz",
    "beleg": "docs/beleg-redispatch.md",
    "dateien": 6,
-   "bytes": 3655253,
-   "zeitraum": "2021-01-01 bis 2026-08-31",
+   "bytes": 3661653,
+   "zeitraum": "2021-01-01 bis 2026-09-03",
    "muster": "data/redispatch/*.json",
    "abzug": "data/redispatch-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
@@ -197,7 +197,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-tagesreihen.md",
    "dateien": 1,
-   "bytes": 2468,
+   "bytes": 1991,
    "zeitraum": null,
    "muster": "data/luecken.json",
    "abzug": "data/luecken.json",
@@ -253,5 +253,5 @@
   }
  ],
  "dateien_gesamt": 172,
- "bytes_gesamt": 30144689
+ "bytes_gesamt": 30152330
 }
