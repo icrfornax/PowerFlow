@@ -126,6 +126,7 @@ die Regelzonenbilanz.
   | Marktstammdatenregister | XML, **Punkt** | `fetch-mastr.py::zahl` |
   | OpenStreetMap | Text, `voltage` mit `;` | `fetch-netz.py::spannung` |
   | Natural Earth | GeoJSON-Zahlen | keine Umwandlung |
+  | ENTSO-E Transparency Platform | XML, **Punkt** | `fetch-engpasskosten.py` |
 
 - **Ein `except: return 0` oder `continue` beim Zahlenlesen ist verboten, wenn
   niemand mitzaehlt.** Genau so verschwand die Redispatch-Arbeit. Jede
@@ -502,6 +503,40 @@ Fuenf Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
   groesser", was 2026 nicht mehr gilt. **Eine Zahl in Prosa veraltet still.**
   `validate.py` rechnet die Spanne jetzt aus den Jahresdateien nach und
   vergleicht sie mit dem Seitentext; ein Negativtest verstellt sie absichtlich.
+
+## Kosten des Engpassmanagements
+
+Eingebunden am 03.09.2026. Quelle: ENTSO-E Transparency Platform, Datenpunkt
+13.1.C, `documentType=A92`. Beleg: `docs/beleg-engpasskosten.md`, Abruf durch
+`scripts/fetch-engpasskosten.py` ueber `scripts/entsoe.py`. Eigener Workflow
+`daten-entsoe.yml`, MONATLICH -- die Quelle meldet monatlich, ein taeglicher
+Lauf holte 91-mal dieselbe Zahl.
+
+**netztransparenz.de hat dafuer keinen Endpunkt.** Die 57 dokumentierten Pfade
+der WebAPI v1.14 sind durchgesehen; Kosten sind nicht dabei. Deshalb ENTSO-E --
+und das ist lizenzrechtlich in Ordnung, 13.1.C steht auf der Freigabeliste.
+
+- **Die Domaene ist die REGELZONE, nicht die Gebotszone.** Mit DE-LU antwortet
+  die Plattform "No matching data found".
+- **B04 IST DIE SUMME, kein dritter Posten.** A46 (Redispatch) + B03
+  (Countertrade) + Sonstiges = B04. Wer alle drei Reihen addiert, verdoppelt --
+  mein erster Lauf kam so auf 3,64 statt 1,82 Mrd. EUR fuer 2025. `validate.py`
+  prueft die Identitaet auf zwei Stellen.
+- **Aufloesung P1M.** Es gibt KEINE Kosten je Massnahme und keine Tageswerte.
+  Die Seite bildet eine Summe nur ueber VOLLE Monate im Zeitraum und sagt es,
+  wenn keiner darin liegt. Die Balken zeigen trotzdem immer zwoelf Monate --
+  ein einzelner Balken ueber die volle Breite sagt nichts.
+- **Ein Wert der Quelle ist falsch etikettiert:** 50Hertz, Dezember 2021,
+  Waehrung "BAM" statt EUR. Behandelt wie der Schweiz-Import vom 09.02.2015 --
+  als fehlend gefuehrt, NICHT umgerechnet, Originalwert in `auffaellig`.
+  Gefunden von der Pruefung `currency_Unit.name == "EUR"`, die beim ersten Lauf
+  sofort abgebrochen hat.
+- **Der Posten "Sonstiges" ist ab 2026 material** (142,8 Mio. EUR). Er wird als
+  eigener Stapelteil ausgewiesen, nicht in eine der anderen Zahlen geschoben.
+- Zwei abgeleitete Zahlen, beide als Rechnung benannt: **Preis je MWh**
+  (Kosten von ENTSO-E, Arbeit von netztransparenz -- zwei Veroeffentlichungen)
+  und **ct je kWh Netzlast**. Letztere ist ausdruecklich NICHT der Betrag auf
+  einer Stromrechnung.
 
 ## Nachholen unvollstaendiger Tage
 

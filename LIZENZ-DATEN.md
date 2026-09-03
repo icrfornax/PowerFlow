@@ -124,3 +124,27 @@ Messwertliste: Summen je Tag, je ÜNB und je Primärenergieart. Genannt werden
 beide Wege. `scripts/fetch-redispatch.py` schreibt weiterhin nur mit
 `--lizenz-geklaert`; der Riegel dokumentiert, worauf sich die Entscheidung
 stützt.
+
+
+---
+
+## ENTSO-E Transparency Platform — CC BY 4.0
+
+**Seit 03.09.2026 eine eigene Datenquelle dieses Projekts**, nicht mehr nur ein
+Glied in der Lizenzkette des Redispatch: `data/engpasskosten.json` (Kosten des
+Engpassmanagements, Datenpunkt 13.1.C) kommt von dort.
+
+- **Lizenz:** CC BY 4.0. 13.1.C ist Datenpunkt 21 der *List of Data available
+  for free re-use*, Fassung 18.10.2023 — dieselbe Liste, über die auch
+  Redispatch (Datenpunkt 19, 13.1.A) frei ist.
+- **Namensnennung wörtlich:** `ENTSO-E Transparency Platform`
+- **Ausnahmen der Liste** betreffen Moldau, die Türkei, einzelne Datenpunkte
+  der Ukraine sowie BritNed und Interconnexion France-Angleterre — Deutschland
+  nicht.
+- **Erhoben** haben die Zahlen die vier deutschen Übertragungsnetzbetreiber;
+  veröffentlicht werden sie über die Plattform des Verbands.
+
+Nicht jeder Datenpunkt der Plattform ist frei. Netzlast, Erzeugung und Preise
+stehen **nicht** auf der Liste — die holt dieses Projekt deshalb von SMARD, wo
+sie als eigene Veröffentlichung der Bundesnetzagentur unter CC BY 4.0 stehen.
+Die Übersicht dazu: `docs/beleg-entsoe-datenpunkte.md`.

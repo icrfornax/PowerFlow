@@ -52,10 +52,18 @@
   "netztransparenz": {
    "name": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
    "url": "https://www.netztransparenz.de/",
-   "lizenz": "siehe LIZENZ-DATEN.md -- Kette ueber ENTSO-E, eine Stelle ungeprueft",
+   "lizenz": "siehe LIZENZ-DATEN.md -- Kette ueber ENTSO-E, seit 03.09.2026 geschlossen",
    "lizenz_url": "https://github.com/icrfornax/PowerFlow/blob/main/LIZENZ-DATEN.md",
    "namensnennung": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
    "erhebung": "die vier Uebertragungsnetzbetreiber"
+  },
+  "entsoe": {
+   "name": "ENTSO-E Transparency Platform",
+   "url": "https://transparency.entsoe.eu/",
+   "lizenz": "CC BY 4.0",
+   "lizenz_url": "https://creativecommons.org/licenses/by/4.0/deed.de",
+   "namensnennung": "ENTSO-E Transparency Platform",
+   "erhebung": "die vier Uebertragungsnetzbetreiber, veroeffentlicht ueber die Plattform des Verbands europaeischer Uebertragungsnetzbetreiber"
   }
  },
  "datensaetze": [
@@ -192,6 +200,18 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
   },
   {
+   "titel": "Kosten des Engpassmanagements",
+   "inhalt": "Je MONAT und Regelzone, in Euro: Gesamtkosten sowie die Posten Redispatch und Countertrade. Eine feinere Aufloesung gibt es nicht -- Kosten je Massnahme veroeffentlicht die Quelle nicht.",
+   "quelle": "entsoe",
+   "beleg": "docs/beleg-engpasskosten.md",
+   "dateien": 1,
+   "bytes": 10960,
+   "zeitraum": null,
+   "muster": "data/engpasskosten.json",
+   "abzug": "data/engpasskosten.json",
+   "alle": null
+  },
+  {
    "titel": "Luecken der Quelle",
    "inhalt": "Welche Kalendertage und Stunden SMARD bis heute nicht geliefert hat, und seit wann sie fehlen. SELBST ERHOBEN aus den eigenen Dateien; erzeugt und nachgeholt von scripts/nachholen.py, geprueft von scripts/validate.py.",
    "quelle": "smard",
@@ -245,13 +265,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 10326,
+   "bytes": 11209,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 172,
- "bytes_gesamt": 30152330
+ "dateien_gesamt": 173,
+ "bytes_gesamt": 30164173
 }

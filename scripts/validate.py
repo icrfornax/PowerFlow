@@ -307,7 +307,8 @@ def tagesbefunde(jahr: int, d: dict) -> list[str]:
 
 def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  kraftwerke: dict, grundkarte: dict, netz: dict,
-                 css: str, verlauf: dict, workflows: dict) -> Befund:
+                 css: str, verlauf: dict, workflows: dict,
+                 engpasskosten: dict) -> Befund:
     b = Befund()
 
     for name in PFLICHTDATEIEN:
@@ -784,6 +785,52 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         b.pruefe(alt_satz not in js,
                  f"die zurueckgenommene Erklaerung steht nicht mehr da: {alt_satz!r}")
 
+    # --- Kosten des Engpassmanagements ---
+    # Die eine Falle dieser Quelle: B04 ist die SUMME, nicht ein dritter Posten.
+    # Wer alle drei Reihen addiert, verdoppelt -- beim ersten Lauf kamen so
+    # 3,64 statt 1,82 Mrd. EUR fuer 2025 heraus. Geprueft wird deshalb, dass
+    # "gesamt" nie kleiner ist als die Summe seiner beiden Posten und dass der
+    # Rest klein bleibt.
+    ek = engpasskosten
+    b.pruefe(ek["einheit"] == "EUR" and ek["aufloesung"] == "P1M",
+             f"Engpasskosten: Einheit {ek['einheit']}, Aufloesung {ek['aufloesung']}")
+    b.pruefe(len(ek["monate"]) >= 60,
+             f"Engpasskosten: {len(ek['monate'])} Monatswerte")
+    # Die Identitaet muss auf den Cent gelten: redispatch + countertrade +
+    # sonstiges = gesamt. Sie ist der Schutz gegen die Doppelzaehlung -- wer
+    # 'gesamt' faelschlich als dritten Posten addiert, verletzt sie sofort.
+    schief_ek = []
+    for i, m in enumerate(ek["monate"]):
+        soll = ek["gesamt"][i]
+        ist = ek["redispatch"][i] + ek["countertrade"][i] + ek["sonstiges"][i]
+        if abs(soll - ist) > 0.02:
+            schief_ek.append(f"{m}: {ist:,.2f} statt {soll:,.2f}")
+    b.pruefe(not schief_ek,
+             "Engpasskosten: redispatch + countertrade + sonstiges = gesamt"
+             + (f" -- {schief_ek[:3]}" if schief_ek else ""))
+    # Und die Monate, in denen "Sonstiges" kein Rundungsrest ist, muessen als
+    # solche verzeichnet sein. Sonst haelt sie beim Lesen jemand fuer einen.
+    gross = [m for i, m in enumerate(ek["monate"])
+             if ek["gesamt"][i] and abs(ek["sonstiges"][i]) > abs(ek["gesamt"][i]) * 0.05]
+    b.pruefe(gross == ek["monate_mit_sonstigem"],
+             f"Engpasskosten: {len(gross)} Monate mit nennenswertem Posten "
+             f"'Sonstiges' sind verzeichnet")
+    b.pruefe(ek["unlesbare_betraege"] == 0,
+             f"Engpasskosten: kein Betrag unlesbar ({ek['unlesbare_betraege']})")
+    # Jeder auffaellige Wert muss seinen Originalbetrag mitfuehren -- wie beim
+    # falschen Schweiz-Import wird nichts korrigiert, nur ausgewiesen.
+    b.pruefe(all(a.get("betraege") and a.get("waehrung") and a.get("warum")
+                 for a in ek.get("auffaellig", [])),
+             f"Engpasskosten: jeder auffaellige Wert nennt Original und Grund "
+             f"({len(ek.get('auffaellig', []))} Stueck)")
+    b.pruefe("B04" in (ek.get("_hinweis") or "") and "verdoppelt" in (ek.get("_hinweis") or ""),
+             "die Datei warnt selbst vor der Doppelzaehlung")
+    b.pruefe("engpasskosten.json" in js and "Was es kostet" in js,
+             "die Seite zeigt die Kosten")
+    b.pruefe("erfunden" in js or "Massnahme wäre erfunden" in js
+             or "Preis je Maßnahme" in js,
+             "und sagt, dass es keine Kosten je Massnahme gibt")
+
     # --- Luecken der Quelle ---
     # Der Bericht aus scripts/nachholen.py wird gegen die Dateien nachgerechnet.
     # Ein Bericht, den niemand prueft, ist kein Bericht -- dieselbe Regel wie
@@ -959,7 +1006,15 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
 # Reihenfolge der Eingaben von eingaben(). Die Negativtests arbeiten ueber
 # diese Namen statt ueber Stellungsargumente.
 FELDER = ("jahre", "index_html", "js", "kraftwerke", "grundkarte", "netz",
-          "css", "verlauf", "workflows")
+          "css", "verlauf", "workflows", "engpasskosten")
+
+
+def _kosten_doppelt(doc: dict) -> dict:
+    """Verfaelschung: 'gesamt' als dritten Posten mitaddiert."""
+    import copy
+    k = copy.deepcopy(doc)
+    k["gesamt"] = [g * 2 for g in k["gesamt"]]
+    return k
 
 
 def verlaufdateien() -> dict[str, dict]:
@@ -976,7 +1031,7 @@ def eingaben() -> tuple:
             json.loads(lade("data/kraftwerke.json")),
             json.loads(lade("data/grundkarte.json")),
             netzdateien(), lade("assets/powerflow.css"), verlaufdateien(),
-            workflowdateien())
+            workflowdateien(), json.loads(lade("data/engpasskosten.json")))
 
 
 def negativtests() -> int:
@@ -1106,6 +1161,10 @@ def negativtests() -> int:
         # ungueltig und faellt stillschweigend auf die geerbte Schrift zurueck.
         # Eine Zahl in der Prosa, die nicht mehr zu den Daten passt. Genau so
         # ist die Schieflage zweimal veraltet, ohne dass es auffiel.
+        # Die Doppelzaehlung der Engpasskosten: wer die Gesamtsumme B04 zu den
+        # Posten addiert, verdoppelt. Genau das war mein erster Lauf.
+        ("Engpasskosten doppelt gezaehlt",
+         lambda: {"engpasskosten": _kosten_doppelt(basis["engpasskosten"])}),
         ("Spanne der Redispatch-Schieflage im Text verstellt",
          lambda: {"js": basis["js"].replace("und +18,1 %", "und +25,4 %")}),
         ("Farb-Token als Schriftfamilie eingesetzt",

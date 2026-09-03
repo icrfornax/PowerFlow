@@ -814,6 +814,8 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-rd-zahl[data-akzent="teal"] .pf-wert { color: var(--teal); }
 .pf-rd-zahl[data-akzent="orange"] .pf-wert { color: var(--orange); }
 .pf-rd-zahl[data-akzent="violett"] .pf-wert { color: var(--violett); }
+/* Fuer Posten ohne eigene Bedeutung in der Traegerfamilie -- "Sonstiges". */
+.pf-rd-zahl[data-akzent="still"] .pf-wert { color: var(--schrift-leise); }
 
 /* Ein Band ganz oben, wenn Tage im Zeitraum keine Daten haben. Es steht VOR
    den Kacheln: eine Summe ueber vier von sieben Tagen ohne Warnung daneben ist
@@ -944,6 +946,37 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
   font-size: 0.7rem; color: var(--schrift-still); margin: 4px 0 0 34px;
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Redispatch: Kosten des Engpassmanagements ----------
+   Monatsbalken, gestapelt aus zwei Posten. Dieselben zwei Farben wie oben bei
+   den Gruenden: Orange fuer den Netzengpass, Teal fuer den Countertrade an der
+   Grenze. Farbe sagt WARUM, hier wie dort. */
+.pf-rd-kosten { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--linie); }
+.pf-rd-kosten > h4 {
+  margin: 0 0 10px; font-size: 0.78rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still); font-weight: 600;
+}
+.pf-kosten-gitter {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px;
+  align-items: end; height: 110px; border-bottom: 1px solid var(--linie);
+}
+.pf-kosten-monat { height: 100%; display: flex; align-items: flex-end; }
+.pf-kosten-stapel {
+  width: 100%; min-height: 2px; display: flex; flex-direction: column-reverse;
+  border-radius: 3px 3px 0 0; overflow: hidden;
+}
+.pf-kosten-stapel i { display: block; width: 100%; }
+.pf-kosten-monat:hover .pf-kosten-stapel { outline: 1px solid var(--schrift); }
+/* Monate ausserhalb des Zeitraums: sichtbar, aber zurueckgenommen. Sie sind
+   Zusammenhang, keine Aussage ueber den gewaehlten Zeitraum. */
+.pf-kosten-monat[data-ausserhalb] .pf-kosten-stapel { opacity: 0.32; }
+.pf-kosten-achse {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px;
+  font-size: 0.68rem; color: var(--schrift-still); margin-top: 4px;
+  font-variant-numeric: tabular-nums; text-align: center;
+}
+.pf-rd-kosten .pf-rechnung { margin-top: 14px; }
+.pf-rd-kosten .pf-rd-gruppe { margin-top: 16px; }
 
 /* ---------- Redispatch: Grund, Anforderer, Dauer ---------- */
 

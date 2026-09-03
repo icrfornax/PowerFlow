@@ -1,0 +1,93 @@
+name: Daten ENTSO-E
+
+# Kosten des Engpassmanagements, Datenpunkt 13.1.C der Verordnung 543/2013.
+# EIGENER Workflow, weil es eine eigene Quelle ist: faellt die ENTSO-E
+# Transparency Platform aus -- sie war Ende August 2026 rund 49 Stunden in
+# Wartung -- soll der taegliche SMARD-Abruf davon nichts merken.
+#
+# MONATLICH, weil die Quelle monatlich meldet (resolution P1M). Ein taeglicher
+# Lauf holte 91-mal dieselbe Zahl.
+#
+# Der Lauf braucht das Secret ENTSOE_TOKEN. Fehlt es, bricht der Schritt
+# sichtbar ab -- anders als beim Redispatch, wo ein fehlendes Secret den
+# uebrigen Abruf nicht aufhalten soll. Hier gibt es nichts anderes zu holen.
+
+on:
+  schedule:
+    # Am 6. jedes Monats, 05:47 UTC. Der Vormonat ist dann gemeldet.
+    - cron: "47 5 6 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: daten-entsoe
+  cancel-in-progress: false
+
+jobs:
+  abrufen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Kosten des Engpassmanagements holen
+        env:
+          ENTSOE_TOKEN: ${{ secrets.ENTSOE_TOKEN }}
+        run: python scripts/fetch-engpasskosten.py
+
+      - name: Quellenverzeichnis neu bauen
+        # Muss VOR dem Tuersteher laufen: er prueft, dass das Verzeichnis alle
+        # Dateien zaehlt. Und quellen.py bricht selbst ab, wenn eine Datei
+        # unter data/ ohne Quellenzuordnung auftaucht.
+        run: python scripts/quellen.py
+
+      - name: Tuersteher
+        run: |
+          python scripts/validate.py
+          python scripts/validate.py --negativtests
+
+      - name: Aenderungen feststellen
+        id: diff
+        run: |
+          if git diff --quiet -- data/; then
+            echo "geaendert=nein" >> "$GITHUB_OUTPUT"
+            echo "Keine Aenderung an data/ -- nichts zu tun."
+          else
+            echo "geaendert=ja" >> "$GITHUB_OUTPUT"
+            git diff --stat -- data/
+          fi
+
+      - name: Committen und pushen
+        if: steps.diff.outputs.geaendert == 'ja'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Daten: Engpasskosten $(date -u +%Y-%m-%d)"
+          for versuch in 1 2 3; do
+            if git push; then
+              echo "Push im Versuch $versuch gelungen."
+              exit 0
+            fi
+            echo "Push fehlgeschlagen, Versuch $versuch. Hole nach und rebase."
+            git fetch origin main || exit 1
+            git rebase origin/main || {
+              echo "Echter Konflikt beim Rebase. Abbruch ohne force."
+              git rebase --abort || true
+              exit 1
+            }
+          done
+          echo "Push auch nach drei Versuchen nicht moeglich."
+          exit 1
+
+      - name: Pages-Bau anstossen
+        if: steps.diff.outputs.geaendert == 'ja'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds"

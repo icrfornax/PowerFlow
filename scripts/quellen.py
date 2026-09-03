@@ -77,10 +77,20 @@ QUELLEN = {
     "netztransparenz": {
         "name": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
         "url": "https://www.netztransparenz.de/",
-        "lizenz": "siehe LIZENZ-DATEN.md -- Kette ueber ENTSO-E, eine Stelle ungeprueft",
+        "lizenz": "siehe LIZENZ-DATEN.md -- Kette ueber ENTSO-E, seit 03.09.2026 geschlossen",
         "lizenz_url": "https://github.com/icrfornax/PowerFlow/blob/main/LIZENZ-DATEN.md",
         "namensnennung": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
         "erhebung": "die vier Uebertragungsnetzbetreiber",
+    },
+    "entsoe": {
+        "name": "ENTSO-E Transparency Platform",
+        "url": "https://transparency.entsoe.eu/",
+        "lizenz": "CC BY 4.0",
+        "lizenz_url": "https://creativecommons.org/licenses/by/4.0/deed.de",
+        "namensnennung": "ENTSO-E Transparency Platform",
+        "erhebung": ("die vier Uebertragungsnetzbetreiber, veroeffentlicht ueber "
+                     "die Plattform des Verbands europaeischer "
+                     "Uebertragungsnetzbetreiber"),
     },
 }
 
@@ -120,6 +130,11 @@ GRUPPEN = [
      "Tagesaggregate: Arbeit nach Richtung, anweisendem Netzbetreiber und "
      "Primaerenergieart, in MWh.", "docs/beleg-redispatch.md",
      "redispatch-verzeichnis.json"),
+    ("engpasskosten.json", "entsoe", "Kosten des Engpassmanagements",
+     "Je MONAT und Regelzone, in Euro: Gesamtkosten sowie die Posten Redispatch "
+     "und Countertrade. Eine feinere Aufloesung gibt es nicht -- Kosten je "
+     "Massnahme veroeffentlicht die Quelle nicht.",
+     "docs/beleg-engpasskosten.md", None),
     ("luecken.json", "smard", "Luecken der Quelle",
      "Welche Kalendertage und Stunden SMARD bis heute nicht geliefert hat, und "
      "seit wann sie fehlen. SELBST ERHOBEN aus den eigenen Dateien; erzeugt und "

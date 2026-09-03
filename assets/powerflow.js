@@ -66,6 +66,23 @@
   function nachIso(d) {
     return d.getFullYear() + "-" + zwei(d.getMonth() + 1) + "-" + zwei(d.getDate());
   }
+  /* Geldbetraege. Millionen und Milliarden werden abgekuerzt -- eine Zahl mit
+     neun Stellen liest niemand. Die volle Zahl steht im Abzug und in der
+     Datei. */
+  function eur(betrag) {
+    var a = Math.abs(betrag);
+    if (a >= 1e9) { return nf2.format(betrag / 1e9) + " Mrd. €"; }
+    if (a >= 1e6) { return nf1.format(betrag / 1e6) + " Mio. €"; }
+    if (a >= 1e3) { return nf0.format(betrag / 1e3) + " Tsd. €"; }
+    return nf0.format(betrag) + " €";
+  }
+
+  // "2026-07" -> "Juli 2026". Lokal gebildet wie jedes Datum auf dieser Seite.
+  function monatLang(marke) {
+    var d = new Date(Number(marke.slice(0, 4)), Number(marke.slice(5, 7)) - 1, 1);
+    return d.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  }
+
   // Kurzform fuer Aufzaehlungen: 30.08.2026. Wie ueberall lokal gebildet, nie
   // ueber toISOString().
   function datumKurz(iso) {
@@ -2750,6 +2767,268 @@
       huelle.appendChild(gkasten);
     }
 
+    /* WAS ES KOSTET -- ENTSO-E 13.1.C.
+
+       Die Quelle liefert MONATSWERTE je Regelzone, sonst nichts. Es gibt keine
+       Kosten je Massnahme und keine Tageswerte; ein Preis je Massnahme waere
+       erfunden. Der gewaehlte Zeitraum ist aber taggenau. Daraus folgt die
+       einzige ehrliche Regel:
+
+         * Deckt der Zeitraum mindestens einen VOLLEN Monat ab, werden diese
+           Monate summiert -- und es steht dabei, welche.
+         * Sonst gibt es keine Summe. Dann stehen die zwoelf zuletzt gemeldeten
+           Monate als Zusammenhang da, ausdruecklich als solcher benannt.
+
+       Zwei Farben, dieselben wie oben bei den Gruenden: Orange fuer den
+       Netzengpass, Teal fuer den Countertrade an der Grenze. Farbe sagt WARUM,
+       hier wie dort. */
+    var K = Z.kosten;
+    if (K && K.monate && K.monate.length) {
+      var kkasten = el("div", { "class": "pf-rd-kosten" });
+      kkasten.appendChild(el("h4", { text: "Was es kostet" }));
+
+      function monatVoll(m) {
+        // Erster und letzter Tag des Monats muessen im Zeitraum liegen.
+        var jahr = Number(m.slice(0, 4)), mon = Number(m.slice(5, 7));
+        var ersterTag = m + "-01";
+        var letzterTag = nachIso(new Date(jahr, mon, 0));
+        return ersterTag >= von && letzterTag <= bis;
+      }
+      var imZeitraum = [], voll = true;
+      K.monate.forEach(function (m, i) { if (monatVoll(m)) { imZeitraum.push(i); } });
+      if (!imZeitraum.length) { voll = false; }
+
+      /* Die Balken zeigen IMMER mindestens zwoelf Monate. Ein einzelner Monat
+         allein waere ein Balken ueber die volle Breite und sagte nichts; erst
+         der Verlauf daneben macht ihn lesbar. Die Monate des Zeitraums stehen
+         voll da, die uebrigen gedaempft -- so bleibt sichtbar, worauf sich die
+         Summe oben bezieht. */
+      var letzte = imZeitraum.length ? imZeitraum[imZeitraum.length - 1]
+                                     : K.monate.length - 1;
+      var erste = Math.max(0, Math.min(letzte - 11,
+                                       imZeitraum.length ? imZeitraum[0] : letzte - 11));
+      var stellen = [];
+      for (var si2 = erste; si2 <= letzte; si2++) { stellen.push(si2); }
+      var drin = {};
+      imZeitraum.forEach(function (i) { drin[i] = true; });
+      // Summiert wird ueber die Monate des ZEITRAUMS, nicht ueber die gezeigten.
+      var summenStellen = imZeitraum.length ? imZeitraum : stellen;
+
+      var summe = 0, sRd = 0, sCt = 0, sSo = 0;
+      summenStellen.forEach(function (i) {
+        summe += K.gesamt[i]; sRd += K.redispatch[i]; sCt += K.countertrade[i];
+        sSo += (K.sonstiges || [])[i] || 0;
+      });
+
+      /* Die Kopfzahlen. Sie stehen nur bei vollen Monaten als Summe des
+         Zeitraums da -- sonst waere es eine Summe ueber etwas anderes, als die
+         Seite oben zeigt. */
+      if (voll) {
+        var kzeile = el("div", { "class": "pf-rd-kopf" });
+        var kopfzahlen = [["Kosten gesamt", eur(summe), "violett"],
+                          ["davon Redispatch", eur(sRd), "orange"],
+                          ["davon Countertrade", eur(sCt), "teal"]];
+        /* "Sonstiges" ist meist null und steht dann auch nicht da. Ist es
+           material -- im Juni 2026 waren es 31,4 von 122,6 Mio. -- gehoert es
+           in die Kopfzeile und nicht in eine Fussnote. */
+        if (summe && Math.abs(sSo) > Math.abs(summe) * 0.02) {
+          kopfzahlen.push(["davon Sonstiges", eur(sSo), "still"]);
+        }
+        kopfzahlen.forEach(function (k) {
+          var b = el("div", { "class": "pf-rd-zahl", "data-akzent": k[2] });
+          b.appendChild(el("span", { "class": "pf-titel", text: k[0] }));
+          b.appendChild(el("p", { "class": "pf-wert", text: k[1] }));
+          kzeile.appendChild(b);
+        });
+        kkasten.appendChild(kzeile);
+        kkasten.appendChild(el("p", { "class": "pf-bezug",
+          text: "Summe über " + summenStellen.length + " volle "
+            + (summenStellen.length === 1 ? "Monat" : "Monate") + " im Zeitraum ("
+            + monatLang(K.monate[summenStellen[0]]) + " bis "
+            + monatLang(K.monate[summenStellen[summenStellen.length - 1]]) + "). Die Quelle "
+            + "meldet monatlich; angebrochene Monate zählen nicht mit." }));
+      } else {
+        kkasten.appendChild(el("p", { "class": "pf-karte-warnung",
+          text: "Für diesen Zeitraum gibt es keine Kostensumme: die Quelle meldet "
+            + "die Kosten monatlich, und der gewählte Zeitraum umfasst keinen "
+            + "vollen Monat. Unten stehen die zwölf zuletzt gemeldeten Monate als "
+            + "Zusammenhang — sie gehören NICHT zum gewählten Zeitraum." }));
+      }
+
+      /* Die Monatsbalken. Gestapelt aus den beiden Posten; die Hoehe ist die
+         Gesamtsumme der Quelle (businessType B04), nicht unsere Addition --
+         zwischen beiden liegt der Posten "Sonstiges". */
+      var maxK = 0;
+      stellen.forEach(function (i) {
+        if (Math.abs(K.gesamt[i]) > maxK) { maxK = Math.abs(K.gesamt[i]); }
+      });
+      if (maxK > 0) {
+        kkasten.appendChild(el("p", { "class": "pf-saeule-massstab",
+          text: "Balken bis " + eur(maxK) + " im Monat"
+            + (voll && stellen.length > summenStellen.length
+                ? " — die Monate des Zeitraums voll, die übrigen gedämpft als Zusammenhang"
+                : "") }));
+        var kgitter = el("div", { "class": "pf-kosten-gitter" });
+        stellen.forEach(function (i) {
+          var sp = el("div", { "class": "pf-kosten-monat" });
+          if (!drin[i] && voll) { sp.setAttribute("data-ausserhalb", "ja"); }
+          var stapelK = el("div", { "class": "pf-kosten-stapel",
+            style: "height:" + (Math.abs(K.gesamt[i]) / maxK * 100).toFixed(1) + "%;",
+            title: monatLang(K.monate[i]) + ": " + eur(K.gesamt[i])
+              + " gesamt, davon " + eur(K.redispatch[i]) + " Redispatch, "
+              + eur(K.countertrade[i]) + " Countertrade und "
+              + eur((K.sonstiges || [])[i] || 0) + " Sonstiges" });
+          [["redispatch", "--orange"], ["countertrade", "--teal"],
+           ["sonstiges", "--tr-sonst"]].forEach(function (p) {
+            var anteil = K.gesamt[i] ? K[p[0]][i] / K.gesamt[i] * 100 : 0;
+            if (anteil <= 0) { return; }
+            stapelK.appendChild(el("i", { style: "height:" + anteil.toFixed(2)
+              + "%;background:var(" + p[1] + ");" }));
+          });
+          sp.appendChild(stapelK);
+          kgitter.appendChild(sp);
+        });
+        kkasten.appendChild(kgitter);
+        var kachse = el("div", { "class": "pf-kosten-achse" });
+        stellen.forEach(function (i, k) {
+          var m = K.monate[i];
+          kachse.appendChild(el("span", {
+            text: (stellen.length <= 14 || k % 3 === 0) ? m.slice(5) + "/" + m.slice(2, 4) : "" }));
+        });
+        kkasten.appendChild(kachse);
+      }
+
+      /* DIE RECHNUNG. Sie ist der eigentliche Gewinn: aus "20,3 TWh" wird eine
+         Groesse, die man beurteilen kann. Beide Zahlen sind gemessen, das
+         Verhaeltnis ist gerechnet -- und die beiden Zahlen stammen aus ZWEI
+         Veroeffentlichungen (Kosten von ENTSO-E, Arbeit von netztransparenz).
+         Das steht dabei. */
+      var arbeitMonate = 0, mitArbeit = 0;
+      summenStellen.forEach(function (i) {
+        var m = K.monate[i];
+        var d = Z.redispatch[Number(m.slice(0, 4))];
+        if (!d) { return; }
+        var gefundenM = false, s = 0;
+        Object.keys(d.tage).forEach(function (tag) {
+          if (tag.slice(0, 7) === m) { s += d.tage[tag].gesamt_mwh; gefundenM = true; }
+        });
+        if (gefundenM) { arbeitMonate += s; mitArbeit++; }
+      });
+      /* Eigene Klasse: die Bilanzrechnung im Flussbild und diese hier sehen
+         gleich aus, sind aber verschiedene Dinge. Ohne die Unterscheidung
+         sammelt eine Textsuche beide ein -- genau das ist der Pruefung
+         "die angezeigte Bilanz geht auf" passiert. */
+      var rechnung = el("div", { "class": "pf-rechnung pf-rechnung-kosten" });
+      rechnung.appendChild(el("p", { "class": "pf-gruppentitel",
+        text: "Was eine Megawattstunde Redispatch kostet" }));
+      if (mitArbeit && arbeitMonate > 0) {
+        [["Kosten Redispatch", eur(sRd)],
+         ["Arbeit Redispatch", gwh(arbeitMonate, 1) + " GWh"]].forEach(function (z) {
+          var r2 = el("div", { "class": "pf-rechnung-zeile" });
+          r2.appendChild(el("span", { text: z[0] }));
+          r2.appendChild(el("span", { "class": "pf-zahl", text: z[1] }));
+          rechnung.appendChild(r2);
+        });
+        var sm = el("div", { "class": "pf-rechnung-zeile pf-rechnung-summe" });
+        sm.appendChild(el("span", { text: "= je MWh" }));
+        sm.appendChild(el("span", { "class": "pf-zahl",
+          text: nf2.format(sRd / arbeitMonate) + " €" }));
+        rechnung.appendChild(sm);
+        rechnung.appendChild(el("p", { "class": "pf-bezug",
+          text: "Über " + mitArbeit + " von " + summenStellen.length + " Monaten, für die "
+            + "beide Größen vorliegen. Die Kosten kommen von der ENTSO-E "
+            + "Transparency Platform, die Arbeit von netztransparenz.de — zwei "
+            + "Veröffentlichungen derselben vier Netzbetreiber. Das Verhältnis "
+            + "ist gerechnet, beide Größen sind gemessen." }));
+      } else {
+        rechnung.appendChild(el("p", { "class": "pf-bezug",
+          text: "Für diese Monate liegt keine Redispatch-Arbeit vor; ohne sie "
+            + "lässt sich kein Preis je MWh bilden." }));
+      }
+      kkasten.appendChild(rechnung);
+
+      /* Der menschliche Bezug. Projektregel: mindestens eine Kennzahl auf eine
+         beurteilbare Groesse umrechnen. Die Netzlast desselben Zeitraums ist
+         die naheliegende -- jeder findet den Cent-Betrag auf seiner Rechnung
+         wieder. */
+      if (voll && netzlast && lasttage) {
+        kkasten.appendChild(el("p", { "class": "pf-bezug",
+          text: "Auf die Netzlast umgelegt: " + nf2.format(summe / netzlast)
+            + " € je MWh, also " + nf2.format(summe / netzlast / 10)
+            + " ct je kWh. Das ist eine Rechnung aus zwei gemessenen Größen und "
+            + "keine Angabe der Quelle — und es ist NICHT der Betrag, der auf "
+            + "einer Stromrechnung steht: was und wie umgelegt wird, regelt das "
+            + "Netzentgeltrecht." }));
+      }
+
+      // Je Regelzone -- dieselbe Aufteilung wie oben bei "Angewiesen von".
+      var jeZone = {};
+      Object.keys(K.je_zone).forEach(function (z) {
+        var s = 0;
+        summenStellen.forEach(function (i) { s += K.je_zone[z][i]; });
+        if (s) { jeZone[z] = s; }
+      });
+      if (Object.keys(jeZone).length) {
+        var zbox = el("div", { "class": "pf-rd-gruppe" });
+        zbox.appendChild(el("h4", { text: "Kosten je Regelzone" }));
+        var namenZ = Object.keys(jeZone).sort(function (a, b) {
+          return jeZone[b] - jeZone[a];
+        });
+        var maxZ = Math.abs(jeZone[namenZ[0]]) || 1;
+        zbox.appendChild(el("p", { "class": "pf-saeule-massstab",
+          text: "Balken bis " + eur(maxZ) }));
+        namenZ.forEach(function (z2) {
+          var h2 = el("div", { "class": "pf-balken" });
+          var zz = el("div", { "class": "pf-zeile" });
+          zz.appendChild(el("span", { "class": "pf-name", text: z2 }));
+          zz.appendChild(el("span", { "class": "pf-zahl",
+            text: eur(jeZone[z2]) + " · " + nf1.format(jeZone[z2] / summe * 100) + " %" }));
+          h2.appendChild(zz);
+          var schiene2 = el("div", { "class": "pf-schiene" });
+          schiene2.appendChild(el("div", { "class": "pf-fuellung",
+            style: "width:" + (Math.abs(jeZone[z2]) / maxZ * 100).toFixed(1)
+              + "%;background:var(--violett);" }));
+          h2.appendChild(schiene2);
+          zbox.appendChild(h2);
+        });
+        kkasten.appendChild(zbox);
+      }
+
+      // Was die Quelle selbst falsch gemeldet hat, bleibt sichtbar.
+      if (K.auffaellig && K.auffaellig.length) {
+        kkasten.appendChild(el("p", { "class": "pf-karte-warnung",
+          text: "Ein Wert der Quelle ist falsch etikettiert: für "
+            + K.auffaellig.map(function (a) {
+                return a.zone + " im " + monatLang(a.monat) + " (Währung "
+                  + a.waehrung + " statt EUR)";
+              }).join(", ")
+            + ". Der Monat wird als fehlend geführt und NICHT umgerechnet — wir "
+            + "wissen nicht, ob das Etikett falsch ist oder die Zahl. Der "
+            + "Originalwert steht in data/engpasskosten.json unter „auffaellig“." }));
+      }
+
+      infoKnopf(kkasten, {
+        wert: "Kosten des Engpassmanagements, Datenpunkt 13.1.C der Verordnung "
+          + "543/2013, abgerufen als documentType A92. Ein Wert je Monat und "
+          + "Regelzone, in Euro.",
+        grenzenTitel: "Was hier nicht geht",
+        grenzen: "Die Quelle liefert MONATSWERTE. Es gibt keine Kosten je Maßnahme "
+          + "und keine Tageswerte — ein Preis je Maßnahme wäre erfunden. Deshalb "
+          + "gibt es eine Summe nur für volle Monate im Zeitraum. Die Quelle "
+          + "meldet drei Reihen: Redispatch (A46), Countertrade (B03) und eine "
+          + "GESAMTSUMME (B04). B04 ist kein dritter Posten; wer alle drei "
+          + "addiert, verdoppelt. Der kleine Rest zwischen B04 und den beiden "
+          + "Posten ist die Position „Sonstiges“ der Quelle.",
+        quellen: [{ text: "ENTSO-E Transparency Platform — 13.1.C",
+                    url: "https://transparency.entsoe.eu/" }],
+        messung: "Messung der vier Übertragungsnetzbetreiber, veröffentlicht über "
+          + "die ENTSO-E Transparency Platform unter CC BY 4.0. Der Preis je MWh "
+          + "und der Cent-Betrag je kWh sind daraus GERECHNET; die Formel steht "
+          + "jeweils dabei."
+      }, "Kosten des Engpassmanagements");
+      huelle.appendChild(kkasten);
+    }
+
     var spalten2 = el("div", { "class": "pf-rd-spalten" });
     /* WER ANGEFORDERT HAT gegen WER ANGEWIESEN HAT. Die Quelle fuehrt beides
        getrennt, und es ist nicht dasselbe: angewiesen hat immer einer der vier
@@ -4087,7 +4366,10 @@
       netzLaden("mastrwind").catch(function () { Z.ebenen.mastrwind = false; }),
       /* Bausteine fuer den mengengewichteten Aussenhandelspreis. 0,16 MB, und
          die Seite laeuft auch ohne -- dann faellt nur die Preiszeile weg. */
-      hole("data/aussenhandel-preis.json").catch(function () { return null; })
+      hole("data/aussenhandel-preis.json").catch(function () { return null; }),
+      /* Kosten des Engpassmanagements, ENTSO-E 13.1.C. Monatswerte, wenige
+         Kilobyte. Faellt der Abruf aus, fehlt nur der Kostenblock. */
+      hole("data/engpasskosten.json").catch(function () { return null; })
     ]).then(function (teile) {
       Z.verzeichnis = teile[0];
       Z.grundkarte = teile[1];
@@ -4095,6 +4377,7 @@
       Z.rdVerzeichnis = teile[3];
       Z.quellen = teile[4];
       Z.ahPreis = teile[8] || null;
+      Z.kosten = teile[9] || null;
       var jahre = Z.verzeichnis.jahre;
       Z.minTag = jahre[0].erster_tag;
       var letzte = jahre[jahre.length - 1];

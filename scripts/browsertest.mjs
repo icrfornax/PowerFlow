@@ -315,7 +315,10 @@ try {
       .map((x) => x.textContent);
     // Beschriftung und Zahl je Zeile, in Reihenfolge -- ein Vergleich auf
     // Zeichenketten mit Minuszeichen und Pluszeichen ist zu heikel.
-    const r = [...document.querySelectorAll(".pf-rechnung-zeile")].map((z) => ({
+    // NUR die Bilanz im Flussbild. Der Kostenblock im Redispatch benutzt
+    // dieselbe Darstellung fuer etwas anderes.
+    const r = [...document.querySelectorAll(
+      ".pf-rechnung:not(.pf-rechnung-kosten) .pf-rechnung-zeile")].map((z) => ({
       label: z.firstChild.textContent, wert: zahl(z.lastChild.textContent)
     }));
     return { titel: titel, gruppen: gruppen, rechnung: r,
@@ -374,7 +377,8 @@ try {
   pruefe(rd.kachel, "Redispatch-Kachel vorhanden");
   pruefe(rd.abschnitt, "Redispatch-Abschnitt vorhanden");
   pruefe(rd.zahlen === 3, `drei Redispatch-Kennzahlen (${rd.zahlen})`);
-  pruefe(rd.gruppen.length === 4, `vier Balkengruppen (${rd.gruppen.join(" | ")})`);
+  // Fuenf seit dem 03.09.2026: "Kosten je Regelzone" ist dazugekommen.
+  pruefe(rd.gruppen.length === 5, `fuenf Balkengruppen (${rd.gruppen.join(" | ")})`);
   pruefe(rd.angewiesen.filter((x) => /^(50Hertz|Amprion|TenneT DE|TransnetBW)$/.test(x)).length === 4,
     `alle vier UeNB unter "Angewiesen von" (${rd.angewiesen.join(", ")})`);
   pruefe(rd.gruppen.some((x) => /Angefordert/.test(x))
@@ -395,6 +399,87 @@ try {
   pruefe(/Probebetrieb ist kein Notfall|keinen Probebetrieb/.test(rd.warnung),
     "der Probebetrieb wird ausdruecklich vom Notfall getrennt",
     rd.warnung.slice(0, 90));
+  /* KOSTEN DES ENGPASSMANAGEMENTS. Die Quelle ist MONATLICH -- der Zeitraum
+     taggenau. Geprueft wird deshalb beides: dass der Block bei vollen Monaten
+     eine Summe zeigt, und dass er bei einem kuerzeren Zeitraum KEINE zeigt,
+     sondern sagt warum. Eine Summe ueber angebrochene Monate waere eine
+     Falschaussage. */
+  const kosten = await js(`(function () {
+    const k = document.querySelector(".pf-rd-kosten");
+    if (!k) { return null; }
+    const stapel = [...k.querySelectorAll(".pf-kosten-stapel")];
+    return {
+      da: true,
+      titel: (k.querySelector("h4") || {}).textContent || "",
+      monate: stapel.length,
+      teile: Math.max(0, ...stapel.map((s) => s.querySelectorAll("i").length)),
+      massstab: [...k.querySelectorAll(".pf-saeule-massstab")]
+        .map((x) => x.textContent).join(" | "),
+      summe: [...k.querySelectorAll(".pf-rd-zahl .pf-titel")].map((x) => x.textContent),
+      warnung: [...k.querySelectorAll(".pf-karte-warnung")].map((x) => x.textContent).join(" "),
+      text: k.textContent,
+      infoknopf: k.querySelectorAll(".pf-info").length
+    };
+  })()`);
+  pruefe(kosten && kosten.da, "der Kostenblock steht im Redispatch-Abschnitt");
+  if (kosten) {
+    pruefe(/Was es kostet/.test(kosten.titel), "er heisst 'Was es kostet'", kosten.titel);
+    pruefe(kosten.monate >= 6, `er zeigt ${kosten.monate} Monatsbalken`);
+    pruefe(kosten.teile >= 2,
+      "die Balken sind nach Posten gestapelt, nicht einfarbig", String(kosten.teile));
+    pruefe(/Balken bis/.test(kosten.massstab),
+      "jede Balkengruppe nennt ihren Massstab", kosten.massstab.slice(0, 80));
+    pruefe(kosten.infoknopf === 1, "es gibt genau einen Info-Knopf dazu");
+    pruefe(/Monat/.test(kosten.text),
+      "die Monatsaufloesung wird benannt");
+    // Der Zeitraum des Tests ist eine Woche -- also KEIN voller Monat.
+    pruefe(kosten.summe.length === 0,
+      "ohne vollen Monat im Zeitraum steht keine Kostensumme da",
+      kosten.summe.join(", "));
+    pruefe(/keinen vollen Monat/.test(kosten.warnung),
+      "und es steht da, warum nicht", kosten.warnung.slice(0, 90));
+  }
+  await foto("kosten", ".pf-rd-kosten");
+
+  /* Und die Gegenprobe: ein VOLLER Monat muss eine Summe ergeben. Ohne diesen
+     Fall prueft der Test nur, dass nie eine Summe erscheint. */
+  await js(`document.getElementById("pf-von").value = "2025-06-01";`
+    + `document.getElementById("pf-von").dispatchEvent(new Event("change", { bubbles: true }));`);
+  await schlafen(600);
+  await js(`document.getElementById("pf-bis").value = "2025-06-30";`
+    + `document.getElementById("pf-bis").dispatchEvent(new Event("change", { bubbles: true }));`);
+  await schlafen(2500);
+  const kostenVoll = await js(`(function () {
+    const k = document.querySelector(".pf-rd-kosten");
+    if (!k) { return null; }
+    const zahl = (t) => {
+      const f = [...k.querySelectorAll(".pf-rd-zahl")]
+        .find((x) => new RegExp(t).test(x.textContent));
+      return f ? f.querySelector(".pf-wert").textContent : "";
+    };
+    return {
+      gesamt: zahl("Kosten gesamt"),
+      redispatch: zahl("davon Redispatch"),
+      bezug: [...k.querySelectorAll(".pf-bezug")].map((x) => x.textContent).join(" "),
+      warnung: [...k.querySelectorAll(".pf-karte-warnung")].map((x) => x.textContent).join(" ")
+    };
+  })()`);
+  if (kostenVoll) {
+    pruefe(/€/.test(kostenVoll.gesamt) && /€/.test(kostenVoll.redispatch),
+      `bei einem vollen Monat steht die Summe da (${kostenVoll.gesamt})`);
+    pruefe(/volle[nr]? Monat/.test(kostenVoll.bezug),
+      "und es steht dabei, ueber wie viele volle Monate summiert wurde");
+    pruefe(/ct je kWh/.test(kostenVoll.bezug),
+      "die Umrechnung auf eine menschliche Bezugsgroesse steht dabei");
+    pruefe(/Netzentgeltrecht/.test(kostenVoll.bezug),
+      "mit dem Vorbehalt, dass es nicht der Betrag auf der Stromrechnung ist");
+    pruefe(!/keinen vollen Monat/.test(kostenVoll.warnung),
+      "und die Warnung fuer angebrochene Monate steht dann NICHT da");
+  }
+  await foto("kosten-monat", ".pf-rd-kosten");
+  await js(`[...document.querySelectorAll(".pf-schnell")].find((b) => b.textContent === "Letzte 7 Tage").click()`);
+  await schlafen(2500);
+
   await foto("redispatch", ".pf-rd-kopf");
   await foto("redispatch-zeit", ".pf-rd-gruende");
 
@@ -1369,7 +1454,9 @@ try {
   pruefe(methodik.bytes > 4000,
     `${methodik.bytes} Bytes -- kein leeres Papier`);
 
-  pruefe(qu.quellen.length === 7, `sieben Quellen genannt: ${qu.quellen.join(" | ")}`);
+  // Acht seit dem 03.09.2026: die ENTSO-E Transparency Platform liefert die
+  // Kosten des Engpassmanagements und ist damit eine eigene Quelle.
+  pruefe(qu.quellen.length === 8, `acht Quellen genannt: ${qu.quellen.join(" | ")}`);
   // Die abgeleitete Flaeche muss im Verzeichnis als solche kenntlich sein und
   // darf nicht neben den Messungen stehen.
   pruefe(qu.quellen.some((x) => /KEINE Messung/.test(x)),
