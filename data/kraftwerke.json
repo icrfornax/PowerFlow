@@ -1,6 +1,6 @@
 {
  "_hinweis": "Quelle: SMARD, Bundesnetzagentur. Lizenz CC BY 4.0, Namensnennung 'Bundesnetzagentur | SMARD.de'. Endpunkt undokumentiert, aus dem SMARD-Frontend rekonstruiert -- siehe docs/beleg-kraftwerksdaten.md. Dies sind STAMMDATEN (Standort, Leistung, Traeger), keine Messung. Die tatsaechliche Erzeugung eines Blocks liegt nur fuer Bloecke mit production_id vor und wird ueber chart_data mit der REGELZONE der Anlage als region abgerufen -- mit region=DE liefert SMARD 404.",
- "abgerufen": "2026-08-30T00:18:32+02:00",
+ "abgerufen": "2026-09-03T11:08:22+02:00",
  "quelle_created": 1782312843043,
  "anzahl": 596,
  "anlagen": [

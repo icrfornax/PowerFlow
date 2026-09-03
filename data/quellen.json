@@ -137,7 +137,7 @@
    "quelle": "osm",
    "beleg": "docs/beleg-netzgeometrie.md",
    "dateien": 1,
-   "bytes": 1763155,
+   "bytes": 1764372,
    "zeitraum": null,
    "muster": "data/netz-hoechstspannung.json",
    "abzug": "data/netz-hoechstspannung.json",
@@ -161,7 +161,7 @@
    "quelle": "osm",
    "beleg": "docs/beleg-netzgeometrie.md",
    "dateien": 1,
-   "bytes": 389017,
+   "bytes": 389281,
    "zeitraum": null,
    "muster": "data/netz-umspannwerke.json",
    "abzug": "data/netz-umspannwerke.json",
@@ -209,7 +209,7 @@
    "quelle": "mastr",
    "beleg": "docs/beleg-mastr.md",
    "dateien": 1,
-   "bytes": 382231,
+   "bytes": 382777,
    "zeitraum": null,
    "muster": "data/mastr-wind.json",
    "abzug": "data/mastr-wind.json",
@@ -221,7 +221,7 @@
    "quelle": "abgeleitet",
    "beleg": "docs/beleg-regelzonenflaeche.md",
    "dateien": 1,
-   "bytes": 37739,
+   "bytes": 37704,
    "zeitraum": null,
    "muster": "data/regelzonen-flaeche.json",
    "abzug": "data/regelzonen-flaeche.json",
@@ -241,5 +241,5 @@
   }
  ],
  "dateien_gesamt": 171,
- "bytes_gesamt": 30132586
+ "bytes_gesamt": 30134578
 }
