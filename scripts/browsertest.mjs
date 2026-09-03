@@ -1232,6 +1232,43 @@ try {
   pruefe(!/Darin stecken Netzverluste/.test(rest.maengel),
     "die alte Erklaerung steht nicht mehr in den Maengeln");
 
+  /* Die Maengelliste traegt jetzt die Untersuchung. Sie wird fotografiert,
+     nicht nur geprueft -- drei echte Maengel dieses Projekts sind ausschliesslich
+     beim Hinsehen aufgefallen. */
+  // Der Kasten wird ueber seine UEBERSCHRIFT gesucht, nicht ueber die Stelle in
+  // der Liste -- "Zu diesem Zeitraum" steht je nach Datenlage davor oder nicht.
+  await js(`(function () {
+    const k = [...document.querySelectorAll(".pf-kasten")]
+      .find((x) => /Bekannte M/.test((x.querySelector("h3") || {}).textContent || ""));
+    if (k) { k.scrollIntoView({ block: "start", behavior: "instant" });
+             window.scrollBy(0, -180); }
+  })()`);
+  await schlafen(350);
+  await foto("bilanzrest-maengel");
+  await js(`(function () {
+    const k = [...document.querySelectorAll(".pf-kachel")]
+      .find((x) => /Bilanzrest/.test(x.textContent));
+    if (!k) { return; }
+    k.scrollIntoView({ block: "center", behavior: "instant" });
+    window.scrollBy(0, -60);
+    // Geoeffnet wird ueber mouseenter, nicht ueber click -- ein Klick HEFTET
+    // das Popover nur an, siehe die Regel dazu in CLAUDE.md.
+    const knopf = k.querySelector(".pf-info");
+    if (knopf) { knopf.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true })); }
+  })()`);
+  await schlafen(400);
+  const restText = await js(`(function () {
+    const p = document.querySelector(".pf-popover");
+    return p ? p.textContent : "";
+  })()`);
+  pruefe(restText.indexOf("Residuallast") >= 0 && restText.indexOf("Redispatch") >= 0,
+    "das Popover der Bilanzrest-Kachel nennt den Befund", restText.slice(0, 90));
+  pruefe(restText.indexOf("falsche Vorzeichen") >= 0,
+    "und die Ruecknahme der Netzverlust-Erklaerung");
+  await foto("bilanzrest-popover");
+  await js(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))`);
+  await schlafen(200);
+
   pruefe(offen && !/HTTP 403/.test(offen.texte),
     "die beantwortete Lizenzfrage steht nicht mehr als offener Punkt");
   pruefe(offen && !/Methodik-PDF, das sich beim Bau/.test(offen.texte),
