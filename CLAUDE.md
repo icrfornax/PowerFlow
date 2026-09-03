@@ -503,6 +503,38 @@ Fuenf Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
   `validate.py` rechnet die Spanne jetzt aus den Jahresdateien nach und
   vergleicht sie mit dem Seitentext; ein Negativtest verstellt sie absichtlich.
 
+## Nachholen unvollstaendiger Tage
+
+Eingerichtet am 03.09.2026, Beleg: `docs/beleg-tagesreihen.md`.
+
+`scripts/nachholen.py` sucht taeglich ALLE Luecken (nicht nur die letzten
+Wochen), holt gezielt die betroffenen Jahre und Wochenbloecke und schreibt
+`data/luecken.json`. Der Grund: der taegliche Abruf fasst nur das laufende und
+das vorige Jahr sowie vier Wochen Stundenwerte an -- was aelter ist, bliebe
+ewig stehen, und niemand wuesste davon.
+
+- **Gesucht wird ueber den KALENDER, nicht ueber die vorhandenen Dateien.**
+  Eine fehlende Monatsdatei waere sonst unsichtbar.
+- **Zwei Tage Karenz.** Der gestrige Tag ist normalerweise unvollstaendig; das
+  ist Meldeverzug und kein Mangel.
+- **Kein Zeitstempel in der Datei.** Er wuerde jeden Tag einen leeren Commit
+  erzeugen. Stattdessen steht je Luecke, seit wann sie klafft.
+- **`validate.py` rechnet den Bericht gegen die Dateien nach.** Ein Bericht,
+  den niemand prueft, ist kein Bericht.
+
+**Eine fehlende Stunde ist keine Null.** Der Verlauf zeichnete sie bis zum
+03.09.2026 als 0 -- am 30.08. sah das aus wie ein Einbruch der Erzeugung auf
+null und war eine Meldeluecke. Jetzt ist eine Traegergruppe ohne jeden Wert
+`null`; Flaechen und Lastlinie werden dort getrennt, und die Stelle traegt
+einen grauen Streifen mit Legendeneintrag.
+
+**Die Unterdeckung wird erklaert, nicht nur gezeigt.** Auf die Erzeugung kommt
+die gemessene NETTOEINFUHR als schraffiertes Band; orange bleibt nur, was
+danach noch fehlt -- Netzverluste, Pumpspeicherbezug und die unterschiedliche
+zeitliche Aufloesung. Der Satz unter dem Bild rechnet es je Zeitraum vor.
+Schraffur ist hier kein Zuschaltmerkmal, sondern die Bedeutung: beide Flaechen
+sind KEINE Energietraeger. Die Traegerbaender bleiben glatt.
+
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
 Belegt in `docs/beleg-tagesreihen.md`. Diese drei Punkte duerfen weder

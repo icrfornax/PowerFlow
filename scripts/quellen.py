@@ -120,6 +120,11 @@ GRUPPEN = [
      "Tagesaggregate: Arbeit nach Richtung, anweisendem Netzbetreiber und "
      "Primaerenergieart, in MWh.", "docs/beleg-redispatch.md",
      "redispatch-verzeichnis.json"),
+    ("luecken.json", "smard", "Luecken der Quelle",
+     "Welche Kalendertage und Stunden SMARD bis heute nicht geliefert hat, und "
+     "seit wann sie fehlen. SELBST ERHOBEN aus den eigenen Dateien; erzeugt und "
+     "nachgeholt von scripts/nachholen.py, geprueft von scripts/validate.py.",
+     "docs/beleg-tagesreihen.md", None),
     ("aussenhandel-preis.json", "smard", "Aussenhandel, mengengewichteter Preis",
      "Je Tag vier Summen ueber die Stunden: Preis mal Einfuhr, Einfuhr, Preis mal "
      "Ausfuhr, Ausfuhr. Daraus laesst sich der mengengewichtete Preis jedes "

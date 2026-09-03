@@ -45,6 +45,15 @@ jobs:
       - name: Stundenwerte nachtragen (letzte vier Wochen)
         run: python scripts/fetch-verlauf.py --wochen 4
 
+      - name: Luecken nachholen und Buch fuehren
+        # Der Schritt darueber holt das laufende und das vorige Jahr sowie die
+        # letzten vier Wochen. Aelteres fasst er nie wieder an -- eine Luecke
+        # von 2019 bliebe ewig stehen, und niemand wuesste davon. Dieser Schritt
+        # sucht alle Luecken, holt gezielt die betroffenen Jahre und
+        # Wochenbloecke und schreibt data/luecken.json. Der Tuersteher rechnet
+        # den Bericht danach gegen die Dateien nach.
+        run: python scripts/nachholen.py
+
       - name: Redispatch nachtragen
         # Eigener Schritt, eigene Quelle. Faellt netztransparenz aus, sollen die
         # SMARD-Daten trotzdem committet werden -- deshalb continue-on-error.

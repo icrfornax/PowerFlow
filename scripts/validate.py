@@ -17,6 +17,7 @@ Seite kommt hier hinein.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import pathlib
 import re
@@ -764,6 +765,34 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         b.pruefe(("in jedem Jahr größer" in js)
                  == all(x > 0 for x in schieflagen),
                  "die Aussage 'in jedem Jahr' steht nur da, wenn sie stimmt")
+
+    # --- Luecken der Quelle ---
+    # Der Bericht aus scripts/nachholen.py wird gegen die Dateien nachgerechnet.
+    # Ein Bericht, den niemand prueft, ist kein Bericht -- dieselbe Regel wie
+    # bei den Zaehlern der Abrufskripte.
+    lk = json.loads(lade("data/luecken.json"))
+    karenz = lk["karenz_tage"]
+    grenze = (dt.date.today() - dt.timedelta(days=karenz)).isoformat()
+    gemeldet = {e["tag"] for e in lk["offene_tage"]}
+    tatsaechlich = set()
+    for d in jahre.values():
+        for tag, wert in zip(d["tage"], d["netzlast"]):
+            if tag <= grenze and wert is None:
+                tatsaechlich.add(tag)
+    b.pruefe(gemeldet == tatsaechlich,
+             f"data/luecken.json nennt genau die fehlenden Tage "
+             f"({len(gemeldet)} gemeldet, {len(tatsaechlich)} gefunden)"
+             + (f" -- nur gemeldet: {sorted(gemeldet - tatsaechlich)[:3]}, "
+                f"nur gefunden: {sorted(tatsaechlich - gemeldet)[:3]}"
+                if gemeldet != tatsaechlich else ""))
+    b.pruefe(all(e["seit"] >= e["tag"] for e in lk["offene_tage"]),
+             "keine Luecke ist frueher aufgefallen als der Tag, an dem sie klafft")
+    b.pruefe("Zeitstempel" in (lk.get("_hinweis") or ""),
+             "luecken.json sagt selbst, warum kein Zeitstempel darin steht")
+    # Ohne Zeitstempel bleibt die Datei stabil, solange sich nichts aendert --
+    # sonst erzeugte der taegliche Lauf jeden Tag einen Commit ohne Inhalt.
+    b.pruefe(not re.search(r"\d{2}:\d{2}:\d{2}", lade("data/luecken.json")),
+             "luecken.json traegt keine Uhrzeit")
 
     # --- Quellenverzeichnis ---
     # Der eigentliche Waechter steckt in scripts/quellen.py: es bricht ab,

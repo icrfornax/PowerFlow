@@ -826,6 +826,32 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 }
 .pf-luecke strong { color: var(--orange); }
 
+/* Legendenmarken fuer die beiden schraffierten Flaechen im Verlauf. Sie sind
+   keine Energietraeger -- die Schraffur sagt genau das. */
+.pf-legende i.pf-schraffiert {
+  width: 14px; height: 10px; border-radius: 2px; display: inline-block;
+}
+.pf-legende i.pf-einfuhr {
+  background: repeating-linear-gradient(45deg,
+    var(--teal) 0 2px, transparent 2px 5px),
+    color-mix(in srgb, var(--teal) 16%, transparent);
+}
+.pf-legende i.pf-luecke {
+  background: repeating-linear-gradient(-45deg,
+    var(--orange) 0 2px, transparent 2px 5px),
+    color-mix(in srgb, var(--orange) 16%, transparent);
+}
+/* Fehlstelle: hier hat die Quelle nichts geliefert. Ein neutraler Streifen,
+   keine Farbe der Traegerfamilie und keine der beiden Deckungsfarben -- sonst
+   liest er sich als Aussage ueber Strom. */
+.pf-fehlstelle { fill: var(--schrift-still); fill-opacity: 0.14; }
+.pf-legende i.pf-fehlt {
+  background: var(--schrift-still); opacity: 0.5;
+}
+.pf-deckungstext {
+  margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--linie);
+}
+
 /* ---------- Redispatch: Zeitprofil ----------
    24 gestapelte Saeulen, eine je Stunde des Tages. Hoehe = wie viele
    Massnahmen liefen gleichzeitig, Farbe = warum. Die Werteachse hat drei

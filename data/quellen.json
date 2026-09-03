@@ -101,7 +101,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 141,
-   "bytes": 14040743,
+   "bytes": 14041287,
    "zeitraum": "2015-01-01 bis 2026-09-03",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
@@ -192,6 +192,18 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
   },
   {
+   "titel": "Luecken der Quelle",
+   "inhalt": "Welche Kalendertage und Stunden SMARD bis heute nicht geliefert hat, und seit wann sie fehlen. SELBST ERHOBEN aus den eigenen Dateien; erzeugt und nachgeholt von scripts/nachholen.py, geprueft von scripts/validate.py.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-tagesreihen.md",
+   "dateien": 1,
+   "bytes": 2468,
+   "zeitraum": null,
+   "muster": "data/luecken.json",
+   "abzug": "data/luecken.json",
+   "alle": null
+  },
+  {
    "titel": "Aussenhandel, mengengewichteter Preis",
    "inhalt": "Je Tag vier Summen ueber die Stunden: Preis mal Einfuhr, Einfuhr, Preis mal Ausfuhr, Ausfuhr. Daraus laesst sich der mengengewichtete Preis jedes Zeitraums exakt bilden, ohne die Stundendateien zu laden. Selbst gerechnet aus data/verlauf/; die Formel steht im Kopf der Datei.",
    "quelle": "smard",
@@ -233,13 +245,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 9846,
+   "bytes": 10326,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 171,
- "bytes_gesamt": 30141197
+ "dateien_gesamt": 172,
+ "bytes_gesamt": 30144689
 }

@@ -198,3 +198,56 @@ python scripts/fetch-tagesreihen.py
 python scripts/validate.py                 # 88 Pruefungen
 python scripts/validate.py --negativtests  # 21 Negativtests
 ```
+
+---
+
+## Nachholen: der Prozess für unvollständige Tage (03.09.2026)
+
+Vom 30.08. bis 01.09.2026 fehlte die Deutschlandreihe ganz. Der Grund lag bei
+der Quelle — 50Hertz meldete unvollständige Stundenwerte, die drei anderen
+Regelzonen waren vollständig —, aber es fiel auf, dass es dafür **keinen
+Prozess** gab: der tägliche Abruf holt das laufende und das vorige Jahr sowie
+die letzten vier Wochen neu. Was älter ist, wird nie wieder angefasst. Eine
+Lücke von 2019 bliebe für immer stehen, und niemand wüsste davon.
+
+### Was jetzt läuft
+
+`scripts/nachholen.py`, täglich im Workflow `daten-smard.yml`:
+
+1. **Suchen.** Alle Tagesdateien auf fehlende Netzlast, alle Monatsdateien auf
+   fehlende Stunden — über den **Kalender**, nicht über die vorhandenen
+   Dateien. Fehlte eine Monatsdatei ganz, wäre sie sonst unsichtbar.
+2. **Holen.** Gezielt die betroffenen Jahre (Tagesreihen) und die betroffenen
+   SMARD-Wochenblöcke (Stundenreihen). Nicht „die letzten N Wochen": eine
+   Lücke von 2019 hieße sonst dreihundert Blöcke für eine einzige Stunde.
+3. **Buch führen.** `data/luecken.json` nennt jede offene Lücke und den Tag,
+   an dem sie zuerst auffiel.
+
+**Karenz: zwei Tage.** Dass der gestrige Tag noch unvollständig ist, ist der
+normale Meldeverzug und kein Mangel.
+
+**In der Datei steht kein Zeitstempel.** Ein „zuletzt geprüft: heute" würde sie
+täglich ändern und täglich einen leeren Commit erzeugen. Stattdessen steht je
+Lücke, seit wann sie klafft — das ändert sich nur, wenn sich wirklich etwas
+ändert. Dass der Lauf stattfindet, sagt der Workflow.
+
+**Geprüft wird der Bericht selbst.** `scripts/validate.py` rechnet die Liste
+bei jedem Lauf gegen die Dateien nach: nennt sie genau die Tage, die fehlen?
+Ist keine Lücke früher aufgefallen als der Tag, an dem sie klafft? Steht keine
+Uhrzeit darin? Ein Bericht, den niemand prüft, ist kein Bericht — dieselbe
+Regel wie bei den Zählern der Abrufskripte.
+
+**Erster Lauf am 03.09.2026:** 3 offene Kalendertage, 23 offene Stunden. Der
+Lauf schloss 2 Stunden; die übrigen liegen bei der Quelle noch nicht vor.
+
+### Was der Verlauf daraus macht
+
+Bis zum 03.09.2026 zeichnete das Verlaufsdiagramm eine fehlende Stunde als
+**Null**. Am 30.08.2026 sah das aus wie ein Einbruch der Erzeugung auf null —
+tatsächlich war es eine Meldelücke. Der Unterschied zwischen „nichts erzeugt"
+und „nichts gemeldet" ist der ganze Punkt.
+
+Seitdem gilt: eine Trägergruppe ohne jeden Wert ist `null`, nicht `0`. Die
+Flächen und die Netzlastlinie werden an solchen Stellen **getrennt**, und die
+Stelle bekommt einen grauen Streifen samt Legendeneintrag „keine Daten der
+Quelle". `scripts/browsertest.mjs` prüft beides als Bedingung.

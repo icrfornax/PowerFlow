@@ -253,6 +253,50 @@ try {
     `Voreinstellung ${vorgabe.von}..${vorgabe.bis} laeuft stuendlich`, vorgabe.kopf);
   pruefe(vorgabe.trenner >= 5,
     `${vorgabe.trenner} Tagestrenner im Wochenverlauf`);
+  /* FEHLENDE STUNDEN SIND KEINE NULLEN. Am 30.08.2026 lieferte SMARD nur einen
+     Teil der Stunden; der Verlauf zeichnete die fehlenden als 0 und zeigte
+     einen Einbruch der Erzeugung auf null. Das las sich wie eine Flaute und war
+     eine Meldeluecke. Geprueft wird die BEDINGUNG: gibt es Fehlstellen, muessen
+     die Flaechen dort getrennt sein und die Stelle markiert. */
+  const deckung = await js(`(function () {
+    const svg = document.querySelector(".pf-diagramm");
+    const baender = [...svg.querySelectorAll(".pf-band")];
+    const teile = (d) => (d.match(/M/g) || []).length;
+    const last = svg.querySelector(".pf-lastlinie");
+    const text = (document.querySelector(".pf-deckungstext") || {}).textContent || "";
+    const legende = [...document.querySelectorAll(".pf-legende span")]
+      .map((x) => x.textContent).join(" | ");
+    return {
+      fehlstellen: svg.querySelectorAll(".pf-fehlstelle").length,
+      bandTeile: baender.length ? Math.max(...baender.map((b) => teile(b.getAttribute("d")))) : 0,
+      lastTeile: last ? teile(last.getAttribute("d")) : 0,
+      einfuhrband: svg.querySelectorAll(".pf-einfuhrband").length,
+      text: text,
+      legende: legende
+    };
+  })()`);
+  if (deckung.fehlstellen) {
+    pruefe(deckung.bandTeile > 1,
+      "bei einer Fehlstelle sind die Traegerflaechen getrennt, nicht ueber null gezogen",
+      `${deckung.bandTeile} Teilpfade`);
+    /* Die Netzlastlinie bricht dort, wo die NETZLAST fehlt -- nicht dort, wo
+       die Erzeugung fehlt. Am 30.08.2026 lieferte SMARD einzelne Stunden mit
+       Netzlast, aber ohne Erzeugung; die Linie ist dort zu Recht durchgezogen.
+       Geprueft wird das deshalb weiter unten in der Tagesansicht, wo drei
+       ganze Tage ohne Netzlast liegen. */
+    pruefe(/keine Daten der Quelle/.test(deckung.legende),
+      "die Fehlstelle ist in der Legende benannt");
+  } else {
+    pruefe(deckung.bandTeile === 1, "ohne Fehlstelle ist jede Flaeche ein Pfad");
+  }
+  pruefe(deckung.einfuhrband >= 0 && /Einfuhr \(netto\), gemessen/.test(deckung.legende),
+    "die gemessene Nettoeinfuhr steht als eigene Flaeche in der Legende");
+  pruefe(/Wie die Lücke gedeckt wird|keine Lücke zu decken/.test(deckung.text),
+    "unter dem Verlauf steht, wie die Unterdeckung ausgeglichen wird",
+    deckung.text.slice(0, 90));
+  pruefe(!deckung.text || /Netzverluste/.test(deckung.text) === /Übrig bleiben/.test(deckung.text),
+    "und was danach uebrig bleibt, wird benannt statt weggerechnet");
+
   await foto("verlauf-woche", ".pf-verlauf");
 
   /* Zufluss/Abfluss und die Regelzonen. Nachgerechnet wird die Bilanz aus den
@@ -423,6 +467,35 @@ try {
   const monat = await js(`document.getElementById("pf-von").value + ".." + document.getElementById("pf-bis").value`);
   pruefe(monat !== start, `Schnellwahl "Voriger Monat" wirkt: ${start} -> ${monat}`);
   const tagesansicht = await js(`document.querySelector(".pf-abschnitt h2").textContent`);
+  /* Die Tagesansicht ueber 30 Tage enthaelt die drei Tage ohne Netzlast. Dort
+     MUSS die Linie unterbrochen sein -- eine gerade Strecke ueber ein Loch ist
+     eine Behauptung ueber nie gemessene Werte. */
+  /* Der Zeitraum muss die Luecke UMSCHLIESSEN. Im vorigen Monat liegen die
+     fehlenden Tage am Ende -- dort hoert die Linie einfach auf, und das ist
+     kein Bruch. Erst wenn Daten davor UND danach stehen, muss sie zweiteilig
+     sein. */
+  await js(`document.getElementById("pf-von").value = "2026-08-20";`
+    + `document.getElementById("pf-von").dispatchEvent(new Event("change", { bubbles: true }));`);
+  await schlafen(600);
+  await js(`document.getElementById("pf-bis").value = "2026-09-02";`
+    + `document.getElementById("pf-bis").dispatchEvent(new Event("change", { bubbles: true }));`);
+  await schlafen(2500);
+  const linie = await js(`(function () {
+    const l = document.querySelector(".pf-diagramm .pf-lastlinie");
+    const svg = document.querySelector(".pf-diagramm");
+    return {
+      teile: l ? (l.getAttribute("d").match(/M/g) || []).length : 0,
+      fehlstellen: svg ? svg.querySelectorAll(".pf-fehlstelle").length : 0
+    };
+  })()`);
+  if (linie.fehlstellen) {
+    pruefe(linie.teile > 1,
+      "in der Tagesansicht ist die Netzlastlinie an der Luecke unterbrochen",
+      `${linie.teile} Teilpfade bei ${linie.fehlstellen} Fehlstellen`);
+  } else {
+    pruefe(linie.teile === 1, "ohne Luecke ist die Netzlastlinie durchgezogen");
+  }
+
   await foto("zeitraum-monat", ".pf-verlauf");
 
   await js(`[...document.querySelectorAll(".pf-schnell")].find((b) => b.textContent === "Letzter Tag").click()`);

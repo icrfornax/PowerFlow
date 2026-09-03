@@ -151,16 +151,24 @@ def pruefe_laengen(monat: str, doc: dict) -> None:
             "nachsehen, welche Reihe beim Nachtragen vergessen wurde.")
 
 
-def nachtragen(wochen: int) -> int:
-    """Holt nur die letzten N Wochenbloecke und arbeitet sie ein.
+def nachtragen(wochen: int | None = None, bloecke: list[int] | None = None) -> int:
+    """Holt Wochenbloecke und arbeitet sie ein.
+
+    Entweder die letzten N (`wochen`) oder eine ausdrueckliche Liste
+    (`bloecke`). Die Liste braucht scripts/nachholen.py: eine Luecke von 2019
+    ueber "die letzten N Wochen" zu erreichen hiesse, dreihundert Bloecke fuer
+    eine einzige Stunde zu holen.
 
     Bestehende Monatsdateien werden gelesen, die geholten Stunden darin
     aktualisiert oder ergaenzt und die Datei neu geschrieben. Was ausserhalb
     der geholten Bloecke liegt, bleibt unangetastet -- ein Nachtrag darf keine
     Geschichte loeschen.
     """
-    alle = smard.wochenbloecke(smard.LAST_NETZLAST, smard.REGION_DE, smard.STUNDE)
-    bloecke = alle[-wochen:]
+    if bloecke is None:
+        if wochen is None:
+            raise ValueError("nachtragen braucht wochen oder bloecke")
+        alle = smard.wochenbloecke(smard.LAST_NETZLAST, smard.REGION_DE, smard.STUNDE)
+        bloecke = alle[-wochen:]
     # Der Grosshandelspreis MUSS mitgeholt werden. Er stand hier lange nicht
     # drin, und das war ein Fehler: der Nachtrag verlaengerte "stunden", der
     # Preis blieb kurz, und der Tuersteher lief in einen IndexError -- nur auf

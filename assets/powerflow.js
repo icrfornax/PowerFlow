@@ -1358,7 +1358,7 @@
   /* Stundenwerte eines Zeitraums, gruppiert. Laeuft ueber alle beruehrten
      Monatsdateien; eine Woche liegt oft in zweien. */
   function reiheStuendlich(von, bis) {
-    var marken = [], netzlast = [], preis = [], rohe = {}, tage = [];
+    var marken = [], netzlast = [], preis = [], rohe = {}, tage = [], netto = [];
     TRAEGERGRUPPEN.forEach(function (g) { rohe[g.name] = []; });
     var gefunden = false;
     monateImZeitraum(von, bis).forEach(function (m) {
@@ -1372,13 +1372,28 @@
         tage.push(tag);
         netzlast.push(d.netzlast[i]);
         preis.push(d.preis_eur_mwh ? d.preis_eur_mwh[i] : null);
+        /* Nettoeinfuhr: gemessen, nicht gerechnet -- beide Richtungen stehen
+           je Stunde in der Datei. Sie beantwortet die Frage, WOMIT eine
+           Unterdeckung gedeckt wird. */
+        var ein = d.import_mwh ? d.import_mwh[i] : null;
+        var aus = d.export_mwh ? d.export_mwh[i] : null;
+        netto.push(ein === null || ein === undefined ? null
+                   : ein - (aus === null || aus === undefined ? 0 : aus));
         TRAEGERGRUPPEN.forEach(function (g) {
-          var summe = 0;
+          /* Eine Gruppe OHNE jeden Wert ist eine Luecke, keine Null. Bis zum
+             03.09.2026 wurde hier 0 geschrieben -- und der Verlauf zeigte am
+             30.08.2026, als SMARD nur 16 von 24 Stunden geliefert hatte, eine
+             Erzeugung, die auf null einbricht. Das war keine Flaute, das war
+             ein fehlender Wert. Der Unterschied ist der zwischen "nichts
+             erzeugt" und "nichts gemeldet". */
+          var summe = 0, gefundenWert = false;
           g.quellen.forEach(function (q) {
             var r = d.erzeugung[q];
-            if (r && r[i] !== null && r[i] !== undefined) { summe += r[i]; }
+            if (r && r[i] !== null && r[i] !== undefined) {
+              summe += r[i]; gefundenWert = true;
+            }
           });
-          rohe[g.name].push(summe);
+          rohe[g.name].push(gefundenWert ? summe : null);
         });
       }
     });
@@ -1391,9 +1406,11 @@
       tage: tage,
       netzlast: netzlast,
       preis: preis,
+      netto: netto,
       reihen: TRAEGERGRUPPEN.map(function (g) {
         return { name: g.name, token: g.token, werte: rohe[g.name],
-                 summe: rohe[g.name].reduce(function (a, b) { return a + b; }, 0) };
+                 summe: rohe[g.name].reduce(function (a, b) {
+                   return a + (b || 0); }, 0) };
       })
     };
   }
@@ -1409,17 +1426,32 @@
       tage: tage,
       netzlast: tage.map(function (t) { return zeileImJahr(t, ["netzlast"]); }),
       preis: tage.map(function (t) { return zeileImJahr(t, ["preis_eur_mwh"]); }),
+      // Nettoeinfuhr je Tag: Summe ueber alle elf Nachbarlaender, gemessen.
+      netto: tage.map(function (t) {
+        var d = Z.jahre[Number(t.slice(0, 4))];
+        if (!d || !d.aussenhandel) { return null; }
+        var summe = null;
+        Object.keys(d.aussenhandel).forEach(function (l) {
+          var ein = zeileImJahr(t, ["aussenhandel", l, "import"]);
+          var aus = zeileImJahr(t, ["aussenhandel", l, "export"]);
+          if (ein === null && aus === null) { return; }
+          summe = (summe || 0) + (ein || 0) - (aus || 0);
+        });
+        return summe;
+      }),
       reihen: TRAEGERGRUPPEN.map(function (g) {
         var werte = tage.map(function (t) {
-          var summe = 0;
+          // Wie bei den Stundenwerten: keine Quelle geliefert heisst Luecke,
+          // nicht null.
+          var summe = 0, gefundenWert = false;
           g.quellen.forEach(function (q) {
             var v = zeileImJahr(t, ["erzeugung", q]);
-            if (v !== null) { summe += v; }
+            if (v !== null) { summe += v; gefundenWert = true; }
           });
-          return summe;
+          return gefundenWert ? summe : null;
         });
         return { name: g.name, token: g.token, werte: werte,
-                 summe: werte.reduce(function (a, b) { return a + b; }, 0) };
+                 summe: werte.reduce(function (a, b) { return a + (b || 0); }, 0) };
       })
     };
   }
@@ -1474,11 +1506,37 @@
     var n = v.marken.length;
     var innenB = B - links - rechts;
 
+    /* WELCHE STELLEN SIND BELEGT? Eine Stunde ohne jeden gemeldeten Wert wird
+       nicht gezeichnet -- weder als Flaeche noch als Linie. Sonst faellt der
+       Stapel auf null, und das liest sich wie eine Flaute statt wie eine
+       Meldeluecke. Genau so sah der 30.08.2026 aus. */
+    var belegt = [];
+    for (var b0 = 0; b0 < n; b0++) {
+      belegt.push(v.reihen.some(function (r) {
+        return r.werte[b0] !== null && r.werte[b0] !== undefined;
+      }));
+    }
+    /* Zusammenhaengende belegte Abschnitte. Ein Pfad je Abschnitt statt eines
+       durchgehenden -- sonst zieht die Flaeche ueber das Loch hinweg. */
+    function abschnitte() {
+      var raus = [], anfang = -1;
+      for (var q = 0; q < n; q++) {
+        if (belegt[q] && anfang < 0) { anfang = q; }
+        if ((!belegt[q] || q === n - 1) && anfang >= 0) {
+          var ende = belegt[q] ? q : q - 1;
+          if (ende >= anfang) { raus.push([anfang, ende]); }
+          anfang = -1;
+        }
+      }
+      return raus;
+    }
+    var ABSCHNITTE = abschnitte();
+
     var stapel = [], laufend = [], maxWert = 0, i;
     for (i = 0; i < n; i++) { laufend.push(0); }
     v.reihen.forEach(function (r) {
       var unterkante = laufend.slice();
-      laufend = laufend.map(function (x, k) { return x + r.werte[k]; });
+      laufend = laufend.map(function (x, k) { return x + (r.werte[k] || 0); });
       stapel.push({ reihe: r, unten: unterkante, oben: laufend.slice() });
     });
     var stapelOben = laufend;
@@ -1507,6 +1565,25 @@
         + ", gestapelt in " + v.einheit + ", dazu die Netzlast als Linie"
         + (hatPreis ? " und der Großhandelspreis" : "")
     });
+
+    /* Zwei Schraffuren. Sie sind hier KEIN Zuschaltmerkmal, sondern die
+       Bedeutung selbst: beide Flaechen sind keine Energietraeger. Die
+       Traegerbaender bleiben glatt -- die Regel dazu steht in CLAUDE.md und
+       gilt weiter. */
+    var defs = s("defs", {});
+    [["pf-schraffur-einfuhr", "var(--teal)", 45],
+     ["pf-schraffur-luecke", "var(--orange)", -45]].forEach(function (m) {
+      var pat = s("pattern", {
+        id: m[0], width: "7", height: "7", patternUnits: "userSpaceOnUse",
+        patternTransform: "rotate(" + m[2] + ")"
+      });
+      pat.appendChild(s("rect", { width: "7", height: "7", fill: m[1],
+        "fill-opacity": "0.16" }));
+      pat.appendChild(s("line", { x1: "0", y1: "0", x2: "0", y2: "7",
+        stroke: m[1], "stroke-width": "2.4", "stroke-opacity": "0.75" }));
+      defs.appendChild(pat);
+    });
+    svg.appendChild(defs);
 
     var gitter = s("g", { "class": "pf-gitter" });
     for (var g = 0; g <= achse + 1e-9; g += stufe) {
@@ -1558,14 +1635,25 @@
     var gKa = s("g", { "class": "pf-kanten" });
     stapel.forEach(function (b) {
       if (b.reihe.summe <= 0) { return; }
-      var d = "M" + X(0).toFixed(1) + " " + Y(b.unten[0]).toFixed(1), k;
-      for (k = 0; k < n; k++) { d += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1); }
-      for (k = n - 1; k >= 0; k--) { d += "L" + X(k).toFixed(1) + " " + Y(b.unten[k]).toFixed(1); }
-      b.flaeche = s("path", { d: d + "Z", "class": "pf-band",
+      var d = "", ok = "", k;
+      ABSCHNITTE.forEach(function (a) {
+        d += "M" + X(a[0]).toFixed(1) + " " + Y(b.unten[a[0]]).toFixed(1);
+        for (k = a[0]; k <= a[1]; k++) {
+          d += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1);
+        }
+        for (k = a[1]; k >= a[0]; k--) {
+          d += "L" + X(k).toFixed(1) + " " + Y(b.unten[k]).toFixed(1);
+        }
+        d += "Z";
+        ok += "M" + X(a[0]).toFixed(1) + " " + Y(b.oben[a[0]]).toFixed(1);
+        for (k = a[0] + 1; k <= a[1]; k++) {
+          ok += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1);
+        }
+      });
+      if (!d) { return; }
+      b.flaeche = s("path", { d: d, "class": "pf-band",
         fill: "var(" + b.reihe.token + ")" });
       gFl.appendChild(b.flaeche);
-      var ok = "M" + X(0).toFixed(1) + " " + Y(b.oben[0]).toFixed(1);
-      for (k = 1; k < n; k++) { ok += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1); }
       b.kante = s("path", { d: ok, "class": "pf-kante",
         stroke: "var(" + b.reihe.token + ")" });
       gKa.appendChild(b.kante);
@@ -1602,9 +1690,24 @@
       return null;
     }
 
-    /* UNTERDECKUNG: die Luecke zwischen Stapelspitze und Netzlast, wenn die
-       Erzeugung nicht reicht. Sie wird orange getoent -- das ist leere
-       Flaeche, dort verfaelscht eine Toenung nichts.
+    /* UNTERDECKUNG -- und WOMIT sie gedeckt wird.
+
+       Die erste Fassung toente die Luecke zwischen Stapelspitze und Netzlast
+       orange und sagte damit nur: hier fehlt etwas. Die Anschlussfrage --
+       woher kommt der Strom dann? -- blieb offen. Sie ist beantwortbar, ohne
+       etwas zu modellieren: die EINFUHR steht gemessen in derselben Datei.
+
+       Deshalb wird jetzt zweistufig gezeichnet:
+
+         1. Auf die Stapelspitze kommt die gemessene NETTOEINFUHR als eigenes
+            Band, schraffiert und in Teal. Schraffur, weil es kein
+            Energietraeger ist -- die Regel "gesaettigte Fuellung nur an kleine
+            Marken" gilt hier nicht, denn dies ist keine Traegerflaeche,
+            sondern eine Herkunftsangabe.
+         2. Was DANN noch bis zur Netzlast fehlt, bleibt orange. Diese Flaeche
+            hat jetzt eine scharfe Bedeutung: nicht durch inlaendische Erzeugung
+            UND nicht durch Einfuhr erklaert. Uebrig bleiben Netzverluste, der
+            Pumpspeicherbezug und die unterschiedliche zeitliche Aufloesung.
 
        Die UEBERDECKUNG bleibt ungetoent. Sie liegt ueber der Netzlastlinie und
        damit MITTEN in den Traegerflaechen; eine Toenung darueber machte aus
@@ -1613,12 +1716,62 @@
        ragt ueber die Linie. Der Zahlenwert steht in der Ablesung.
 
        An den Kreuzungen wird geteilt, sonst faerbte ein Segment falsch. */
+    /* FEHLENDE STELLEN AUSDRUECKLICH MARKIEREN. Eine leere Spalte allein ist
+       zweideutig -- sie koennte auch bedeuten, dass nichts erzeugt wurde. Der
+       graue Streifen sagt: hier hat die Quelle nichts geliefert. Er liegt
+       UNTER den Flaechen, damit er nichts ueberdeckt. */
+    var fehlstellen = [];
+    for (var f0 = 0; f0 < n; f0++) {
+      if (belegt[f0]) { continue; }
+      var f1 = f0;
+      while (f1 + 1 < n && !belegt[f1 + 1]) { f1++; }
+      fehlstellen.push([f0, f1]);
+      f0 = f1;
+    }
+    fehlstellen.forEach(function (a) {
+      var xa = a[0] > 0 ? (X(a[0] - 1) + X(a[0])) / 2 : X(a[0]);
+      var xb = a[1] < n - 1 ? (X(a[1]) + X(a[1] + 1)) / 2 : X(a[1]);
+      svg.appendChild(s("rect", { "class": "pf-fehlstelle",
+        x: xa.toFixed(1), y: oben, width: Math.max(2, xb - xa).toFixed(1),
+        height: hoeheOben }));
+    });
+
+    var hatNetto = !!(v.netto && v.netto.some(function (x) { return x !== null; }));
+    // Oberkante der EINFUHR: Erzeugung plus Nettoeinfuhr, aber nie unter der
+    // Erzeugung -- eine Nettoausfuhr wird hier nicht abgezogen. Sie ist kein
+    // Deckungsbeitrag, und ein nach unten gezogenes Band waere eine zweite
+    // Aussage im selben Bild.
+    var einfuhrOben = stapelOben.map(function (e, k) {
+      var q = hatNetto ? v.netto[k] : null;
+      return e + (q !== null && q !== undefined && q > 0 ? q : 0);
+    });
+    if (hatNetto) {
+      var dEin = "";
+      for (i = 0; i < n - 1; i++) {
+        if (!belegt[i] || !belegt[i + 1]) { continue; }
+        if (einfuhrOben[i] <= stapelOben[i] && einfuhrOben[i + 1] <= stapelOben[i + 1]) {
+          continue;
+        }
+        dEin += "M" + X(i).toFixed(1) + " " + Y(stapelOben[i]).toFixed(1)
+             + "L" + X(i).toFixed(1) + " " + Y(einfuhrOben[i]).toFixed(1)
+             + "L" + X(i + 1).toFixed(1) + " " + Y(einfuhrOben[i + 1]).toFixed(1)
+             + "L" + X(i + 1).toFixed(1) + " " + Y(stapelOben[i + 1]).toFixed(1) + "Z";
+      }
+      if (dEin) {
+        svg.appendChild(s("path", { d: dEin, "class": "pf-einfuhrband",
+          fill: "url(#pf-schraffur-einfuhr)" }));
+      }
+    }
+
     var gDeck = s("g", { "class": "pf-deckung" });
     var deckPfade = { ueber: "", unter: "" };
     for (i = 0; i < n - 1; i++) {
       var la = v.netzlast[i], lb = v.netzlast[i + 1];
       if (la === null || lb === null) { continue; }
-      var ea = stapelOben[i], eb = stapelOben[i + 1];
+      if (!belegt[i] || !belegt[i + 1]) { continue; }
+      // Gemessen wird gegen die Oberkante der EINFUHR, nicht gegen die
+      // Stapelspitze: was die Einfuhr deckt, ist keine Luecke mehr.
+      var ea = einfuhrOben[i], eb = einfuhrOben[i + 1];
       var da = ea - la, db = eb - lb;
       function quad(xa, yEa, yLa, xb, yEb, yLb, positiv) {
         var d = "M" + xa.toFixed(1) + " " + yEa.toFixed(1)
@@ -1638,17 +1791,20 @@
       }
     }
     if (deckPfade.unter) {
-      gDeck.appendChild(s("path", { d: deckPfade.unter, fill: "var(--orange)",
-        "fill-opacity": 0.30 }));
+      gDeck.appendChild(s("path", { d: deckPfade.unter, "class": "pf-luecke-flaeche",
+        fill: "url(#pf-schraffur-luecke)" }));
     }
     svg.appendChild(gDeck);
 
     /* Netzlast als duenne Linie in Textfarbe. non-scaling-stroke, damit sie
        beim Skalieren duenn bleibt und nicht zum Balken wird. */
-    var dl = "";
+    var dl = "", offen = false;
     v.netzlast.forEach(function (x, k) {
-      if (x === null) { return; }
-      dl += (dl ? "L" : "M") + X(k).toFixed(1) + " " + Y(x).toFixed(1);
+      // Eine fehlende Stunde UNTERBRICHT die Linie. Vorher wurde ueber das
+      // Loch hinweg verbunden -- eine gerade Strecke, die nie gemessen wurde.
+      if (x === null) { offen = false; return; }
+      dl += (offen ? "L" : "M") + X(k).toFixed(1) + " " + Y(x).toFixed(1);
+      offen = true;
     });
     if (dl) { svg.appendChild(s("path", { d: dl, "class": "pf-lastlinie", fill: "none" })); }
 
@@ -1746,8 +1902,19 @@
       if (v.netzlast[k] !== null) {
         zeilen.push({ label: "Netzlast", wert: nf1.format(v.netzlast[k] / v.teiler),
           farbe: "var(--last-linie)" });
-        var deck = (stapelOben[k] - v.netzlast[k]) / v.teiler;
-        zeilen.push({ label: deck >= 0 ? "Überdeckung" : "Unterdeckung",
+        /* Die Rechnung Schritt fuer Schritt, damit man sie mitlesen kann:
+           Erzeugung, dann die gemessene Nettoeinfuhr, dann was uebrig bleibt.
+           Vorher stand hier nur "Unterdeckung -3,2" ohne jede Erklaerung. */
+        zeilen.push({ label: "Erzeugung gesamt",
+          wert: nf1.format(stapelOben[k] / v.teiler), farbe: "var(--schrift-still)" });
+        var q = v.netto ? v.netto[k] : null;
+        if (q !== null && q !== undefined) {
+          zeilen.push({ label: q >= 0 ? "+ Einfuhr (netto)" : "− Ausfuhr (netto)",
+            wert: (q >= 0 ? "+" : "−") + nf1.format(Math.abs(q) / v.teiler),
+            farbe: "var(--teal)" });
+        }
+        var deck = (einfuhrOben[k] - v.netzlast[k]) / v.teiler;
+        zeilen.push({ label: deck >= 0 ? "Überdeckung" : "Nicht erklärte Lücke",
           wert: (deck >= 0 ? "+" : "−") + nf1.format(Math.abs(deck)),
           farbe: deck >= 0 ? "var(--teal)" : "var(--orange)" });
       }
@@ -1833,9 +2000,27 @@
     spl.appendChild(el("i", { "class": "pf-strich pf-last" }));
     spl.appendChild(document.createTextNode("Netzlast"));
     legende.appendChild(spl);
+    if (hatNetto) {
+      var spe = el("span");
+      spe.appendChild(el("i", { "class": "pf-schraffiert pf-einfuhr" }));
+      spe.appendChild(document.createTextNode(
+        "Einfuhr (netto), gemessen — sitzt auf der Erzeugung"));
+      legende.appendChild(spe);
+    }
+    if (fehlstellen.length) {
+      var spf = el("span");
+      spf.appendChild(el("i", { "class": "pf-schraffiert pf-fehlt" }));
+      var fehlt = 0;
+      fehlstellen.forEach(function (a) { fehlt += a[1] - a[0] + 1; });
+      spf.appendChild(document.createTextNode(
+        "keine Daten der Quelle — " + fehlt
+        + (v.stuendlich ? " Stunden" : " Tage") + " ohne Meldung"));
+      legende.appendChild(spf);
+    }
     var spd = el("span");
-    spd.appendChild(el("i", { style: "background:var(--orange);opacity:0.45;" }));
-    spd.appendChild(document.createTextNode("Unterdeckung: Erzeugung unter der Last"));
+    spd.appendChild(el("i", { "class": "pf-schraffiert pf-luecke" }));
+    spd.appendChild(document.createTextNode(
+      "Lücke: weder Erzeugung noch Einfuhr"));
     legende.appendChild(spd);
     if (hatPreis) {
       var spp = el("span");
@@ -1849,6 +2034,51 @@
       legende.appendChild(spp);
     }
     huelle.appendChild(legende);
+
+    /* WIE DIE UNTERDECKUNG AUSGEGLICHEN WIRD -- ausgerechnet, nicht behauptet.
+
+       Der Satz nennt drei gemessene Groessen: wie oft die Erzeugung unter der
+       Last lag, wie viel davon die Einfuhr deckt, und was danach uebrig
+       bleibt. Der Rest wird BENANNT und nicht wegerklaert: Netzverluste, der
+       Bezug der Pumpspeicher und die unterschiedliche zeitliche Aufloesung von
+       Erzeugung und Aussenhandel. */
+    var luecke = { punkte: 0, roh: 0, gedeckt: 0, offen: 0, belegt: 0 };
+    for (i = 0; i < n; i++) {
+      if (v.netzlast[i] === null || !belegt[i]) { continue; }
+      luecke.belegt++;
+      var fehlRoh = v.netzlast[i] - stapelOben[i];
+      if (fehlRoh > 0) {
+        luecke.punkte++;
+        luecke.roh += fehlRoh;
+        luecke.gedeckt += Math.min(fehlRoh, einfuhrOben[i] - stapelOben[i]);
+        luecke.offen += Math.max(0, v.netzlast[i] - einfuhrOben[i]);
+      }
+    }
+    var einheitSumme = v.stuendlich ? "GWh" : "GWh";
+    var summeTeiler = 1000;
+    if (luecke.punkte) {
+      var anteil = luecke.roh ? luecke.gedeckt / luecke.roh * 100 : 0;
+      huelle.appendChild(el("p", { "class": "pf-bezug pf-deckungstext",
+        text: "Wie die Lücke gedeckt wird: in " + nf0.format(luecke.punkte)
+          + " von " + nf0.format(luecke.belegt)
+          + (v.stuendlich ? " Stunden" : " Tagen")
+          + " dieses Zeitraums lag die Erzeugung unter der Netzlast, zusammen um "
+          + nf1.format(luecke.roh / summeTeiler) + " " + einheitSumme + ". "
+          + nf1.format(luecke.gedeckt / summeTeiler) + " " + einheitSumme
+          + " davon — " + nf0.format(anteil) + " % — deckt die gemessene "
+          + "Nettoeinfuhr; sie sitzt im Bild schraffiert auf der Erzeugung. "
+          + "Übrig bleiben " + nf1.format(luecke.offen / summeTeiler) + " "
+          + einheitSumme + ", im Bild die orange Schraffur. Darin stecken "
+          + "Netzverluste, der Bezug der Pumpspeicher und die unterschiedliche "
+          + "zeitliche Auflösung von Erzeugung und Außenhandel. Dieser Rest "
+          + "wird nicht weggerechnet und nicht geschätzt — er steht so da, wie "
+          + "er sich ergibt." }));
+    } else if (luecke.belegt) {
+      huelle.appendChild(el("p", { "class": "pf-bezug pf-deckungstext",
+        text: "In diesem Zeitraum lag die Erzeugung zu keiner "
+          + (v.stuendlich ? "Stunde" : "Tageszeit") + " unter der Netzlast; "
+          + "es gibt keine Lücke zu decken." }));
+    }
 
     var schalter = el("button", { "class": "pf-tabellenschalter", type: "button",
       "aria-expanded": "false", text: "Als Tabelle anzeigen" });
