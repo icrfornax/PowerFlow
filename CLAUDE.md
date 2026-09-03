@@ -214,6 +214,26 @@ die Regelzonenbilanz.
   ungueltig und faellt stillschweigend auf die geerbte Schrift zurueck -- eine
   Beschriftung stand dadurch in der Ziffernschrift. Sichtbar nur im
   Bildschirmfoto, in keiner Pruefung; `validate.py` prueft es jetzt.
+- **Eine Auskunft, die nur im `title`-Attribut steht, ist keine.** Dort steht
+  eine Zeile ohne Umbruch, ohne Farbe, ohne Tastaturzugang, und sie erscheint
+  erst nach einer Sekunde. Der Fehler ist zweimal passiert -- beim Zeitprofil
+  und gleich wieder beim Kostenblock. Deshalb gibt es jetzt EINE Funktion,
+  `ablesungAn(rahmen)`, die alle Grafiken bedienen: Zeitprofil, Kosten,
+  Regelzonenbalken. Ein `title` ist nur noch zulaessig, wenn derselbe Wert
+  ohnehin sichtbar danebensteht (etwa als voller Text einer gekuerzten
+  Beschriftung). `browsertest.mjs` prueft, dass keine Grafikmarke ihre Auskunft
+  im `title` traegt.
+- **Lange Erklaerungen klappen auf, der erste Satz bleibt stehen.**
+  `langtext()` teilt am ersten Satzende; darunter steht der Rest in einem
+  `<details>`. Nicht umgekehrt -- was zaehlt, darf nicht hinter einem Klick
+  liegen. Unter 240 Zeichen bleibt es ein gewoehnlicher Absatz.
+- **Fliesstext hoert bei 82 Zeichen auf.** Auf einem breiten Bildschirm laeuft
+  ein Absatz sonst ueber 200 Zeichen, und das Auge verliert beim Zeilenwechsel
+  die Spur. Gilt nicht fuer Tabellen und Grafiken.
+- **Zwei Grafiken mit verschiedenen Zeitachsen im selben Abschnitt brauchen
+  jede eine Achsenbeschriftung** und eine Ueberschrift, die den Bezug nennt --
+  "ueber den Tag, 0 bis 24 Uhr" gegen "je Monat". Ohne das liest man die zweite
+  Grafik als Fortsetzung der ersten.
 - Beschriftungen nennen Einheit und Bezug.
 - Zugaenglichkeit: sichtbarer Fokus, aria-Beschriftungen an Knoepfen ohne Text,
   `prefers-reduced-motion` beachten, Tabellen und Grafiken mit eigenem

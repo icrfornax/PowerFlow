@@ -439,6 +439,83 @@ try {
     pruefe(/keinen vollen Monat/.test(kosten.warnung),
       "und es steht da, warum nicht", kosten.warnung.slice(0, 90));
   }
+  /* KEINE AUSKUNFT NUR IM title-ATTRIBUT. Der Fehler ist auf dieser Seite
+     zweimal passiert -- erst beim Zeitprofil, dann beim Kostenblock. Geprueft
+     wird deshalb die BEDINGUNG: jede Grafikmarke, die einen Wert traegt, muss
+     ihn ueber eine echte Ablesung zeigen. */
+  const ablesungen = await js(`(function () {
+    const mitTitle = [...document.querySelectorAll(
+      ".pf-kosten-stapel[title], .pf-zone-stapel span[title], .pf-rd-saeule[title], "
+      + ".pf-rd-stapel[title], .pf-rd-teil[title]")];
+    // Der Kostenbalken muss auf Zeigen eine Ablesung oeffnen.
+    const sp = document.querySelector(".pf-kosten-monat");
+    const vorher = document.querySelectorAll(".pf-kosten-gitter .pf-rd-info:not([hidden])").length;
+    if (sp) { sp.dispatchEvent(new MouseEvent("mouseenter", { bubbles: false })); }
+    const feld = document.querySelector(".pf-kosten-gitter .pf-rd-info");
+    const offen = feld && !feld.hasAttribute("hidden");
+    const text = offen ? feld.textContent : "";
+    // Und die Regelzonenkarten ebenso.
+    const zs = document.querySelector(".pf-zone-stapel span");
+    if (zs) { zs.dispatchEvent(new MouseEvent("mouseenter", { bubbles: false })); }
+    const zfeld = document.querySelector(".pf-zone-schiene .pf-rd-info");
+    return {
+      mitTitle: mitTitle.length,
+      vorher: vorher,
+      offen: !!offen,
+      text: text,
+      abschnitte: offen ? feld.querySelectorAll("dt.pf-rd-info-titel").length : 0,
+      zoneOffen: !!(zfeld && !zfeld.hasAttribute("hidden")),
+      zoneText: zfeld ? zfeld.textContent.slice(0, 60) : ""
+    };
+  })()`);
+  pruefe(ablesungen.mitTitle === 0,
+    "keine Grafikmarke traegt ihre Auskunft im title-Attribut",
+    `${ablesungen.mitTitle} mit title`);
+  pruefe(ablesungen.vorher === 0, "die Kostenablesung ist zunaechst zu");
+  pruefe(ablesungen.offen, "und geht beim Zeigen auf");
+  pruefe(/€/.test(ablesungen.text) && ablesungen.abschnitte >= 2,
+    `sie nennt Betrag und Aufgliederung (${ablesungen.abschnitte} Abschnitte)`,
+    ablesungen.text.slice(0, 70));
+  pruefe(ablesungen.zoneOffen && /GWh/.test(ablesungen.zoneText),
+    "auch die Regelzonenbalken haben eine echte Ablesung", ablesungen.zoneText);
+
+  /* AUFKLAPPBARE TEXTBLOECKE. Lange Erklaerungen bleiben stehen, aber der
+     erste Satz muss sichtbar sein -- was zaehlt, darf nicht hinter einem Klick
+     liegen. */
+  const aufklapp = await js(`(function () {
+    const d = [...document.querySelectorAll("details.pf-mehr")];
+    return {
+      anzahl: d.length,
+      zu: d.filter((x) => !x.open).length,
+      mitZusammenfassung: d.filter((x) => {
+        const s = x.querySelector("summary");
+        return s && s.textContent.trim().length > 25;
+      }).length,
+      /* Der verborgene Teil muss Text enthalten UND kuerzer sein als das
+         Ganze. Ueber die Hoehe laesst sich das nicht pruefen: Chrome verbirgt
+         den Inhalt eines geschlossenen <details> seit einiger Zeit mit
+         content-visibility, nicht mit display:none -- die Hoehe bleibt
+         stehen. Geprueft wird deshalb der Inhalt, nicht die Geometrie. */
+      probe: (function () {
+        if (!d.length) { return null; }
+        const s = d[0].querySelector("summary").textContent.trim();
+        const rest = d[0].querySelector("p").textContent.trim();
+        const ganz = d[0].textContent.trim();
+        return { summary: s.length, rest: rest.length, ganz: ganz.length };
+      })()
+    };
+  })()`);
+  pruefe(aufklapp.anzahl >= 4,
+    `${aufklapp.anzahl} lange Textbloecke sind aufklappbar`);
+  pruefe(aufklapp.zu === aufklapp.anzahl,
+    "sie sind zugeklappt voreingestellt");
+  pruefe(aufklapp.mitZusammenfassung === aufklapp.anzahl,
+    "jeder zeigt seinen ersten Satz auch im zugeklappten Zustand");
+  pruefe(aufklapp.probe && aufklapp.probe.rest > 40
+    && aufklapp.probe.summary < aufklapp.probe.ganz,
+    "der verborgene Teil traegt den laengeren Rest des Textes",
+    JSON.stringify(aufklapp.probe));
+
   await foto("kosten", ".pf-rd-kosten");
 
   /* Und die Gegenprobe: ein VOLLER Monat muss eine Summe ergeben. Ohne diesen
@@ -1029,7 +1106,10 @@ try {
      es die vier Aufgliederungen fuehrt und dass es die Tastatur bedient. */
   const rdInfo = await js(`(function () {
     const spalten = [...document.querySelectorAll(".pf-rd-spalte")];
-    const info = document.querySelector(".pf-rd-info");
+    // GENAU die Ablesung des Zeitprofils. Seit dem 04.09.2026 benutzen auch der
+    // Kostenblock und die vier Regelzonenkarten dieselbe Bauart -- ein
+    // ungenauer Selektor griffe die erste beliebige davon ab.
+    const info = document.querySelector(".pf-rd-flaeche .pf-rd-info");
     const vorher = info ? info.hasAttribute("hidden") : null;
     // Die Stunde mit dem hoechsten Stapel -- dort ist sicher etwas zu sehen.
     let beste = 0, hoch = -1;

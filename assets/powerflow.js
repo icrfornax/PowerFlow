@@ -2075,8 +2075,8 @@
     var summeTeiler = 1000;
     if (luecke.punkte) {
       var anteil = luecke.roh ? luecke.gedeckt / luecke.roh * 100 : 0;
-      huelle.appendChild(el("p", { "class": "pf-bezug pf-deckungstext",
-        text: "Wie die Lücke gedeckt wird: in " + nf0.format(luecke.punkte)
+      huelle.appendChild(langtext(
+        "Wie die Lücke gedeckt wird: in " + nf0.format(luecke.punkte)
           + " von " + nf0.format(luecke.belegt)
           + (v.stuendlich ? " Stunden" : " Tagen")
           + " dieses Zeitraums lag die Erzeugung unter der Netzlast, zusammen um "
@@ -2094,7 +2094,8 @@
           + "reihen erfassen offenbar nicht jede Anlage, die ins Netz der "
           + "allgemeinen Versorgung einspeist. Nachzulesen unter „Bekannte "
           + "Mängel der Daten“. Der Rest wird nicht weggerechnet und nicht "
-          + "geschätzt — er steht so da, wie er sich ergibt." }));
+          + "geschätzt — er steht so da, wie er sich ergibt.",
+        "pf-bezug pf-deckungstext"));
     } else if (luecke.belegt) {
       huelle.appendChild(el("p", { "class": "pf-bezug pf-deckungstext",
         text: "In diesem Zeitraum lag die Erzeugung zu keiner "
@@ -2180,13 +2181,36 @@
       /* FESTE Reihenfolge, nicht nach Groesse sortiert. Sonst steht Wind in
          jedem der vier Balken an einer anderen Stelle und der Vergleich
          zwischen den Zonen -- der eigentliche Zweck -- wird zum Suchspiel. */
+      var zAblese = ablesungAn(schiene);
       x.gruppen.forEach(function (g) {
         var anteil = g.mwh / x.erzeugung * 100;
-        stapel.appendChild(el("span", {
-          style: "width:" + anteil.toFixed(2) + "%;background:var(" + g.token + ");",
-          title: g.name + ": " + gwh(g.mwh, 1) + " GWh · " + nf1.format(anteil) + " %"
-        }));
+        var stueck = el("span", {
+          style: "width:" + anteil.toFixed(2) + "%;background:var(" + g.token + ");"
+        });
+        /* Eine echte Ablesung, kein title-Attribut. Die Werte je Traeger und
+           Zone stehen NIRGENDS sonst auf der Seite -- der Balken ist ihre
+           einzige Anzeige, und eine Auskunft, die nur im title steht, ist fuer
+           Tastatur und Vorlesesoftware keine. */
+        stueck.addEventListener("mouseenter", function () {
+          zAblese.zeige({
+            kopf: x.zone + " — " + g.name,
+            wert: gwh(g.mwh, 1), einheit: "GWh",
+            bezug: nf1.format(anteil) + " % der Erzeugung dieser Regelzone im "
+              + "Zeitraum.",
+            abschnitte: [{ titel: "Alle Träger dieser Zone", zeilen: x.gruppen
+              .filter(function (g2) { return g2.mwh; })
+              .map(function (g2) {
+                return { name: g2.name, token: g2.token,
+                         wert: gwh(g2.mwh, 1) + " GWh · "
+                           + nf1.format(g2.mwh / x.erzeugung * 100) + " %" };
+              }) }]
+          }, (g.mwh ? (x.gruppen.slice(0, x.gruppen.indexOf(g))
+               .reduce(function (a, b) { return a + b.mwh; }, 0) + g.mwh / 2)
+               / x.erzeugung : 0.5));
+        });
+        stapel.appendChild(stueck);
       });
+      schiene.addEventListener("mouseleave", function () { zAblese.verbirg(); });
       schiene.appendChild(stapel);
       karte.appendChild(schiene);
 
@@ -2337,6 +2361,112 @@
       was: "Strombedingter Redispatch: das Netz trägt den geplanten Transport "
         + "nicht. Das ist der Regelfall." }
   ];
+
+  /* AUFKLAPPBARER TEXT.
+
+     Lange Erklaerungen sind auf dieser Seite unvermeidlich -- jede Annahme
+     muss benannt werden, jede Ruecknahme auch. Aber ein Block von acht Zeilen
+     ueber die volle Breite wird nicht gelesen, und dann ist die Sorgfalt
+     umsonst.
+
+     Deshalb: der ERSTE SATZ bleibt immer sichtbar, der Rest klappt auf. Nicht
+     umgekehrt -- was zaehlt, darf nicht hinter einem Klick liegen. Gebaut mit
+     <details>/<summary>, also ohne eigenes JavaScript, mit Tastatur und
+     Vorlesesoftware von Haus aus.
+
+     `text` wird am ersten Punkt-Leerzeichen geteilt. Ist der Text kurz genug,
+     kommt ein gewoehnlicher Absatz zurueck -- ein Aufklapper um zwei Zeilen
+     waere Schikane. */
+  var AUFKLAPP_AB = 240;        // Zeichen; darunter bleibt es ein Absatz
+
+  function langtext(text, klasse) {
+    if (text.length <= AUFKLAPP_AB) {
+      return el("p", { "class": klasse || "pf-bezug", text: text });
+    }
+    var schnitt = -1;
+    // Erste Satzgrenze suchen, aber nicht mitten in "z. B." oder "0,39 ct".
+    for (var i = 40; i < text.length - 1; i++) {
+      if (text.charAt(i) === "." && text.charAt(i + 1) === " "
+          && text.charAt(i - 1) !== " ") { schnitt = i + 1; break; }
+    }
+    if (schnitt < 0 || schnitt > text.length - 60) {
+      return el("p", { "class": klasse || "pf-bezug", text: text });
+    }
+    /* Die Klasse steht AUCH am <details>, nicht nur an seinen Teilen. Sonst
+       liefert querySelector(".pf-ahp-hinweis") die Zusammenfassung und damit
+       nur den ersten Satz -- zwei Pruefungen sind genau darauf hereingefallen,
+       und ein Leser mit Vorlesesoftware haette dasselbe Problem. */
+    var d = el("details", { "class": "pf-mehr " + (klasse || "pf-bezug") });
+    var s = el("summary", { "class": klasse || "pf-bezug" });
+    s.appendChild(document.createTextNode(text.slice(0, schnitt).trim()));
+    s.appendChild(el("span", { "class": "pf-mehr-marke", text: "mehr" }));
+    d.appendChild(s);
+    d.appendChild(el("p", { "class": klasse || "pf-bezug",
+      text: text.slice(schnitt).trim() }));
+    return d;
+  }
+
+  /* DIE ABLESUNG -- EINE Funktion fuer alle Grafiken.
+
+     Sie steht hier, weil derselbe Fehler sonst ein drittes Mal passiert: eine
+     Grafikmarke bekommt ein `title`-Attribut, und die Auskunft steht damit in
+     einer Zeile ohne Umbruch, ohne Farbe, ohne Tastaturzugang und erscheint
+     erst nach einer Sekunde. Beim Zeitprofil war das schon einmal so, beim
+     Kostenblock ist es mir gleich wieder passiert.
+
+     Aufgerufen wird sie mit einem Bauplan, nicht mit fertigem Markup:
+
+       { kopf, wert, einheit, bezug,
+         abschnitte: [ { titel, zeilen: [ { name, wert, token } ] } ] }
+
+     Die Rueckgabe hat zeige(bauplan, anteil) und verbirg(). `anteil` ist die
+     waagerechte Lage im Rahmen, 0 bis 1 -- links davon oeffnet die Ablesung
+     nach rechts, rechts davon nach links, damit sie nie aus dem Bild laeuft.
+     Der Rahmen braucht position: relative. */
+  function ablesungAn(rahmen) {
+    var feld = el("div", { "class": "pf-rd-info", role: "status", hidden: "hidden" });
+    rahmen.appendChild(feld);
+    return {
+      feld: feld,
+      zeige: function (plan, anteil) {
+        feld.innerHTML = "";
+        if (plan.kopf) {
+          feld.appendChild(el("p", { "class": "pf-rd-info-uhr", text: plan.kopf }));
+        }
+        if (plan.wert !== undefined && plan.wert !== null) {
+          var w = el("p", { "class": "pf-rd-info-wert", text: plan.wert });
+          if (plan.einheit) { w.appendChild(el("span", { text: plan.einheit })); }
+          feld.appendChild(w);
+        }
+        if (plan.bezug) {
+          feld.appendChild(el("p", { "class": "pf-bezug", text: plan.bezug }));
+        }
+        var dl = el("dl", { "class": "pf-rd-info-liste" });
+        (plan.abschnitte || []).forEach(function (a) {
+          if (!a.zeilen || !a.zeilen.length) { return; }
+          if (a.titel) {
+            dl.appendChild(el("dt", { "class": "pf-rd-info-titel", text: a.titel }));
+            dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
+          }
+          a.zeilen.forEach(function (z) {
+            var dt2 = el("dt");
+            if (z.token) {
+              dt2.appendChild(el("i", { style: "background:var(" + z.token + ");" }));
+            }
+            dt2.appendChild(document.createTextNode(z.name));
+            dl.appendChild(dt2);
+            dl.appendChild(el("dd", { text: z.wert }));
+          });
+        });
+        if (dl.childNodes.length) { feld.appendChild(dl); }
+        feld.removeAttribute("hidden");
+        var links = anteil < 0.5;
+        feld.style.left = links ? (anteil * 100).toFixed(1) + "%" : "auto";
+        feld.style.right = links ? "auto" : ((1 - anteil) * 100).toFixed(1) + "%";
+      },
+      verbirg: function () { feld.setAttribute("hidden", "hidden"); }
+    };
+  }
 
   /* Die Stunde mit den meisten bzw. wenigsten laufenden Massnahmen. Zwei
      kleine Funktionen statt einer Schleife an drei Stellen. */
@@ -2489,6 +2619,11 @@
     });
     huelle.appendChild(kopfzeile);
 
+    huelle.appendChild(el("p", { "class": "pf-kasten-vor",
+      text: "Drei Fragen, drei Blöcke: wie viel (oben), wann und warum (über den "
+        + "Tag), und was es kostet (je Monat). Die beiden Grafiken haben "
+        + "verschiedene Zeitachsen — die eine zeigt 24 Stunden, die andere zwölf "
+        + "Monate." }));
     huelle.appendChild(el("p", { "class": "pf-bezug",
       text: r.massnahmen.toLocaleString("de-DE") + " Maßnahmen an "
         + r.tageMitMassnahme + " von " + r.belegteTage + " Tagen"
@@ -2549,7 +2684,8 @@
     var maxStd = Math.max.apply(null, r.stunden);
     if (gruppen.length) {
       var gkasten = el("div", { "class": "pf-rd-gruende" });
-      gkasten.appendChild(el("h4", { text: "Wann und warum eingegriffen wurde" }));
+      gkasten.appendChild(el("h4",
+        { text: "Wann und warum eingegriffen wurde · über den Tag, 0 bis 24 Uhr" }));
 
       if (r.belegteTage && maxStd > 0) {
         var mittel = function (x) { return x / r.belegteTage; };
@@ -2592,28 +2728,21 @@
           spalten24.push(spalte);
         }
 
-        /* Die Ablesung. Ein eigenes Element, kein title-Attribut: dort steht
-           eine Zeile ohne Zeilenumbruch, ohne Farbe und ohne Tastaturzugang,
-           und sie kam obendrein erst nach einer Sekunde. */
-        var info = el("div", { "class": "pf-rd-info", role: "status", hidden: "hidden" });
-        flaeche.appendChild(info);
+        /* Dieselbe Ablesung wie beim Kostenblock und bei den Regelzonen --
+           EINE Funktion, ein Aussehen, ein Verhalten. Vorher stand hier eine
+           eigene Fassung; als der Kostenblock dazukam, hatte er prompt wieder
+           ein title-Attribut. */
+        var ablese = ablesungAn(flaeche);
 
-        function zeile(dl, name, wert, token) {
-          var dt2 = el("dt");
-          if (token) { dt2.appendChild(el("i", { style: "background:var(" + token + ");" })); }
-          dt2.appendChild(document.createTextNode(name));
-          dl.appendChild(dt2);
-          dl.appendChild(el("dd", { text: wert }));
-        }
-
-        function anteilszeile(dl, karte, stunde, titelToken) {
-          var namen = Object.keys(karte).filter(function (k) {
+        function anteilszeilen(karte, stunde, token) {
+          return Object.keys(karte).filter(function (k) {
             return karte[k][stunde];
-          }).sort(function (a, b) { return karte[b][stunde] - karte[a][stunde]; });
-          namen.forEach(function (n) {
-            zeile(dl, n, nf1.format(mittel(karte[n][stunde])) + " · "
-              + nf0.format(karte[n][stunde] / r.stunden[stunde] * 100) + " %",
-              titelToken ? titelToken(n) : null);
+          }).sort(function (a2, b2) {
+            return karte[b2][stunde] - karte[a2][stunde];
+          }).map(function (n2) {
+            return { name: n2, token: token ? token(n2) : null,
+                     wert: nf1.format(mittel(karte[n2][stunde])) + " · "
+                       + nf0.format(karte[n2][stunde] / r.stunden[stunde] * 100) + " %" };
           });
         }
 
@@ -2623,54 +2752,42 @@
           if (aktiv >= 0) { spalten24[aktiv].removeAttribute("data-aktiv"); }
           aktiv = stunde;
           spalten24[aktiv].setAttribute("data-aktiv", "ja");
-          info.innerHTML = "";
-          info.appendChild(el("p", { "class": "pf-rd-info-uhr",
-            text: zwei(stunde) + ":00 bis " + zwei((stunde + 1) % 24) + ":00 Uhr" }));
-          var wert = el("p", { "class": "pf-rd-info-wert",
-            text: nf1.format(mittel(r.stunden[stunde])) });
-          wert.appendChild(el("span", { text: "Maßnahmen gleichzeitig, im Mittel" }));
-          info.appendChild(wert);
-          info.appendChild(el("p", { "class": "pf-bezug",
-            text: "an " + nf0.format(r.stundenTage[stunde]) + " von "
+          ablese.zeige({
+            kopf: zwei(stunde) + ":00 bis " + zwei((stunde + 1) % 24) + ":00 Uhr",
+            wert: nf1.format(mittel(r.stunden[stunde])),
+            einheit: "Maßnahmen gleichzeitig, im Mittel",
+            bezug: "an " + nf0.format(r.stundenTage[stunde]) + " von "
               + nf0.format(r.belegteTage) + " Tagen lief in dieser Stunde "
               + "mindestens eine · sie dauerten im Mittel "
               + nf1.format(r.stundenDauer[stunde] / r.stunden[stunde])
-              + " Stunden insgesamt" }));
-
-          var dl = el("dl", { "class": "pf-rd-info-liste" });
-          dl.appendChild(el("dt", { "class": "pf-rd-info-titel", text: "Warum" }));
-          dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
-          anteilszeile(dl, r.stdGruppe, stunde, function (name) {
-            var g = RD_GRUNDGRUPPEN.filter(function (x) { return x.name === name; })[0];
-            return g ? g.token : null;
-          });
-          dl.appendChild(el("dt", { "class": "pf-rd-info-titel", text: "Richtung" }));
-          dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
-          zeile(dl, "hochgefahren", nf1.format(mittel(r.stdHoch[stunde])) + " · "
-            + nf0.format(r.stdHoch[stunde] / r.stunden[stunde] * 100) + " %", "--teal");
-          zeile(dl, "heruntergefahren", nf1.format(mittel(r.stdRunter[stunde])) + " · "
-            + nf0.format(r.stdRunter[stunde] / r.stunden[stunde] * 100) + " %", "--orange");
-          dl.appendChild(el("dt", { "class": "pf-rd-info-titel",
-            text: "Angewiesen von — die Regelzone" }));
-          dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
-          anteilszeile(dl, r.stdUenb, stunde);
-          dl.appendChild(el("dt", { "class": "pf-rd-info-titel",
-            text: "Betroffene Erzeugung" }));
-          dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
-          anteilszeile(dl, r.stdArt, stunde);
-          info.appendChild(dl);
-
-          /* Rand halten: an den ersten und letzten Stunden wuerde die Ablesung
-             sonst aus dem Bild laufen. */
-          info.removeAttribute("hidden");
-          info.style.left = stunde < 12 ? (stunde / 24 * 100) + "%" : "auto";
-          info.style.right = stunde < 12 ? "auto" : ((23 - stunde) / 24 * 100) + "%";
+              + " Stunden insgesamt",
+            abschnitte: [
+              { titel: "Warum", zeilen: anteilszeilen(r.stdGruppe, stunde,
+                  function (name) {
+                    var g = RD_GRUNDGRUPPEN.filter(function (x) {
+                      return x.name === name; })[0];
+                    return g ? g.token : null;
+                  }) },
+              { titel: "Richtung", zeilen: [
+                  { name: "hochgefahren", token: "--teal",
+                    wert: nf1.format(mittel(r.stdHoch[stunde])) + " · "
+                      + nf0.format(r.stdHoch[stunde] / r.stunden[stunde] * 100) + " %" },
+                  { name: "heruntergefahren", token: "--orange",
+                    wert: nf1.format(mittel(r.stdRunter[stunde])) + " · "
+                      + nf0.format(r.stdRunter[stunde] / r.stunden[stunde] * 100) + " %" }
+                ] },
+              { titel: "Angewiesen von — die Regelzone",
+                zeilen: anteilszeilen(r.stdUenb, stunde) },
+              { titel: "Betroffene Erzeugung",
+                zeilen: anteilszeilen(r.stdArt, stunde) }
+            ]
+          }, (stunde + 0.5) / 24);
         }
 
         function verbergen() {
           if (aktiv >= 0) { spalten24[aktiv].removeAttribute("data-aktiv"); }
           aktiv = -1;
-          info.setAttribute("hidden", "hidden");
+          ablese.verbirg();
         }
 
         spalten24.forEach(function (sp, i) {
@@ -2698,11 +2815,13 @@
           achse.appendChild(el("span", { text: hb % 3 === 0 ? zwei(hb) : "" }));
         }
         gkasten.appendChild(achse);
+        gkasten.appendChild(el("p", { "class": "pf-achsenfuss",
+          text: "Stunde des Tages, Ortszeit" }));
 
         var spitze = spitzenstunde(r.stunden);
         var tief = tiefststunde(r.stunden);
-        gkasten.appendChild(el("p", { "class": "pf-bezug",
-          text: "Höhe: gleichzeitig laufende Maßnahmen je Stunde des Tages, "
+        gkasten.appendChild(langtext(
+          "Höhe: gleichzeitig laufende Maßnahmen je Stunde des Tages, "
             + "gemittelt über " + nf0.format(r.belegteTage) + " Tage (Ortszeit). "
             + "Farbe: der Grund. Am meisten um " + zwei(spitze) + ":00 mit "
             + nf1.format(mittel(r.stunden[spitze])) + ", am wenigsten um "
@@ -2713,7 +2832,7 @@
             + "Gesamtarbeit und ein Fenster, keinen Verlauf darin. Eine Stufe "
             + "oder Priorität führt sie nicht, und der Ort der betroffenen "
             + "Anlage lässt sich nicht auflösen — deshalb steht dort, wer "
-            + "angewiesen hat." }));
+            + "angewiesen hat."));
       }
 
       /* Die Gruppenliste ist jetzt zugleich die Legende der Grafik daruber.
@@ -2785,7 +2904,7 @@
     var K = Z.kosten;
     if (K && K.monate && K.monate.length) {
       var kkasten = el("div", { "class": "pf-rd-kosten" });
-      kkasten.appendChild(el("h4", { text: "Was es kostet" }));
+      kkasten.appendChild(el("h4", { text: "Was es kostet · je Monat" }));
 
       function monatVoll(m) {
         // Erster und letzter Tag des Monats muessen im Zeitraum liegen.
@@ -2869,15 +2988,12 @@
                 ? " — die Monate des Zeitraums voll, die übrigen gedämpft als Zusammenhang"
                 : "") }));
         var kgitter = el("div", { "class": "pf-kosten-gitter" });
+        var spaltenK = [], kAktiv = -1;
         stellen.forEach(function (i) {
           var sp = el("div", { "class": "pf-kosten-monat" });
           if (!drin[i] && voll) { sp.setAttribute("data-ausserhalb", "ja"); }
           var stapelK = el("div", { "class": "pf-kosten-stapel",
-            style: "height:" + (Math.abs(K.gesamt[i]) / maxK * 100).toFixed(1) + "%;",
-            title: monatLang(K.monate[i]) + ": " + eur(K.gesamt[i])
-              + " gesamt, davon " + eur(K.redispatch[i]) + " Redispatch, "
-              + eur(K.countertrade[i]) + " Countertrade und "
-              + eur((K.sonstiges || [])[i] || 0) + " Sonstiges" });
+            style: "height:" + (Math.abs(K.gesamt[i]) / maxK * 100).toFixed(1) + "%;" });
           [["redispatch", "--orange"], ["countertrade", "--teal"],
            ["sonstiges", "--tr-sonst"]].forEach(function (p) {
             var anteil = K.gesamt[i] ? K[p[0]][i] / K.gesamt[i] * 100 : 0;
@@ -2887,6 +3003,65 @@
           });
           sp.appendChild(stapelK);
           kgitter.appendChild(sp);
+          spaltenK.push(sp);
+        });
+        var kAblese = ablesungAn(kgitter);
+        function kZeige(i, k) {
+          if (kAktiv >= 0) { spaltenK[kAktiv].removeAttribute("data-aktiv"); }
+          kAktiv = k;
+          spaltenK[k].setAttribute("data-aktiv", "ja");
+          var so = (K.sonstiges || [])[i] || 0;
+          kAblese.zeige({
+            kopf: monatLang(K.monate[i]) + (drin[i] || !voll ? "" : " — außerhalb des Zeitraums"),
+            wert: eur(K.gesamt[i]), einheit: "Kosten gesamt",
+            bezug: "Monatswert der Quelle. Der Anteil der Regelzonen steht "
+              + "unter der Grafik; Kosten je Maßnahme gibt es nicht.",
+            abschnitte: [{ titel: "Wofür", zeilen: [
+              { name: "Netzengpass (Redispatch)", wert: eur(K.redispatch[i]),
+                token: "--orange" },
+              { name: "Countertrade an der Grenze", wert: eur(K.countertrade[i]),
+                token: "--teal" }
+            ].concat(Math.abs(so) > Math.abs(K.gesamt[i]) * 0.005
+              ? [{ name: "Sonstiges", wert: eur(so), token: "--tr-sonst" }] : []) },
+            { titel: "Je Regelzone", zeilen: Object.keys(K.je_zone)
+                .filter(function (z) { return K.je_zone[z][i]; })
+                .sort(function (a, b) { return K.je_zone[b][i] - K.je_zone[a][i]; })
+                .map(function (z) {
+                  return { name: z, wert: eur(K.je_zone[z][i]) };
+                }) }]
+          }, (k + 0.5) / stellen.length);
+        }
+        spaltenK.forEach(function (sp2, k) {
+          sp2.addEventListener("mouseenter", function () { kZeige(stellen[k], k); });
+        });
+        kgitter.addEventListener("mouseleave", function () {
+          if (kAktiv >= 0) { spaltenK[kAktiv].removeAttribute("data-aktiv"); }
+          kAktiv = -1;
+          kAblese.verbirg();
+        });
+        kgitter.setAttribute("tabindex", "0");
+        kgitter.setAttribute("role", "group");
+        kgitter.setAttribute("aria-label",
+          "Kosten des Engpassmanagements je Monat. Mit den Pfeiltasten den "
+          + "Monat wechseln.");
+        kgitter.addEventListener("focus", function () {
+          if (kAktiv < 0) { kZeige(stellen[stellen.length - 1], stellen.length - 1); }
+        });
+        kgitter.addEventListener("blur", function () {
+          if (kAktiv >= 0) { spaltenK[kAktiv].removeAttribute("data-aktiv"); }
+          kAktiv = -1; kAblese.verbirg();
+        });
+        kgitter.addEventListener("keydown", function (ev) {
+          if (ev.key === "Escape") {
+            if (kAktiv >= 0) { spaltenK[kAktiv].removeAttribute("data-aktiv"); }
+            kAktiv = -1; kAblese.verbirg(); return;
+          }
+          var schritt = ev.key === "ArrowRight" ? 1 : ev.key === "ArrowLeft" ? -1 : 0;
+          if (!schritt) { return; }
+          ev.preventDefault();
+          var k2 = (kAktiv < 0 ? stellen.length - 1 : kAktiv + schritt);
+          if (k2 < 0 || k2 >= stellen.length) { return; }
+          kZeige(stellen[k2], k2);
         });
         kkasten.appendChild(kgitter);
         var kachse = el("div", { "class": "pf-kosten-achse" });
@@ -2896,6 +3071,7 @@
             text: (stellen.length <= 14 || k % 3 === 0) ? m.slice(5) + "/" + m.slice(2, 4) : "" }));
         });
         kkasten.appendChild(kachse);
+        kkasten.appendChild(el("p", { "class": "pf-achsenfuss", text: "Monat" }));
       }
 
       /* DIE RECHNUNG. Sie ist der eigentliche Gewinn: aus "20,3 TWh" wird eine
@@ -2934,12 +3110,12 @@
         sm.appendChild(el("span", { "class": "pf-zahl",
           text: nf2.format(sRd / arbeitMonate) + " €" }));
         rechnung.appendChild(sm);
-        rechnung.appendChild(el("p", { "class": "pf-bezug",
-          text: "Über " + mitArbeit + " von " + summenStellen.length + " Monaten, für die "
+        rechnung.appendChild(langtext(
+          "Über " + mitArbeit + " von " + summenStellen.length + " Monaten, für die "
             + "beide Größen vorliegen. Die Kosten kommen von der ENTSO-E "
             + "Transparency Platform, die Arbeit von netztransparenz.de — zwei "
             + "Veröffentlichungen derselben vier Netzbetreiber. Das Verhältnis "
-            + "ist gerechnet, beide Größen sind gemessen." }));
+            + "ist gerechnet, beide Größen sind gemessen."));
       } else {
         rechnung.appendChild(el("p", { "class": "pf-bezug",
           text: "Für diese Monate liegt keine Redispatch-Arbeit vor; ohne sie "
@@ -2952,13 +3128,13 @@
          die naheliegende -- jeder findet den Cent-Betrag auf seiner Rechnung
          wieder. */
       if (voll && netzlast && lasttage) {
-        kkasten.appendChild(el("p", { "class": "pf-bezug",
-          text: "Auf die Netzlast umgelegt: " + nf2.format(summe / netzlast)
+        kkasten.appendChild(langtext(
+          "Auf die Netzlast umgelegt: " + nf2.format(summe / netzlast)
             + " € je MWh, also " + nf2.format(summe / netzlast / 10)
             + " ct je kWh. Das ist eine Rechnung aus zwei gemessenen Größen und "
             + "keine Angabe der Quelle — und es ist NICHT der Betrag, der auf "
             + "einer Stromrechnung steht: was und wie umgelegt wird, regelt das "
-            + "Netzentgeltrecht." }));
+            + "Netzentgeltrecht."));
       }
 
       // Je Regelzone -- dieselbe Aufteilung wie oben bei "Angewiesen von".
@@ -3688,11 +3864,11 @@
       // Zahlen nebeneinander liest, soll nicht ueber eine Rundung stolpern.
       summe.appendChild(el("span", { "class": "pf-zahl", text: vz(k.rest, 2) }));
       rechnung.appendChild(summe);
-      rechnung.appendChild(el("p", { "class": "pf-bezug",
-        text: "Alles in GWh. " + nf2.format(k.rest / k.netzlast * 100) + " % der Netzlast. "
+      rechnung.appendChild(langtext(
+        "Alles in GWh. " + nf2.format(k.rest / k.netzlast * 100) + " % der Netzlast. "
           + "Der Rest geht nicht auf null auf und wird nicht dorthin gerechnet — darin "
           + "stecken Netzverluste und die unterschiedliche zeitliche Auflösung von "
-          + "Erzeugung und Außenhandel." }));
+          + "Erzeugung und Außenhandel."));
       netzInhalt.appendChild(rechnung);
     }
     fluss.appendChild(saeule("netz", "Netz · Regelzonen", gwh(k.netzlast, 1) + " GWh Netzlast",
@@ -3729,8 +3905,8 @@
       /* Der Vorbehalt gehoert dazu, sonst liest sich die Zahl als Handels-
          spanne. Sie ist keine: es ist der deutsche Preis zur Stunde des
          Flusses, nicht der Preis, zu dem an der Grenze abgerechnet wurde. */
-      flussblock.appendChild(el("p", { "class": "pf-bezug pf-ahp-hinweis",
-        text: "Beide Preise sind stündlich mengengewichtet, über "
+      flussblock.appendChild(langtext(
+        "Beide Preise sind stündlich mengengewichtet, über "
           + nf0.format(ahp.stunden) + " Stunden an " + nf0.format(ahp.tage)
           + " Tagen. Ein Tagesmittel ergäbe etwas anderes, weil an einem Tag zu "
           + "teuren Stunden eingeführt und zu billigen ausgeführt wird. "
@@ -3739,7 +3915,7 @@
           + "Den führt die Quelle nicht; er wäre der Preis der jeweils "
           + "gekoppelten Gebotszone. Die Differenz ist deshalb keine "
           + "Handelsspanne, sondern zeigt, dass Strom aus billigen in teure "
-          + "Stunden fließt." }));
+          + "Stunden fließt.", "pf-bezug pf-ahp-hinweis"));
     }
 
     // --- Regelzonen ---
