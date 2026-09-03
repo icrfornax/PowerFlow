@@ -77,8 +77,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3126248,
-   "zeitraum": "2015-01-01 bis 2026-08-29",
+   "bytes": 3126745,
+   "zeitraum": "2015-01-01 bis 2026-09-02",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/tage"
@@ -89,7 +89,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 1,
-   "bytes": 13003,
+   "bytes": 13004,
    "zeitraum": null,
    "muster": "data/verlauf-verzeichnis.json",
    "abzug": "data/verlauf-verzeichnis.json",
@@ -101,8 +101,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 141,
-   "bytes": 14034622,
-   "zeitraum": "2015-01-01 bis 2026-09-01",
+   "bytes": 14040743,
+   "zeitraum": "2015-01-01 bis 2026-09-03",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
@@ -241,5 +241,5 @@
   }
  ],
  "dateien_gesamt": 171,
- "bytes_gesamt": 30134578
+ "bytes_gesamt": 30141197
 }

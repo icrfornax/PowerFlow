@@ -1,5 +1,5 @@
 {
- "abgerufen": "2026-09-02T11:33:07+02:00",
+ "abgerufen": "2026-09-03T11:42:35+02:00",
  "hinweis": "Verzeichnis der Jahresdateien. Die Seite laedt das Jahr des gewaehlten Tages und das Vorjahr fuer den Vergleichswert.",
  "jahre": [
   {
@@ -97,7 +97,7 @@
    "datei": "data/tage/2026.json",
    "erster_tag": "2026-01-01",
    "letzter_tag": "2026-12-31",
-   "letzter_belegter_tag": "2026-08-29",
+   "letzter_belegter_tag": "2026-09-02",
    "auffaellige_tage": []
   }
  ]
