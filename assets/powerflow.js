@@ -3051,16 +3051,33 @@
       /* Die Monatsbalken. Gestapelt aus den beiden Posten; die Hoehe ist die
          Gesamtsumme der Quelle (businessType B04), nicht unsere Addition --
          zwischen beiden liegt der Posten "Sonstiges". */
+      /* DER VORJAHRESMONAT. Der feste Bezugswert dieser Seite ist derselbe
+         Zeitraum ein Jahr frueher, mit realen Messwerten -- keine Glaettung,
+         kein Mittel. Bei Monatswerten heisst das: derselbe Kalendermonat des
+         Vorjahres. Wo es ihn nicht gibt (2019 ist der erste Jahrgang), bleibt
+         die Marke weg statt auf null zu fallen. */
+      var stelleVon = {};
+      K.monate.forEach(function (m, i) { stelleVon[m] = i; });
+      function vorjahr(i) {
+        var m = K.monate[i];
+        var j = stelleVon[(Number(m.slice(0, 4)) - 1) + m.slice(4)];
+        return j === undefined ? null : K.gesamt[j];
+      }
       var maxK = 0;
       stellen.forEach(function (i) {
         if (Math.abs(K.gesamt[i]) > maxK) { maxK = Math.abs(K.gesamt[i]); }
+        // Der Massstab MUSS den Vorjahreswert einschliessen, sonst liegt die
+        // Marke ueber dem Bild und der Vergleich ist wertlos.
+        var v2 = vorjahr(i);
+        if (v2 !== null && Math.abs(v2) > maxK) { maxK = Math.abs(v2); }
       });
       if (maxK > 0) {
         kkasten.appendChild(el("p", { "class": "pf-saeule-massstab",
           text: "Balken bis " + eur(maxK) + " im Monat"
             + (voll && stellen.length > summenStellen.length
                 ? " — die Monate des Zeitraums voll, die übrigen gedämpft als Zusammenhang"
-                : "") }));
+                : "")
+            + " · die waagerechte Marke ist derselbe Monat ein Jahr früher" }));
         var kgitter = el("div", { "class": "pf-kosten-gitter" });
         var spaltenK = [], kAktiv = -1;
         stellen.forEach(function (i) {
@@ -3076,6 +3093,11 @@
               + "%;background:var(" + p[1] + ");" }));
           });
           sp.appendChild(stapelK);
+          var vj = vorjahr(i);
+          if (vj !== null && maxK) {
+            sp.appendChild(el("i", { "class": "pf-kosten-vorjahr",
+              style: "bottom:" + (Math.abs(vj) / maxK * 100).toFixed(1) + "%;" }));
+          }
           kgitter.appendChild(sp);
           spaltenK.push(sp);
         });
@@ -3085,11 +3107,18 @@
           kAktiv = k;
           spaltenK[k].setAttribute("data-aktiv", "ja");
           var so = (K.sonstiges || [])[i] || 0;
+          var vjw = vorjahr(i);
           kAblese.zeige({
             kopf: monatLang(K.monate[i]) + (drin[i] || !voll ? "" : " — außerhalb des Zeitraums"),
             wert: eur(K.gesamt[i]), einheit: "Kosten gesamt",
-            bezug: "Monatswert der Quelle. Der Anteil der Regelzonen steht "
-              + "unter der Grafik; Kosten je Maßnahme gibt es nicht.",
+            bezug: (vjw === null
+              ? "Monatswert der Quelle. Für diesen Monat gibt es kein Vorjahr — "
+                + "die Reihe beginnt 2019."
+              : "Derselbe Monat ein Jahr früher: " + eur(vjw) + " · "
+                + (K.gesamt[i] >= vjw ? "+" : "−")
+                + nf0.format(Math.abs(prozent(K.gesamt[i], vjw))) + " %. "
+                + "Reale Messwerte, kein Mittel.")
+              + " Kosten je Maßnahme gibt es nicht.",
             abschnitte: [{ titel: "Wofür", zeilen: [
               { name: "Netzengpass (Redispatch)", wert: eur(K.redispatch[i]),
                 token: "--orange" },
@@ -3146,6 +3175,75 @@
         });
         kkasten.appendChild(kachse);
         kkasten.appendChild(el("p", { "class": "pf-achsenfuss", text: "Monat" }));
+      }
+
+      /* DIE JAHRESREIHE. Der Monatsverlauf zeigt die Saison, nicht die
+         Entwicklung -- dafuer braucht es die Jahre nebeneinander. Sie stehen
+         hier alle, die die Quelle hat.
+
+         ZWEI JAHRE SIND UNVOLLSTAENDIG, und das darf nicht untergehen: 2026
+         reicht nur bis Juli, und in 2021 fehlt der Dezember von 50Hertz (die
+         Quelle hat ihn mit der Waehrung BAM etikettiert, siehe unten). Beide
+         werden schraffiert gezeichnet und benannt. Ein unvollstaendiges Jahr
+         neben vollen Jahren ohne Hinweis waere eine Falschaussage -- es sieht
+         aus wie ein Rueckgang und ist keiner. */
+      var jahre = {}, jahrMonate = {};
+      K.monate.forEach(function (m, i) {
+        var j = m.slice(0, 4);
+        jahre[j] = (jahre[j] || 0) + K.gesamt[i];
+        jahrMonate[j] = (jahrMonate[j] || 0) + 1;
+      });
+      var luecken = {};
+      (K.unvollstaendige_monate || []).forEach(function (m) {
+        luecken[m.slice(0, 4)] = true;
+      });
+      var jahrNamen = Object.keys(jahre).sort();
+      if (jahrNamen.length > 2) {
+        var jbox = el("div", { "class": "pf-kosten-jahre" });
+        jbox.appendChild(el("h4", { text: "Entwicklung über die Jahre" }));
+        var maxJ = 0;
+        jahrNamen.forEach(function (j) {
+          if (Math.abs(jahre[j]) > maxJ) { maxJ = Math.abs(jahre[j]); }
+        });
+        jbox.appendChild(el("p", { "class": "pf-saeule-massstab",
+          text: "Balken bis " + eur(maxJ) + " im Jahr" }));
+        jahrNamen.forEach(function (j) {
+          var unvoll = jahrMonate[j] < 12 || luecken[j];
+          var h3 = el("div", { "class": "pf-balken" });
+          var z3 = el("div", { "class": "pf-zeile" });
+          z3.appendChild(el("span", { "class": "pf-name",
+            text: j + (unvoll ? " · unvollständig" : "") }));
+          z3.appendChild(el("span", { "class": "pf-zahl", text: eur(jahre[j]) }));
+          h3.appendChild(z3);
+          var sch = el("div", { "class": "pf-schiene" });
+          var f3 = el("div", { "class": "pf-fuellung",
+            style: "width:" + (Math.abs(jahre[j]) / maxJ * 100).toFixed(1)
+              + "%;background:var(--violett);" });
+          if (unvoll) { f3.setAttribute("data-unvollstaendig", "ja"); }
+          sch.appendChild(f3);
+          h3.appendChild(sch);
+          jbox.appendChild(h3);
+        });
+        var unvollNamen = jahrNamen.filter(function (j) {
+          return jahrMonate[j] < 12 || luecken[j];
+        });
+        if (unvollNamen.length) {
+          jbox.appendChild(el("p", { "class": "pf-bezug",
+            text: "Schraffiert und damit nicht vergleichbar: "
+              + unvollNamen.map(function (j) {
+                  /* Zwei verschiedene Maengel, zwei verschiedene Saetze. "12
+                     von 12 Monaten, davon einer nur teilweise gemeldet" las
+                     sich wie ein Widerspruch. */
+                  if (jahrMonate[j] < 12) {
+                    return j + " (nur " + jahrMonate[j] + " von 12 Monaten)";
+                  }
+                  return j + " (ein Monat nur von einem Teil der Regelzonen "
+                    + "gemeldet)";
+                }).join(", ")
+              + ". Ein unvollständiges Jahr neben vollen Jahren sieht aus wie "
+              + "ein Rückgang und ist keiner." }));
+        }
+        kkasten.appendChild(jbox);
       }
 
       /* DIE RECHNUNG. Sie ist der eigentliche Gewinn: aus "20,3 TWh" wird eine

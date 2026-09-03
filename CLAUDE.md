@@ -571,6 +571,16 @@ und das ist lizenzrechtlich in Ordnung, 13.1.C steht auf der Freigabeliste.
   sofort abgebrochen hat.
 - **Der Posten "Sonstiges" ist ab 2026 material** (142,8 Mio. EUR). Er wird als
   eigener Stapelteil ausgewiesen, nicht in eine der anderen Zahlen geschoben.
+- **Der Vorjahresvergleich ist eingebaut**, wie ueberall auf dieser Seite mit
+  realen Messwerten: die waagerechte Marke ueber jedem Monatsbalken ist
+  DERSELBE KALENDERMONAT ein Jahr frueher, die Ablesung nennt Wert und
+  Abweichung. Der Massstab schliesst die Marke ein -- sonst laege sie ueber dem
+  Bildrand. Wo es kein Vorjahr gibt (2019 ist der erste Jahrgang), bleibt die
+  Marke weg statt auf null zu fallen.
+- **Die Jahresreihe zeigt 2019 bis heute.** Zwei Jahre sind unvollstaendig und
+  werden GESTREIFT gezeichnet, nicht nur benannt: 2026 reicht bis Juli, und in
+  2021 fehlt der Dezember von 50Hertz. Ein unvollstaendiges Jahr neben vollen
+  sieht aus wie ein Rueckgang und ist keiner.
 - Zwei abgeleitete Zahlen, beide als Rechnung benannt: **Preis je MWh**
   (Kosten von ENTSO-E, Arbeit von netztransparenz -- zwei Veroeffentlichungen)
   und **ct je kWh Netzlast**. Letztere ist ausdruecklich NICHT der Betrag auf

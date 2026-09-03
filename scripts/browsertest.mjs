@@ -529,7 +529,51 @@ try {
     "der verborgene Teil traegt den laengeren Rest des Textes",
     JSON.stringify(aufklapp.probe));
 
+  /* DER VORJAHRESVERGLEICH IM KOSTENBLOCK. Der feste Bezugswert dieser Seite
+     ist derselbe Zeitraum ein Jahr frueher -- bei Monatswerten also derselbe
+     Kalendermonat. Geprueft wird, dass die Marke da ist, dass sie IM Bild
+     bleibt (der Massstab muss sie einschliessen) und dass unvollstaendige
+     Jahre in der Jahresreihe als solche gezeichnet sind. */
+  const vergleichK = await js(`(function () {
+    const marken = [...document.querySelectorAll(".pf-kosten-vorjahr")];
+    const hoehen = marken.map((x) => parseFloat(x.style.bottom));
+    const jahre = [...document.querySelectorAll(".pf-kosten-jahre .pf-balken")];
+    const namen = jahre.map((x) => x.querySelector(".pf-name").textContent);
+    return {
+      marken: marken.length,
+      spalten: document.querySelectorAll(".pf-kosten-monat").length,
+      ueberRand: hoehen.filter((h) => h > 100.5).length,
+      jahre: namen,
+      unvollstaendig: jahre.filter((x) =>
+        x.querySelector(".pf-fuellung[data-unvollstaendig]")).length,
+      hinweis: [...document.querySelectorAll(".pf-kosten-jahre .pf-bezug, "
+        + ".pf-kosten-jahre details.pf-mehr")].map((x) => x.textContent).join(" "),
+      massstab: [...document.querySelectorAll(".pf-rd-kosten .pf-saeule-massstab")]
+        .map((x) => x.textContent).join(" | ")
+    };
+  })()`);
+  pruefe(vergleichK.marken >= vergleichK.spalten - 1,
+    `der Vorjahresmonat ist an ${vergleichK.marken} von ${vergleichK.spalten} Balken markiert`);
+  pruefe(vergleichK.ueberRand === 0,
+    "keine Vorjahresmarke liegt ueber dem Bildrand -- der Massstab schliesst sie ein",
+    `${vergleichK.ueberRand} darueber`);
+  pruefe(/ein Jahr früher/.test(vergleichK.massstab),
+    "und der Massstab sagt, was die Marke ist");
+  pruefe(vergleichK.jahre.length >= 6,
+    `die Jahresreihe zeigt ${vergleichK.jahre.length} Jahre (${vergleichK.jahre.join(", ")})`);
+  pruefe(vergleichK.unvollstaendig >= 1,
+    "unvollstaendige Jahre sind als solche gezeichnet",
+    String(vergleichK.unvollstaendig));
+  pruefe(/nicht vergleichbar/.test(vergleichK.hinweis),
+    "und der Hinweis sagt, dass sie nicht vergleichbar sind",
+    vergleichK.hinweis.slice(0, 80));
+
   await foto("kosten", ".pf-rd-kosten");
+  // Ablesung schliessen, sonst verdeckt sie im naechsten Bild die Jahresreihe.
+  await js(`document.querySelector(".pf-kosten-gitter")`
+    + `.dispatchEvent(new MouseEvent("mouseleave", { bubbles: false }))`);
+  await schlafen(200);
+  await foto("kosten-jahre", ".pf-kosten-jahre");
 
   /* Und die Gegenprobe: ein VOLLER Monat muss eine Summe ergeben. Ohne diesen
      Fall prueft der Test nur, dass nie eine Summe erscheint. */

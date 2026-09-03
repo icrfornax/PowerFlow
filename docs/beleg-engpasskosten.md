@@ -116,6 +116,32 @@ Euro in die Summe gelaufen.
   und wie umgelegt wird, regelt das Netzentgeltrecht — das ist nicht dieselbe
   Zahl.
 
+## Der Vorjahresvergleich
+
+Eingebaut am 04.09.2026. Der feste Bezugswert dieser Seite ist derselbe
+Zeitraum ein Jahr früher mit **realen Messwerten** — kein Monatsmittel, keine
+geglättete Kurve. Bei Monatswerten heißt das: derselbe Kalendermonat des
+Vorjahres.
+
+- Im Monatsverlauf steht er als **waagerechte Marke** über dem Balken; die
+  Ablesung nennt den Wert und die Abweichung in Prozent.
+- Der Maßstab der Grafik schließt die Vorjahreswerte **ein**. Ohne das läge die
+  Marke in Jahren mit fallenden Kosten über dem Bildrand — 2022 auf 2023 wäre
+  genau so ein Fall.
+- Für 2019 gibt es kein Vorjahr. Die Marke bleibt dann **weg**, statt auf null
+  zu fallen.
+
+Dazu eine **Jahresreihe** über alle acht Jahrgänge. Zwei davon sind
+unvollständig und werden gestreift gezeichnet:
+
+| Jahr | Mangel |
+|---|---|
+| 2021 | Dezember nur von drei der vier Regelzonen gemeldet (50Hertz mit Währung BAM, siehe oben) |
+| 2026 | nur sieben von zwölf Monaten |
+
+Ein unvollständiges Jahr neben vollen Jahren sieht aus wie ein Rückgang und ist
+keiner. Deshalb die Streifen und der Satz darunter.
+
 ## Prüfungen
 
 - `fetch-engpasskosten.py` **bricht ab** bei einem unbekannten `businessType`
@@ -127,4 +153,6 @@ Euro in die Summe gelaufen.
   mit nennenswertem „Sonstiges".
 - `browsertest.mjs`: der Block steht da, nennt seinen Maßstab, sagt, dass es
   keine Kosten je Maßnahme gibt, und zeigt bei einem Zeitraum ohne vollen Monat
-  keine Summe.
+  keine Summe. Dazu: die Vorjahresmarke ist an jedem Balken, **keine liegt über
+  dem Bildrand**, die Jahresreihe zeigt alle Jahrgänge, und die unvollständigen
+  sind als solche gezeichnet.
