@@ -1118,14 +1118,24 @@ try {
       grenzen: grenzen ? grenzen.textContent : ""
     };
   })()`);
-  pruefe(offen && offen.anzahl === 7,
-    `sieben offene Punkte nach der Durchsicht (${offen && offen.anzahl})`);
-  pruefe(offen && offen.hoch === 3,
-    `drei davon sind als "Als Naechstes" markiert (${offen && offen.hoch})`);
+  pruefe(offen && offen.anzahl === 5,
+    `fuenf offene Punkte nach dem Abraeumen vom 03.09. (${offen && offen.anzahl})`);
+  pruefe(offen && offen.hoch === 1,
+    `einer davon ist als "Als Naechstes" markiert (${offen && offen.hoch})`);
   pruefe(offen && /Als N/.test(offen.erste),
     "die Liste beginnt mit einem Punkt hoher Prioritaet", offen && offen.erste);
   pruefe(offen && !/Solaranlagen|Kleine Windparks/.test(offen.texte),
     "die zwei gestrichenen Punkte stehen nicht mehr in der Liste");
+  /* ERLEDIGTES DARF NICHT IN DER LISTE STEHEN. Drei Punkte standen dort noch
+     als "Als Naechstes", obwohl zwei davon laengst lagen -- das Methodik-PDF
+     seit Tagen, Import und Export im Verlauf seit dem 31.08. Eine Liste, in der
+     Erledigtes stehen bleibt, glaubt irgendwann niemand mehr. */
+  pruefe(offen && !/HTTP 403/.test(offen.texte),
+    "die beantwortete Lizenzfrage steht nicht mehr als offener Punkt");
+  pruefe(offen && !/Methodik-PDF, das sich beim Bau/.test(offen.texte),
+    "das gelieferte Methodik-PDF steht nicht mehr als offener Punkt");
+  pruefe(offen && !/bisher nur als Summe des/.test(offen.texte),
+    "Import und Export im Verlauf stehen nicht mehr als offener Punkt");
   pruefe(offen && /Regelzone je Windpark/.test(offen.grenzen)
     && /Redispatch auf der Karte/.test(offen.grenzen),
     "die zwei verschobenen Punkte stehen jetzt unter Grenzen");

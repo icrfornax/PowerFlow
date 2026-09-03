@@ -283,12 +283,14 @@ Zoom eine Haeufung ueberhaupt aufloest.
 Mit Immo Punkt fuer Punkt sortiert. Die Liste auf der Seite hat seither eine
 Reihenfolge; was oben steht, traegt die Markierung "Als Naechstes".
 
-**Hoch (in dieser Reihenfolge):**
-1. Ob Redispatch auf der Liste frei weiterverwendbarer ENTSO-E-Daten steht --
-   die einzige inhaltliche Luecke in einer Lizenzkette dieser Seite.
-2. Zugang zur ENTSO-E Transparency Platform (beantragt, Antwort steht aus).
-   Beantwortet vermutlich Punkt 1 mit einem Klick.
-3. Methodik-PDF, das sich beim Bau selbst aus den Dateien neu rechnet.
+**Hoch:** Redispatch direkt von der ENTSO-E Transparency Platform holen statt
+von netztransparenz.de -- die Lizenzkette laeuft ohnehin ueber die ETP.
+
+**Erledigt am 03.09.2026:** die Lizenzfrage (Punkt 1, siehe oben), der
+ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF
+(Punkt 3, `scripts/methodik.py`). Die drei standen noch als "Als Naechstes" auf
+der Seite, obwohl zwei davon laengst lagen. Was erledigt ist, gehoert nicht in
+eine Liste offener Punkte -- sonst glaubt sie irgendwann niemand mehr.
 
 **Niedrig:** Gesamtlauf ueber alle Vergleichsjahre als CSV; Viertelstundenwerte
 (48 statt 12 MB, die jeder mitlaedt); die 1.030 Windanlagen ohne Koordinate im
@@ -381,13 +383,18 @@ das jetzt selbst. `scripts/validate.py` prueft beides.
 Eingebunden: Tagesaggregate 2021 bis heute, Kachel und eigener Abschnitt.
 Beleg in `docs/beleg-redispatch.md`, Lizenzkette in `LIZENZ-DATEN.md`.
 
-**Die Lizenzkette hat eine offene Stelle.** netztransparenz.de nennt keine
-Lizenz; getragen wird die Veroeffentlichung davon, dass dieselben Massnahmen
-ueber die ENTSO-E Transparency Platform laufen, deren Terms of Use in Klausel
-2.5 eine Liste frei weiterverwendbarer Daten fuehren (CC BY 4.0 seit 02/2022).
-Ob Redispatch auf dieser Liste steht, ist NICHT geprueft -- die Seite antwortet
-mit HTTP 403. Veroeffentlicht werden deshalb nur Tagesaggregate, keine Kopie
-der Messwertliste. Wer daran etwas aendert, liest zuerst den Beleg.
+**Die Lizenzkette ist seit dem 03.09.2026 geschlossen.** netztransparenz.de
+nennt keine Lizenz; getragen wird die Veroeffentlichung davon, dass dieselben
+Massnahmen ueber die ENTSO-E Transparency Platform laufen, deren Terms of Use in
+Klausel 2.5 eine Liste frei weiterverwendbarer Daten fuehren (CC BY 4.0 seit
+02/2022). Diese Liste ist jetzt nachgesehen: Redispatch ist **Datenpunkt 19,
+"Information relating to redispatching", Artikel 13.1.a** der Verordnung
+543/2013, Fassung vom 18.10.2023; ausgenommen sind nur Moldau, die Tuerkei,
+einzelne Datenpunkte der Ukraine sowie BritNed und Interconnexion
+France-Angleterre. Beleg mit Fundstelle und Pruefsumme in
+`docs/beleg-redispatch.md`. Bis dahin galt: nicht geprueft, die Seite antwortet
+mit HTTP 403. Veroeffentlicht werden weiterhin Tagesaggregate; das ist jetzt
+eine Wahl und kein Zwang.
 
 **Am 31.08.2026 eingebaut: Grund, Anforderer und Dauer.** Die Aufgliederung
 nach dem Grund ist die wichtigste davon, weil sie eine falsche Aussage der

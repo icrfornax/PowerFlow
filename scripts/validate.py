@@ -903,7 +903,7 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     lizenztext = lade("LIZENZ-DATEN.md")
     for pflicht in ("ODbL", "Share-alike", "Bundesnetzagentur | SMARD.de",
                     "© OpenStreetMap contributors", "23c",
-                    "netztransparenz.de", "HTTP 403", "Klausel 2.5"):
+                    "netztransparenz.de", "13.1.a", "Klausel 2.5"):
         b.pruefe(pflicht in lizenztext, f"LIZENZ-DATEN.md nennt: {pflicht!r}")
 
     return b

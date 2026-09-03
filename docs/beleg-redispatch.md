@@ -191,9 +191,49 @@ Daten, die *„open for free re-use with no need to seek the prior agreement of
 the respective Primary Owner of Data"* sind; seit Februar 2022 gilt darauf
 **CC BY 4.0**.
 
-**Was offen bleibt.** Ob Redispatch auf dieser Liste steht, ist nicht geprüft —
-die Seite mit der Liste beantwortet meine Abrufe mit HTTP 403. Das ist die
-einzige offene Stelle und im eingeloggten Portal mit einem Klick zu prüfen.
+**GESCHLOSSEN am 03.09.2026: Redispatch steht auf der Liste.** Die ENTSO-E
+Transparency Platform war seit dem 31.08. rund 49 Stunden in Wartung (HTTP 503)
+und antwortet seit dem 03.09.2026 wieder. Damit war die Liste erreichbar.
+
+Beleg: *List of Data available for free re-use*, Fassung vom **18.10.2023**,
+verlinkt im Artikel „Legal Terms and Conditions" des ENTSO-E-Hilfebereichs
+(<https://transparencyplatform.zendesk.com/hc/en-us/articles/40921911218961-Legal-Terms-and-Conditions>,
+Anhang `231018_List_of_Data_available_for_reuse.pdf`, 236.143 Bytes,
+SHA-256 `b21717e8a5a41b9b8544db730d11c2a717abc9b07f89704437a89332b708ff9a`).
+Das PDF wird **nicht** in dieses Repository kopiert — es ist ein fremdes
+Dokument; die Belegkette braucht die Fundstelle, die Fassung und die
+Prüfsumme.
+
+Wörtlich aus der Liste, Zeilen 19 bis 21:
+
+| # | Bezeichnung | Artikel VO 543/2013 |
+|---|---|---|
+| **19** | **Information relating to redispatching** | **13.1.a** |
+| 20 | Information relating to countertrading | 13.1.b |
+| 21 | Costs incurred from redispatching and countertrading and from any other remedial actions | 13.1.c |
+
+Und die Bedingung, ebenfalls wörtlich: *„ENTSOE below publishes the list of data
+which can be freely re-used by the Data Users in conformity with the open data
+standards and licenses under a Creative Commons Attribution 4.0 International
+License (CC-BY 4.0). Data Users may freely copy, redistribute, and adapt the
+listed data for any purpose, by giving appropriate credit (attribution) to its
+source and indicating if they have made any changes, with no need to seek for
+the prior agreement of the respective Primary Owner of Data."*
+
+**Die Ausnahmen betreffen uns nicht.** Ausgenommen sind Daten aus Moldau (MD)
+und der Türkei (TR), die Datenpunkte #24, 26, 29, 30, 32–35 aus der Ukraine (UA)
+und von BritNed sowie Daten der Interconnexion France-Angleterre. Deutschland
+steht nicht darunter, und 19 bis 21 sind keine der ausgenommenen Nummern.
+
+**Was daraus folgt.** Die Kette ist geschlossen: netztransparenz.de
+veröffentlicht dieselben Maßnahmen, die als Artikel 13.1.a auf der ETP stehen,
+und diese sind ausdrücklich unter CC BY 4.0 frei weiterverwendbar. Der Riegel
+`--lizenz-geklaert` bleibt trotzdem stehen — er kostet nichts und zwingt jeden,
+der das Skript startet, den Kopf zu lesen.
+
+*(Bis zum 03.09.2026 stand hier: „Ob Redispatch auf dieser Liste steht, ist
+nicht geprüft — die Seite mit der Liste beantwortet meine Abrufe mit HTTP 403."
+Das war der Stand, solange die Plattform nicht erreichbar war.)*
 
 **Was daraus folgt.** Veröffentlicht werden **Tagesaggregate** — Summen je Tag,
 je ÜNB und je Primärenergieart — keine Kopie der Messwertliste. Genannt werden

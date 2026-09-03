@@ -18,9 +18,15 @@ was nicht:
     Use eine Liste von Daten, die "open for free re-use with no need to seek
     the prior agreement of the respective Primary Owner of Data" sind. Seit
     Februar 2022 gilt darauf CC BY 4.0, mit Namensnennung von ENTSO-E.
-  * NICHT VERIFIZIERT: ob Redispatch auf dieser Liste steht. Die Seite mit der
-    Liste beantwortet meine Abrufe mit HTTP 403. Das ist die einzige offene
-    Stelle in der Kette und mit einem Klick im Portal zu pruefen.
+  * GEPRUEFT am 03.09.2026, nachdem die Plattform aus 49 Stunden Wartung
+    zurueck war: Redispatch STEHT auf der Liste. In der Fassung vom 18.10.2023
+    ("List of Data available for free re-use", Anhang
+    231018_List_of_Data_available_for_reuse.pdf im Artikel "Legal Terms and
+    Conditions" des ENTSO-E-Hilfebereichs, SHA-256 b21717e8...b708ff9a) ist es
+    Datenpunkt 19, "Information relating to redispatching", Artikel 13.1.a der
+    Verordnung 543/2013. Ausgenommen sind nur Moldau, die Tuerkei, einzelne
+    Datenpunkte der Ukraine sowie BritNed und Interconnexion France-Angleterre
+    -- Deutschland nicht. Die Kette ist damit geschlossen.
 
 Daraus folgt fuer dieses Projekt: veroeffentlicht werden **Tagesaggregate**,
 keine Kopie der Messwertliste, mit Namensnennung beider Wege. Wer das aendern

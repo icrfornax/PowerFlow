@@ -3577,24 +3577,28 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
+      /* Am 03.09.2026 abgeraeumt: die Lizenzfrage ist beantwortet, der
+         ENTSO-E-Zugang steht, das Methodik-PDF liegt, und Import/Export im
+         Verlauf sind seit dem 31.08. drin. Vier Punkte weg, einer neu. Was
+         erledigt ist, gehoert nicht in eine Liste offener Punkte -- sonst
+         glaubt sie irgendwann niemand mehr. */
       { hoch: true,
-        text: "Ob Redispatch auf der Liste frei weiterverwendbarer "
-          + "ENTSO-E-Daten steht, ist nicht geprüft — die Seite mit der Liste "
-          + "antwortet mit HTTP 403. Das ist die einzige inhaltliche Lücke in "
-          + "einer Lizenzkette dieser Seite." },
-      { hoch: true,
-        text: "Zugang zur ENTSO-E Transparency Platform ist beantragt. Damit "
-          + "ließe sich die Lizenzkette des Redispatch von einer Argumentation "
-          + "zu einer Zusage machen — und die Frage darüber beantworten." },
-      { hoch: true,
-        text: "Methodik-PDF, das sich beim Bau selbst aus den Dateien neu "
-          + "rechnet." },
+        text: "Redispatch direkt von der ENTSO-E Transparency Platform holen "
+          + "statt von netztransparenz.de. Die Lizenzkette läuft ohnehin über "
+          + "die ETP — Datenpunkt 19, Artikel 13.1.a, CC BY 4.0, am 03.09.2026 "
+          + "in der Liste nachgesehen. Dann stützt sich alles auf eine Quelle "
+          + "mit ausdrücklichen Nutzungsbedingungen, statt über eine zweite "
+          + "Plattform zu argumentieren." },
       { hoch: false,
         text: "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar "
           + "wird, wie stark das Ergebnis am gewählten Zeitraum hängt." },
       { hoch: false,
-        text: "Import und Export im Verlauf — bisher nur als Summe des "
-          + "Zeitraums, nicht Stunde für Stunde." },
+        text: "Die ENTSO-E-Preisreihe für Deutschland/Luxemburg enthält je Tag "
+          + "ZWEI Viertelstundenreihen, die sich nur im Feld "
+          + "classificationSequence (Position 1 und 2) unterscheiden. "
+          + "Position 1 stimmt auf 0,005 €/MWh mit SMARD überein; welche "
+          + "Auktion Position 2 ist, ist nicht belegt. Vor jeder Nutzung der "
+          + "Viertelstundenpreise zu klären." },
       { hoch: false,
         text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
           + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
