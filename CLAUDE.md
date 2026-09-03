@@ -540,9 +540,29 @@ sind KEINE Energietraeger. Die Traegerbaender bleiben glatt.
 Belegt in `docs/beleg-tagesreihen.md`. Diese drei Punkte duerfen weder
 stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
 
-1. **Der Bilanzrest geht nicht auf null auf.** Ueber 4.258 Tage gemessen liegt
-   er zwischen -18,8 % und +12,0 %, im Median bei -2,6 %. Eine fruehere Angabe
-   von 0,5 % war auf einen einzelnen Tag geeicht und ist zurueckgenommen.
+1. **Der Bilanzrest geht nicht auf null auf** -- und seit dem 03.09.2026 ist
+   untersucht, warum. Beleg: `docs/beleg-bilanzrest.md`.
+   - Ueber 4.260 Tage: **-3,45 % der Netzlast, in Summe -196 TWh**. Negativ
+     heisst: die veroeffentlichte Erzeugung plus Einfuhr ist KLEINER als die
+     Netzlast. Es fehlt Erzeugung, nicht Verbrauch.
+   - **Redispatch erklaert nichts davon.** Korrelation -0,048 ueber 2.050 Tage;
+     das Fuenftel mit dreissigfacher Redispatch-Menge liegt nur 0,38
+     Prozentpunkte anders. Redispatch verschiebt Erzeugung zwischen Anlagen,
+     beide Seiten stehen ohnehin in denselben Reihen.
+   - **Der Bruch von 2018 ist Erdgas:** die Reihe springt von 25,6 auf 42,9 TWh
+     (+3,4 % der Netzlast), der Rest verbessert sich um 5,9 Prozentpunkte. Ein
+     realer Zubau in dieser Hoehe hat nicht stattgefunden -- die Erfassung hat
+     sich geaendert.
+   - **Er folgt der RESIDUALLAST** (r = -0,668), nicht der Netzlast (-0,357):
+     mittags +3,1 %, abends -4,3 %, im Dezember -4,9 %, im Juni -0,1 %.
+   - **ZWEI FRUEHERE ERKLAERUNGEN SIND ZURUECKGENOMMEN.** Netzverluste haben
+     das falsche Vorzeichen -- sie machten den Rest positiver. Und der
+     Pumpspeicherbezug steckt bereits in der Netzlast; zieht man ihn ein
+     zweites Mal ab, wird der Rest von -1,29 auf -3,81 % schlechter. Beides
+     stand als Ursache auf der Seite. `validate.py` prueft, dass es
+     verschwunden bleibt.
+   - Eine fruehere Angabe von 0,5 % war auf einen einzelnen Tag geeicht und ist
+     ebenfalls zurueckgenommen.
 2. **Vor 2019 ist die Regelzonenaufteilung unvollstaendig** - 2015 fehlen bis zu
    3,4 % der Last je Tag. Ursache nicht geklaert. Die Seite warnt sichtbar.
    Bei der **Erzeugung** ist der Riss groesser als bei der Last: die Zonensumme

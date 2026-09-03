@@ -766,6 +766,24 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  == all(x > 0 for x in schieflagen),
                  "die Aussage 'in jedem Jahr' steht nur da, wenn sie stimmt")
 
+    # --- Der Bilanzrest, untersucht am 03.09.2026 ---
+    # Die Seite nennt jetzt Zahlen aus dieser Untersuchung. Sie stehen in Prosa
+    # und veralten still -- wie schon zweimal die Redispatch-Schieflage.
+    # Deshalb: der Beleg muss da sein und die Seite muss auf ihn zeigen.
+    beleg = lade("docs/beleg-bilanzrest.md")
+    for satz in ("Redispatch erkl", "Erdgas", "Netzverluste haben das falsche",
+                 "Residuallast", "0,048", "17,3 TWh"):
+        b.pruefe(satz in beleg, f"beleg-bilanzrest.md nennt: {satz!r}")
+    b.pruefe("beleg-bilanzrest.md" in js,
+             "die Seite verweist auf die Untersuchung des Bilanzrests")
+    # Die zwei zurueckgenommenen Ursachen duerfen NICHT mehr als Erklaerung
+    # dastehen. Geprueft wird auf die alte Formulierung, nicht auf das Wort --
+    # es kommt in der Richtigstellung selbst vor.
+    for alt_satz in ("Darin stecken Netzverluste",
+                     "Netzverluste, der Bezug der Pumpspeicher"):
+        b.pruefe(alt_satz not in js,
+                 f"die zurueckgenommene Erklaerung steht nicht mehr da: {alt_satz!r}")
+
     # --- Luecken der Quelle ---
     # Der Bericht aus scripts/nachholen.py wird gegen die Dateien nachgerechnet.
     # Ein Bericht, den niemand prueft, ist kein Bericht -- dieselbe Regel wie

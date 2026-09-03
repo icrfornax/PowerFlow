@@ -2068,11 +2068,16 @@
           + " davon — " + nf0.format(anteil) + " % — deckt die gemessene "
           + "Nettoeinfuhr; sie sitzt im Bild schraffiert auf der Erzeugung. "
           + "Übrig bleiben " + nf1.format(luecke.offen / summeTeiler) + " "
-          + einheitSumme + ", im Bild die orange Schraffur. Darin stecken "
-          + "Netzverluste, der Bezug der Pumpspeicher und die unterschiedliche "
-          + "zeitliche Auflösung von Erzeugung und Außenhandel. Dieser Rest "
-          + "wird nicht weggerechnet und nicht geschätzt — er steht so da, wie "
-          + "er sich ergibt." }));
+          + einheitSumme + ", im Bild die orange Schraffur. Was dahintersteckt, "
+          + "ist am 03.09.2026 untersucht worden: es ist NICHT Redispatch "
+          + "(Korrelation −0,05 über 2.050 Tage) und es sind auch nicht "
+          + "Netzverluste — die hätten das falsche Vorzeichen. Die Lücke folgt "
+          + "der Residuallast (r = −0,67): je mehr die Last von steuerbarer "
+          + "Erzeugung getragen wird, desto größer wird sie. Die Erzeugungs"
+          + "reihen erfassen offenbar nicht jede Anlage, die ins Netz der "
+          + "allgemeinen Versorgung einspeist. Nachzulesen unter „Bekannte "
+          + "Mängel der Daten“. Der Rest wird nicht weggerechnet und nicht "
+          + "geschätzt — er steht so da, wie er sich ergibt." }));
     } else if (luecke.belegt) {
       huelle.appendChild(el("p", { "class": "pf-bezug pf-deckungstext",
         text: "In diesem Zeitraum lag die Erzeugung zu keiner "
@@ -3184,10 +3189,15 @@
         wert: "Erzeugung + Import − Export − Netzlast. Rechnet die anderen Kacheln gegen.",
         grenzenTitel: "Was hier hineinläuft",
         grenzen: "Dieser Rest ist nicht null und soll es auch nicht vortäuschen. Über alle "
-          + "4.258 belegten Tage gemessen liegt er zwischen −18,8 % und +12,0 %, im Median bei "
-          + "−2,6 %. Darin stecken Netzverluste, die unterschiedliche zeitliche Auflösung von "
-          + "Erzeugung (Tageswert) und Außenhandel (Stundenwerte) und — vor 2018 deutlich — "
-          + "Erfassungslücken der Quelle.",
+          + "4.260 belegten Tage gemessen liegt er bei −3,45 % der Netzlast, in Summe "
+          + "−196 TWh. Negativ heißt: die veröffentlichte Erzeugung plus Einfuhr ist "
+          + "kleiner als die Netzlast. Am 03.09.2026 untersucht — er folgt der "
+          + "Residuallast (Korrelation −0,67), hat mit Redispatch nichts zu tun "
+          + "(−0,05) und war vor 2018 dreimal so groß, weil die Erdgasreihe damals "
+          + "unvollständig war. Netzverluste und Pumpspeicherbezug standen hier früher "
+          + "als Ursache; beides ist zurückgenommen — Verluste hätten das falsche "
+          + "Vorzeichen, und der Pumpspeicherbezug steckt bereits in der Netzlast. "
+          + "Einzelheiten in docs/beleg-bilanzrest.md.",
         quellen: QUELLE_SMARD,
         messung: "Selbst gerechnet aus vier gemessenen Größen. Die Formel steht oben. Eine "
           + "frühere Fassung dieser Seite nannte 0,5 % als Sollwert; das war auf einen "
@@ -3798,10 +3808,36 @@
     var ul3 = el("ul");
     [
       "Die Bilanz geht nicht auf null auf. Erzeugung + Import − Export − Netzlast "
-        + "liegt über 4.258 Tage zwischen −18,8 % und +12,0 %, im Median bei −2,6 %. "
-        + "Darin stecken Netzverluste, unterschiedliche Auflösungen und — vor 2018 "
-        + "deutlich — Erfassungslücken der Quelle. Die Ursache der frühen Lücke ist "
-        + "nicht geklärt.",
+        + "liegt über 4.260 Tage bei −3,45 % der Netzlast, in Summe −196 TWh. "
+        + "Negativ heißt: die veröffentlichte Erzeugung plus Einfuhr ist kleiner "
+        + "als die Netzlast — es fehlt Erzeugung, nicht Verbrauch. Am 03.09.2026 "
+        + "untersucht (docs/beleg-bilanzrest.md).",
+      "Der Bruch von 2018 ist gefunden: vor 2018 lag der Rest bei −8,4 bis "
+        + "−9,0 %, danach bei rund −2 %. Im selben Schritt springt genau eine "
+        + "Reihe — Erdgas, von 25,6 auf 42,9 TWh. Das sind 3,4 % der Netzlast, "
+        + "und der Rest verbessert sich um 5,9 Prozentpunkte. Ein realer Zubau "
+        + "in dieser Höhe hat nicht stattgefunden; geändert hat sich die "
+        + "Erfassung. Die frühere Angabe „Ursache nicht geklärt“ "
+        + "ist damit erledigt.",
+      "Redispatch erklärt den Rest NICHT. Über 2.050 Tage ab 2021 gemessen: "
+        + "Korrelation −0,05. Das Fünftel der Tage mit dem meisten Redispatch "
+        + "(163.282 MWh im Mittel) liegt bei −1,64 %, das Fünftel mit dem "
+        + "wenigsten (5.465 MWh) bei −1,26 %. Dreißigfache Menge, 0,38 "
+        + "Prozentpunkte Unterschied. Redispatch verschiebt Erzeugung zwischen "
+        + "Anlagen; beide Seiten stehen ohnehin in denselben Reihen.",
+      "Zwei frühere Erklärungen sind zurückgenommen. Netzverluste haben das "
+        + "falsche Vorzeichen — sie machten den Rest positiver, nicht negativer. "
+        + "Und der Pumpspeicherbezug steckt bereits in der Netzlast: zieht man "
+        + "ihn ein zweites Mal ab, wird der Rest von −1,29 auf −3,81 % "
+        + "schlechter. Beides stand bis zum 03.09.2026 als Ursache auf dieser "
+        + "Seite.",
+      "Was der Rest stattdessen ist: er folgt der Residuallast — dem Teil der "
+        + "Last, den Wind und Photovoltaik nicht decken (Korrelation −0,67; zur "
+        + "Netzlast nur −0,36). Mittags ist er positiv (+3,1 % um 14 Uhr), "
+        + "abends und im Winter am stärksten negativ (−4,3 % um 20 Uhr, −4,9 % "
+        + "im Dezember). Geschlossen, nicht gemessen: die Erzeugungsreihen "
+        + "erfassen nicht jede Anlage, die ins Netz der allgemeinen Versorgung "
+        + "einspeist. Welche Anlagenarten und ab welcher Größe, ist offen.",
       "Ein Wert der Quelle ist falsch: der Schweiz-Import am 09.02.2015 steht mit "
         + "25.009.206 MWh in den Rohdaten — 25 TWh an einem Tag. Er wird als fehlend "
         + "geführt, nicht korrigiert; der Originalwert bleibt in den Dateien sichtbar.",
@@ -3871,6 +3907,11 @@
       { hoch: false,
         text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
           + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
+      { hoch: false,
+        text: "Welche Anlagenarten in den Erzeugungsreihen fehlen und ab welcher "
+          + "Größe. Dass etwas fehlt, ist am 03.09.2026 gemessen worden — der "
+          + "Bilanzrest folgt der Residuallast, und der Sprung von 2018 sitzt "
+          + "bei Erdgas. Womit genau, sagt die Quelle nicht." },
       { hoch: false,
         text: "1.030 Windenergieanlagen in Betrieb haben im Register keine "
           + "Koordinate und fehlen auf der Karte. Das ist eine Lücke der "

@@ -1191,8 +1191,8 @@ try {
       grenzen: grenzen ? grenzen.textContent : ""
     };
   })()`);
-  pruefe(offen && offen.anzahl === 5,
-    `fuenf offene Punkte nach dem Abraeumen vom 03.09. (${offen && offen.anzahl})`);
+  pruefe(offen && offen.anzahl === 6,
+    `sechs offene Punkte (${offen && offen.anzahl})`);
   pruefe(offen && offen.hoch === 1,
     `einer davon ist als "Als Naechstes" markiert (${offen && offen.hoch})`);
   pruefe(offen && /Als N/.test(offen.erste),
@@ -1203,6 +1203,35 @@ try {
      als "Als Naechstes", obwohl zwei davon laengst lagen -- das Methodik-PDF
      seit Tagen, Import und Export im Verlauf seit dem 31.08. Eine Liste, in der
      Erledigtes stehen bleibt, glaubt irgendwann niemand mehr. */
+  /* Der Bilanzrest ist am 03.09.2026 untersucht worden. Zwei frueher genannte
+     Ursachen sind widerlegt und muessen von der Seite verschwunden sein --
+     Netzverluste (falsches Vorzeichen) und Pumpspeicherbezug (steckt schon in
+     der Netzlast). Geprueft wird beides am tatsaechlich angezeigten Text. */
+  const rest = await js(`(function () {
+    const maengel = [...document.querySelectorAll(".pf-kasten li")]
+      .map((x) => x.textContent).join(" ");
+    const kachel = [...document.querySelectorAll(".pf-kachel")]
+      .find((x) => /Bilanzrest/.test(x.textContent));
+    return {
+      maengel: maengel,
+      nenntRedispatch: /Redispatch erklärt den Rest NICHT/.test(maengel),
+      nenntErdgas: /Erdgas, von 25,6 auf 42,9/.test(maengel),
+      nimmtZurueck: /falsche Vorzeichen/.test(maengel),
+      nenntResiduallast: /Residuallast/.test(maengel),
+      kachelDa: !!kachel
+    };
+  })()`);
+  pruefe(rest.nenntRedispatch,
+    "die Seite sagt ausdruecklich, dass Redispatch den Bilanzrest nicht erklaert");
+  pruefe(rest.nenntErdgas,
+    "und benennt den Bruch von 2018 als Erfassungsluecke bei Erdgas");
+  pruefe(rest.nimmtZurueck,
+    "die zwei widerlegten Ursachen werden ausdruecklich zurueckgenommen");
+  pruefe(rest.nenntResiduallast,
+    "und es steht da, woran der Rest stattdessen haengt");
+  pruefe(!/Darin stecken Netzverluste/.test(rest.maengel),
+    "die alte Erklaerung steht nicht mehr in den Maengeln");
+
   pruefe(offen && !/HTTP 403/.test(offen.texte),
     "die beantwortete Lizenzfrage steht nicht mehr als offener Punkt");
   pruefe(offen && !/Methodik-PDF, das sich beim Bau/.test(offen.texte),
