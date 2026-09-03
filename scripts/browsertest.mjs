@@ -758,6 +758,63 @@ try {
     "genau einer der beiden laengsten Laenderbalken fuellt die Schiene",
     `${skala.impErster} / ${skala.expErster}`);
 
+  /* LUECKEN IM ZEITRAUM. Anlass: vom 30.08. bis 01.09.2026 fehlt die
+     Deutschlandreihe, weil 50Hertz unvollstaendige Stundenwerte meldet -- die
+     drei anderen Zonen liegen vor. Eine Summe ueber vier von sieben Tagen ohne
+     Warnung daneben ist eine Falschaussage.
+
+     Geprueft wird eine BEDINGUNG, keine Datumsangabe: wenn Tage fehlen, muss
+     das Band vor den Kacheln stehen, die fehlenden Tage nennen und mit dem
+     ausfuehrlichen Hinweis uebereinstimmen. Fuellt die Quelle die Luecke
+     spaeter nach, bleibt die Pruefung gueltig. */
+  await js(`document.getElementById("pf-von").value = "2026-08-28";`
+    + `document.getElementById("pf-von").dispatchEvent(new Event("change", { bubbles: true }));`);
+  await schlafen(600);
+  await js(`document.getElementById("pf-bis").value = "2026-09-02";`
+    + `document.getElementById("pf-bis").dispatchEvent(new Event("change", { bubbles: true }));`);
+  await schlafen(2500);
+  const luecke = await js(`(function () {
+    const band = document.querySelector(".pf-luecke");
+    const kacheln = document.querySelector(".pf-kacheln");
+    const hinweise = [...document.querySelectorAll(".pf-kasten li")]
+      .map((x) => x.textContent).join(" ");
+    // Datumsangaben der Form 30.08.2026 einsammeln -- ohne Zeichenklasse mit
+    // Backslash, die faellt im Template-Literal zusammen.
+    const daten = (s) => (s.match(/[0-9][0-9][.][0-9][0-9][.]20[0-9][0-9]/g) || []);
+    return {
+      band: !!band,
+      text: band ? band.textContent : "",
+      vorKacheln: band && kacheln
+        ? !!(band.compareDocumentPosition(kacheln) & Node.DOCUMENT_POSITION_FOLLOWING)
+        : null,
+      bandDaten: band ? daten(band.textContent) : [],
+      hinweisDaten: daten((hinweise.split("Es fehlen:")[1] || "").split(".")[0]
+        ? hinweise.split("Es fehlen:")[1].split("Die Lücke")[0] : ""),
+      nenntZone: /50Hertz/.test(hinweise) && /Abruf/.test(hinweise),
+      hinweisText: hinweise
+    };
+  })()`);
+  if (luecke.band) {
+    pruefe(luecke.vorKacheln === true,
+      "das Luecken-Band steht VOR den Kennzahlen, nicht darunter");
+    pruefe(luecke.bandDaten.length > 0,
+      `es nennt die fehlenden Tage (${luecke.bandDaten.join(", ")})`);
+    pruefe(/ohne Daten/.test(luecke.text),
+      "und sagt, wie viele von wie vielen Tagen fehlen", luecke.text.slice(0, 70));
+    pruefe(luecke.hinweisDaten.join(",") === luecke.bandDaten.join(","),
+      "Band und ausfuehrlicher Hinweis nennen dieselben Tage",
+      `${luecke.bandDaten.join(",")} gegen ${luecke.hinweisDaten.join(",")}`);
+    pruefe(luecke.nenntZone,
+      "der Hinweis nennt die Regelzone und sagt, dass es kein Abrufausfall ist",
+      luecke.hinweisText.slice(0, 120));
+  } else {
+    pruefe(!/liegen nur/.test(luecke.hinweisText),
+      "ohne Band meldet auch der Hinweis keine fehlenden Tage");
+  }
+  await foto("luecke", ".pf-luecke");
+  await js(`[...document.querySelectorAll(".pf-schnell")].find((b) => b.textContent === "Letzte 7 Tage").click()`);
+  await schlafen(2500);
+
   /* DAS ZEITPROFIL DES REDISPATCH -- neu gebaut am 31.08.2026.
 
      Die erste Fassung war 24 graue Saeulen mit einem title-Attribut. Sie
@@ -791,8 +848,11 @@ try {
   })()`);
   pruefe(rdzeit.n === 24, "24 Saeulen -- eine je Stunde des Tages",
     String(rdzeit.n));
-  pruefe(rdzeit.voll === 1 && rdzeit.spanne > 5,
-    "genau eine Stunde ist die hoechste, und das Profil ist nicht flach",
+  // Nicht "genau eine": bei kurzen Zeitraeumen koennen zwei Stunden gleichauf
+  // liegen, und das ist kein Fehler. Geprueft wird, dass ueberhaupt eine Saeule
+  // die volle Hoehe hat und das Profil nicht flach ist.
+  pruefe(rdzeit.voll >= 1 && rdzeit.voll <= 3 && rdzeit.spanne > 5,
+    "eine Stunde fuellt die Hoehe, und das Profil ist nicht flach",
     `voll ${rdzeit.voll}, Spanne ${rdzeit.spanne}`);
   pruefe(rdzeit.mehrfarbig >= 1,
     "die Saeulen sind nach dem Grund gestapelt, nicht einfarbig",

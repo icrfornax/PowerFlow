@@ -66,6 +66,13 @@
   function nachIso(d) {
     return d.getFullYear() + "-" + zwei(d.getMonth() + 1) + "-" + zwei(d.getDate());
   }
+  // Kurzform fuer Aufzaehlungen: 30.08.2026. Wie ueberall lokal gebildet, nie
+  // ueber toISOString().
+  function datumKurz(iso) {
+    return ausIso(iso).toLocaleDateString("de-DE", {
+      day: "2-digit", month: "2-digit", year: "numeric"
+    });
+  }
   function datumLang(iso) {
     return ausIso(iso).toLocaleDateString("de-DE", {
       weekday: "long", year: "numeric", month: "long", day: "numeric"
@@ -291,6 +298,39 @@
       return { name: name, mwh: summeZeitraum(von, bis, ["erzeugung", name]).wert };
     }).filter(function (e) { return e.mwh !== null; })
       .sort(function (a, b) { return b.mwh - a.mwh; });
+  }
+
+  /* WELCHE TAGE FEHLEN -- und woran es liegt.
+
+     Anlass: vom 30.08. bis 01.09.2026 fehlt die Deutschlandreihe ganz, waehrend
+     TenneT, Amprion und TransnetBW an denselben Tagen vollstaendig vorliegen.
+     Die Luecke steckt allein in den Stundenwerten von 50Hertz (16, 22 und 11
+     von 24), und die Deutschlandsumme entsteht aus allen vier -- deshalb faellt
+     sie mit aus. Ein blosses "nur 4 von 7 Tagen belegt" laesst das aussehen wie
+     ein Ausfall des Abrufs. Es ist keiner.
+
+     Zurueckgegeben wird die Liste der fehlenden Tage und, sofern eindeutig,
+     welche Zonen an genau diesen Tagen SEHR WOHL Daten haben. */
+  function luecken(von, bis) {
+    var fehlend = [], mitDaten = {}, ohneDaten = {};
+    tageImZeitraum(von, bis).forEach(function (tag) {
+      var d = Z.jahre[Number(tag.slice(0, 4))];
+      if (!d) { return; }
+      var i = d.tage.indexOf(tag);
+      if (i < 0) { return; }
+      if (d.netzlast[i] !== null) { return; }
+      fehlend.push(tag);
+      Object.keys(d.regelzonen).forEach(function (z) {
+        var w = d.regelzonen[z].netzlast[i];
+        if (w === null || w === undefined) { ohneDaten[z] = true; }
+        else { mitDaten[z] = true; }
+      });
+    });
+    return { tage: fehlend,
+             zonenMitDaten: Object.keys(mitDaten).filter(function (z) {
+               return !ohneDaten[z];
+             }),
+             zonenOhneDaten: Object.keys(ohneDaten) };
   }
 
   function zonen(von, bis) {
@@ -2741,6 +2781,22 @@
       return;
     }
 
+    /* Ein Band GANZ OBEN, wenn Tage fehlen. Der ausfuehrliche Hinweis steht
+       weiter unten unter "Hinweise zur Datenlage" -- aber wer die Kacheln
+       liest, liest sie zuerst, und eine Summe ueber vier von sieben Tagen ohne
+       Warnung daneben ist eine Falschaussage. */
+    var lueckeOben = luecken(von, bis);
+    if (lueckeOben.tage.length) {
+      var band = el("p", { "class": "pf-luecke" });
+      band.appendChild(el("strong", { text: lueckeOben.tage.length + " von "
+        + k.tage + " Tagen ohne Daten" }));
+      band.appendChild(document.createTextNode(
+        " — " + lueckeOben.tage.map(datumKurz).join(", ")
+        + ". Alle Zahlen auf dieser Seite summieren nur die " + k.belegt
+        + " belegten Tage. Woran es liegt, steht unter „Hinweise zur Datenlage“."));
+      neu.appendChild(band);
+    }
+
     // --- Kennzahlen ---
     var proTag = einTag ? "" : " · " + gwh(k.netzlast / k.belegt, 1) + " GWh je Tag";
     var kacheln = el("div", { "class": "pf-kacheln" });
@@ -2909,10 +2965,22 @@
 
     // --- Warnungen zum Zeitraum ---
     var warnungen = [];
+    var lk = luecken(von, bis);
     if (k.belegt < k.tage) {
-      warnungen.push("Von " + k.tage + " Kalendertagen des Zeitraums liegen nur " + k.belegt
+      var satz = "Von " + k.tage + " Kalendertagen des Zeitraums liegen nur " + k.belegt
         + " mit Daten vor. Die Summen beziehen sich auf die belegten Tage; fehlende werden "
-        + "nicht als Null gezählt.");
+        + "nicht als Null gezählt.";
+      if (lk.tage.length && lk.tage.length <= 10) {
+        satz += " Es fehlen: " + lk.tage.map(datumKurz).join(", ") + ".";
+      }
+      if (lk.zonenOhneDaten.length && lk.zonenMitDaten.length) {
+        satz += " Die Lücke liegt nicht am Abruf: an genau diesen Tagen meldet die "
+          + "Quelle für " + lk.zonenOhneDaten.join(" und ") + " unvollständige "
+          + "Stundenwerte, während " + lk.zonenMitDaten.join(", ") + " vollständig "
+          + "vorliegen. Die Deutschlandreihe entsteht aus allen vier und fällt "
+          + "deshalb ganz aus.";
+      }
+      warnungen.push(satz);
     }
     jahreImZeitraum(von, bis).forEach(function (jahr) {
       var jd = Z.jahre[jahr];

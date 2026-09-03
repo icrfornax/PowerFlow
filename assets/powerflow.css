@@ -815,6 +815,17 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-rd-zahl[data-akzent="orange"] .pf-wert { color: var(--orange); }
 .pf-rd-zahl[data-akzent="violett"] .pf-wert { color: var(--violett); }
 
+/* Ein Band ganz oben, wenn Tage im Zeitraum keine Daten haben. Es steht VOR
+   den Kacheln: eine Summe ueber vier von sieben Tagen ohne Warnung daneben ist
+   eine Falschaussage. */
+.pf-luecke {
+  margin: 0 0 14px; padding: 11px 14px; border-radius: 8px;
+  border: 1px solid var(--orange); border-left-width: 4px;
+  background: color-mix(in srgb, var(--orange) 10%, var(--flaeche));
+  font-size: 0.86rem; line-height: 1.5;
+}
+.pf-luecke strong { color: var(--orange); }
+
 /* ---------- Redispatch: Zeitprofil ----------
    24 gestapelte Saeulen, eine je Stunde des Tages. Hoehe = wie viele
    Massnahmen liefen gleichzeitig, Farbe = warum. Die Werteachse hat drei
