@@ -558,9 +558,31 @@
   }
 
   /* Bezugszeile: derselbe Zeitraum ein Jahr frueher, reale Messwerte. */
-  function bezugstext(heute, vorher, vvon, vbis) {
+  /* Der Vergleich mit dem Vorjahr -- und die Falle darin.
+
+     Bis zum 03.09.2026 wurden hier zwei SUMMEN durcheinander geteilt, ohne zu
+     fragen, ueber wie viele Tage sie laufen. Solange beide Zeitraeume
+     vollstaendig sind, geht das gut. Fehlen aber Tage -- und vom 30.08. bis
+     01.09.2026 fehlen drei -- wird daraus Unsinn: die Seite zeigte "3.520,9 GWh
+     gegen 6.955,4 GWh im Vorjahreszeitraum, -49,4 %". Das waren drei Tage gegen
+     sechs. Der Verbrauch ist nicht um die Haelfte gefallen.
+
+     Deshalb: sind beide Zeitraeume gleich gut belegt, bleibt es beim Vergleich
+     der Summen. Sind sie es nicht, wird JE BELEGTEM TAG verglichen und das
+     ausdruecklich gesagt. Ein Mittelwert ueber ungleich viele Tage ist keine
+     perfekte Antwort -- ein fehlender Sonntag verzerrt ihn -- aber er ist um
+     Groessenordnungen weniger falsch als der Vergleich zweier Summen. */
+  function bezugstext(heute, vorher, vvon, vbis, tageHeute, tageVorher) {
     if (vorher === null || vorher === undefined) {
       return "kein Vergleichswert für " + zeitraumKurz(vvon, vbis) + " vorhanden";
+    }
+    var ungleich = tageHeute && tageVorher && tageHeute !== tageVorher;
+    if (ungleich) {
+      var pj = prozent(heute / tageHeute, vorher / tageVorher);
+      return gwh(vorher, 1) + " GWh im Vorjahreszeitraum über " + tageVorher
+        + " Tage — hier sind es " + tageHeute + ". Je belegtem Tag "
+        + (pj >= 0 ? "+" : "−") + nf1.format(Math.abs(pj)) + " %; "
+        + "die Summen sind nicht vergleichbar.";
     }
     var p = prozent(heute, vorher);
     return gwh(vorher, 1) + " GWh im Vorjahreszeitraum · "
@@ -2190,7 +2212,7 @@
     { text: "ENTSO-E Transparency Platform", url: "https://transparency.entsoe.eu/" }
   ];
 
-  function redispatchAbschnitt(von, bis, netzlast) {
+  function redispatchAbschnitt(von, bis, netzlast, lasttage) {
     var r = redispatch(von, bis);
     var huelle = el("div", { "class": "pf-verlauf" });
     if (!r) {
@@ -2218,8 +2240,13 @@
     huelle.appendChild(el("p", { "class": "pf-bezug",
       text: r.massnahmen.toLocaleString("de-DE") + " Maßnahmen an "
         + r.tageMitMassnahme + " von " + r.belegteTage + " Tagen"
-        + (netzlast ? " · entspricht " + nf2.format(r.gesamt / netzlast * 100)
-            + " % der Netzlast im Zeitraum" : "") }));
+        + (netzlast && lasttage === r.belegteTage
+            ? " · entspricht " + nf2.format(r.gesamt / netzlast * 100)
+              + " % der Netzlast im Zeitraum"
+            : netzlast
+              ? " · ein Anteil an der Netzlast wäre hier irreführend: sie liegt "
+                + "nur für " + lasttage + " dieser Tage vor"
+              : "") }));
 
     function balken(titel, werte, farbe) {
       var box = el("div", { "class": "pf-rd-gruppe" });
@@ -2803,7 +2830,7 @@
 
     kacheln.appendChild(kachel({
       titel: "Netzlast", wert: gwh(k.netzlast, 1), einheit: "GWh", akzent: "violett",
-      bezug: bezugstext(k.netzlast, v.netzlast, vv, vb) + proTag,
+      bezug: bezugstext(k.netzlast, v.netzlast, vv, vb, k.belegt, v.belegt) + proTag,
       info: {
         wert: "SMARD-Filter 410 „Realisierter Stromverbrauch, Gesamt (Netzlast)“, Region DE, "
           + "summiert über " + k.belegt + " Tage. Gegen die eigene Viertelstundenreihe "
@@ -2820,7 +2847,7 @@
 
     kacheln.appendChild(kachel({
       titel: "Erzeugung", wert: gwh(k.erzeugung, 1), einheit: "GWh", akzent: "teal",
-      bezug: bezugstext(k.erzeugung, v.erzeugung, vv, vb),
+      bezug: bezugstext(k.erzeugung, v.erzeugung, vv, vb, k.belegt, v.belegt),
       info: {
         wert: "Summe der zwölf SMARD-Erzeugungsreihen für Region DE über den Zeitraum.",
         grenzenTitel: "Kernenergie",
@@ -2871,7 +2898,7 @@
 
     kacheln.appendChild(kachel({
       titel: "Import", wert: gwh(k.imp, 1), einheit: "GWh", akzent: "teal",
-      bezug: bezugstext(k.imp, v.imp, vv, vb),
+      bezug: bezugstext(k.imp, v.imp, vv, vb, k.belegt, v.belegt),
       info: {
         wert: "Summe der stündlichen SMARD-Importreihen je Nachbarland (physikalischer "
           + "Stromfluss). Die Reihen sind vorzeichenlos positiv.",
@@ -2887,7 +2914,7 @@
 
     kacheln.appendChild(kachel({
       titel: "Export", wert: gwh(k.exp, 1), einheit: "GWh", akzent: "orange",
-      bezug: bezugstext(k.exp, v.exp, vv, vb),
+      bezug: bezugstext(k.exp, v.exp, vv, vb, k.belegt, v.belegt),
       info: {
         wert: "Summe der stündlichen SMARD-Exportreihen je Nachbarland.",
         grenzenTitel: "Auflösung und Beleg",
@@ -2905,7 +2932,7 @@
          Rechnung raeumt das in einer Zeile aus. */
       bezug: (k.saldo >= 0 ? "Netto-Zufluss" : "Netto-Abfluss")
         + ": Import − Export = " + gwh(k.imp, 1) + " − " + gwh(k.exp, 1)
-        + " · " + bezugstext(k.saldo, v.saldo, vv, vb),
+        + " · " + bezugstext(k.saldo, v.saldo, vv, vb, k.belegt, v.belegt),
       info: {
         wert: "Import minus Export über alle Nachbarländer im Zeitraum. "
           + "Das Vorzeichen folgt daraus: ein MINUS heißt, dass mehr ausgeführt "
@@ -2921,7 +2948,7 @@
     kacheln.appendChild(kachel({
       titel: "Bilanzrest", wert: vz(k.rest, 2), einheit: "GWh",
       bezug: (k.rest === null ? "—" : nf2.format(k.rest / k.netzlast * 100) + " % der Netzlast")
-        + " · " + bezugstext(k.rest, v.rest, vv, vb),
+        + " · " + bezugstext(k.rest, v.rest, vv, vb, k.belegt, v.belegt),
       marke: "Selbstkontrolle — geht nicht auf null",
       info: {
         wert: "Erzeugung + Import − Export − Netzlast. Rechnet die anderen Kacheln gegen.",
@@ -2942,8 +2969,16 @@
     if (rd) {
       kacheln.appendChild(kachel({
         titel: "Redispatch", wert: gwh(rd.gesamt, 1), einheit: "GWh",
-        bezug: nf2.format(rd.gesamt / k.netzlast * 100) + " % der Netzlast · "
-          + bezugstext(rd.gesamt, rdV && rdV.gesamt, vv, vb),
+        /* Der Anteil an der Netzlast nur, wenn BEIDE Summen ueber dieselben
+           Tage laufen. Redispatch liegt fuer Tage vor, an denen die Netzlast
+           fehlt -- vom 30.08. bis 01.09.2026 waeren das sechs Tage Redispatch
+           geteilt durch drei Tage Netzlast gewesen. Das ist keine Zahl. */
+        bezug: (rd.belegteTage === k.belegt
+                  ? nf2.format(rd.gesamt / k.netzlast * 100) + " % der Netzlast · "
+                  : "Anteil an der Netzlast hier nicht angebbar: Redispatch liegt "
+                    + "für " + rd.belegteTage + " Tage vor, die Netzlast für "
+                    + k.belegt + ". · ")
+          + bezugstext(rd.gesamt, rdV && rdV.gesamt, vv, vb, rd.belegteTage, rdV && rdV.belegteTage),
         marke: "Eingriffe und Probebetrieb — kein Lastfluss",
         info: {
           wert: "Summe der Redispatch-Arbeit aus " + rd.massnahmen.toLocaleString("de-DE")
@@ -3194,7 +3229,7 @@
 
     // --- Redispatch ---
     neu.appendChild(abschnitt("Redispatch · Eingriffe ins Netz",
-      redispatchAbschnitt(von, bis, k.netzlast)));
+      redispatchAbschnitt(von, bis, k.netzlast, k.belegt)));
 
     // --- Karte ---
     var karteHuelle = el("div", { "class": "pf-karte-huelle" });
@@ -3582,13 +3617,17 @@
          Verlauf sind seit dem 31.08. drin. Vier Punkte weg, einer neu. Was
          erledigt ist, gehoert nicht in eine Liste offener Punkte -- sonst
          glaubt sie irgendwann niemand mehr. */
+      /* Am 03.09.2026 geprueft und VERWORFEN -- mit Zahlen, nicht mit Gefuehl.
+         Der Punkt bleibt in der Liste, aber als offene FRAGE, nicht als
+         Aufgabe: die Umstellung waere ein Rueckschritt. */
       { hoch: true,
-        text: "Redispatch direkt von der ENTSO-E Transparency Platform holen "
-          + "statt von netztransparenz.de. Die Lizenzkette läuft ohnehin über "
-          + "die ETP — Datenpunkt 19, Artikel 13.1.a, CC BY 4.0, am 03.09.2026 "
-          + "in der Liste nachgesehen. Dann stützt sich alles auf eine Quelle "
-          + "mit ausdrücklichen Nutzungsbedingungen, statt über eine zweite "
-          + "Plattform zu argumentieren." },
+        text: "Warum die ENTSO-E-Reihe für Redispatch kürzer ist als die von "
+          + "netztransparenz.de. Über acht Tage im August 2026 gemessen führt "
+          + "die Transparency Platform nur 24 bis 63 % der Arbeit und etwa die "
+          + "Hälfte der Vorgänge (51 Zeitreihen gegen 108 Maßnahmen am 28.08.). "
+          + "Eine Umstellung auf die ETP wäre deshalb ein Rückschritt und "
+          + "unterbleibt; woran der Unterschied liegt — Schwelle, Abgrenzung "
+          + "oder Meldeverzug — ist nicht geklärt." },
       { hoch: false,
         text: "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar "
           + "wird, wie stark das Ergebnis am gewählten Zeitraum hängt." },

@@ -589,3 +589,77 @@ Jahresdateien nach und vergleicht sie mit dem Wortlaut der Seite; ein
 Negativtest verstellt sie absichtlich und muss anschlagen. Der Satz „in jedem
 Jahr größer" darf nur dann dort stehen, wenn kein Jahr ein negatives Vorzeichen
 hat.
+
+---
+
+## 03.09.2026: Redispatch von ENTSO-E geholt — und NICHT umgestellt
+
+Auftrag war, Redispatch direkt von der ENTSO-E Transparency Platform zu holen,
+nachdem die Lizenzkette dorthin führt. Der Abruf funktioniert. Umgestellt wird
+trotzdem nicht, und zwar aus einem gemessenen Grund: **die ENTSO-E-Reihe ist
+deutlich unvollständiger als netztransparenz.de.**
+
+### Der Zugang — belegt, nicht angenommen
+
+Die Dokumentation nennt zwei getrennte Datenpunkte: *RedispatchingInternal
+[13.1.A]* und *RedispatchingCrossBorder [13.1.A]*, beide in der Fassung r3.2
+(Hilfebereich der Plattform, zuletzt geändert 03.07. bzw. 10.07.2026).
+
+Im RESTful API sind das:
+
+| | Parameter |
+|---|---|
+| intern | `documentType=A63&businessType=A85&in_Domain=<CTA>&out_Domain=<CTA>` |
+| grenzüberschreitend | `documentType=A63&businessType=A46&in_Domain=<CTA-A>&out_Domain=<CTA-B>` |
+
+**Die Domäne ist die Regelzone, nicht die Gebotszone.** Mit
+`10Y1001A1001A82H` (DE-LU) antwortet die API „No matching data found"; mit den
+vier CTA-Codes (`10YDE-VE-------2`, `10YDE-RWENET---I`, `10YDE-EON------1`,
+`10YDE-ENBW-----N`) kommt ein `TransmissionNetwork_MarketDocument`. Das ist
+nicht geraten — die Fehlermeldung nennt den Datenpunkt, der angesprochen wurde.
+
+**Einheit aus den Daten:** `quantity_Measurement_Unit.name` = `MWH`, im
+Dateischema als `CapacityImpact[MWh/MTU]` bezeichnet. **`curveType` ist A03** —
+ein Wert gilt, bis der nächste genannte Punkt kommt; die Punkte sind
+lückenhaft numeriert (1, 5, 29, 33, 37 …). Wer sie ohne diese Ausdehnung
+summiert, unterschätzt grob.
+
+### Die Gegenprobe — acht Tage, dieselbe Frage
+
+Summe der Arbeit je lokalem Kalendertag, vier Regelzonen, gegen unsere
+netztransparenz-Datei:
+
+| Tag | ENTSO-E | netztransparenz | Anteil | Reihen | Maßnahmen |
+|---|---|---|---|---|---|
+| 21.08.2026 | 9.312 MWh | 15.629 MWh | 59,6 % | 20 | 30 |
+| 22.08. | 13.320 | 56.182 | 23,7 % | 22 | 65 |
+| 23.08. | 21.834 | 52.280 | 41,8 % | 19 | 48 |
+| 24.08. | 4.276 | 6.819 | 62,7 % | 17 | 19 |
+| 25.08. | 24.280 | 60.567 | 40,1 % | 54 | 105 |
+| 26.08. | 21.606 | 52.874 | 40,9 % | 35 | 75 |
+| 27.08. | 77.912 | 250.184 | 31,1 % | 60 | 147 |
+| 28.08. | 43.755 | 143.220 | 30,6 % | 51 | 108 |
+
+**Grenzüberschreitendes Redispatch ist an diesen Tagen leer** — alle 80
+Kombinationen der vier deutschen Regelzonen mit zehn Nachbarn ergaben null.
+
+Die Lücke hängt nicht an der Auslegung von `curveType` A03: die beiden
+denkbaren Alternativen (Wert gilt nur für seine eine MTU; oder die Zahl ist
+Leistung statt Arbeit) machen die ENTSO-E-Summe **kleiner**, nicht größer.
+Unabhängig davon zählt die Reihenzahl: **51 Zeitreihen gegen 108 Maßnahmen**
+am 28.08. Es sind schlicht weniger Vorgänge veröffentlicht.
+
+### Was daraus folgt
+
+netztransparenz.de bleibt die Quelle. Ein Wechsel würde ein Drittel bis zwei
+Drittel der Arbeit verlieren — genau der Fehler, den das Dezimalkomma schon
+einmal verursacht hat, diesmal nur mit besserer Begründung.
+
+Der Nutzen des ENTSO-E-Zugangs liegt anderswo und ist eingelöst: **die
+Lizenzkette ist geschlossen** (Datenpunkt 19, Artikel 13.1.a, CC BY 4.0). Dass
+die ETP-Reihe unvollständiger ist, ändert daran nichts — sie belegt die
+Freigabe, sie muss nicht die Datenquelle sein.
+
+Offen bleibt, WARUM die ETP-Reihe kürzer ist. Denkbar wäre eine Schwelle, eine
+andere Abgrenzung des Begriffs oder ein Meldeverzug. Das ist nicht geprüft und
+wird nicht behauptet.

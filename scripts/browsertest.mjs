@@ -1136,6 +1136,71 @@ try {
     "das gelieferte Methodik-PDF steht nicht mehr als offener Punkt");
   pruefe(offen && !/bisher nur als Summe des/.test(offen.texte),
     "Import und Export im Verlauf stehen nicht mehr als offener Punkt");
+
+  /* DER VORJAHRESVERGLEICH BEI UNGLEICH VIELEN TAGEN. Vom 30.08. bis
+     01.09.2026 fehlen drei Tage; die Seite zeigte daraufhin "3.520,9 GWh gegen
+     6.955,4 GWh im Vorjahreszeitraum, -49,4 %". Das waren drei Tage gegen
+     sechs. Geprueft wird die BEDINGUNG: sind die Zeitraeume ungleich belegt,
+     darf keine Prozentzahl aus zwei Summen dastehen. */
+  await js(`document.getElementById("pf-von").value = "2026-08-28";`
+    + `document.getElementById("pf-von").dispatchEvent(new Event("change", { bubbles: true }));`);
+  await schlafen(600);
+  await js(`document.getElementById("pf-bis").value = "2026-09-02";`
+    + `document.getElementById("pf-bis").dispatchEvent(new Event("change", { bubbles: true }));`);
+  await schlafen(2500);
+  const vergleich = await js(`(function () {
+    const band = document.querySelector(".pf-luecke");
+    const bezuege = [...document.querySelectorAll(".pf-kachel .pf-bezug")]
+      .map((x) => x.textContent);
+    return {
+      luecke: !!band,
+      // Bei ungleicher Belegung muss "je belegtem Tag" dastehen ...
+      jeTag: bezuege.filter((x) => x.indexOf("Je belegtem Tag") >= 0).length,
+      // ... und der Hinweis, dass die Summen nicht vergleichbar sind.
+      warnung: bezuege.filter((x) => x.indexOf("nicht vergleichbar") >= 0).length,
+      gesamt: bezuege.length,
+      beispiel: bezuege[0] || ""
+    };
+  })()`);
+  if (vergleich.luecke) {
+    pruefe(vergleich.jeTag >= 4,
+      `bei ungleich belegten Zeitraeumen wird je belegtem Tag verglichen (${vergleich.jeTag} Kacheln)`,
+      vergleich.beispiel);
+    pruefe(vergleich.warnung === vergleich.jeTag,
+      "und jede dieser Kacheln sagt, dass die Summen nicht vergleichbar sind");
+  } else {
+    pruefe(true, "keine Luecke im Zeitraum -- Vergleich der Summen ist zulaessig");
+  }
+  /* Und der Anteil, der zwei verschieden lange Zeitraeume durcheinander
+     teilt: Redispatch liegt fuer alle Tage vor, die Netzlast nicht. "263,9 GWh
+     = 7,49 % der Netzlast" waeren sechs Tage geteilt durch drei gewesen. */
+  const anteil = await js(`(function () {
+    const k = [...document.querySelectorAll(".pf-kachel")]
+      .find((x) => /Redispatch/.test(x.textContent));
+    const abschnitt = document.querySelector(".pf-rd-kopf")
+      ? document.querySelector(".pf-rd-kopf").parentNode.querySelector(".pf-bezug")
+      : null;
+    return {
+      kachel: k ? k.querySelector(".pf-bezug").textContent : "",
+      abschnitt: abschnitt ? abschnitt.textContent : "",
+      luecke: !!document.querySelector(".pf-luecke")
+    };
+  })()`);
+  if (anteil.luecke) {
+    pruefe(!/% der Netzlast/.test(anteil.kachel),
+      "kein Netzlastanteil, solange Redispatch mehr Tage abdeckt als die Netzlast",
+      anteil.kachel.slice(0, 100));
+    pruefe(/nicht angebbar/.test(anteil.kachel),
+      "und die Kachel sagt, warum", anteil.kachel.slice(0, 100));
+    pruefe(/irreführend/.test(anteil.abschnitt),
+      "derselbe Vorbehalt im Redispatch-Abschnitt", anteil.abschnitt.slice(0, 110));
+  } else {
+    pruefe(/% der Netzlast/.test(anteil.kachel),
+      "bei gleich langen Zeitraeumen steht der Netzlastanteil da");
+  }
+  await foto("vorjahresvergleich", ".pf-kacheln");
+  await js(`[...document.querySelectorAll(".pf-schnell")].find((b) => b.textContent === "Letzte 7 Tage").click()`);
+  await schlafen(2500);
   pruefe(offen && /Regelzone je Windpark/.test(offen.grenzen)
     && /Redispatch auf der Karte/.test(offen.grenzen),
     "die zwei verschobenen Punkte stehen jetzt unter Grenzen");

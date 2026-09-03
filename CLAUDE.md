@@ -283,8 +283,15 @@ Zoom eine Haeufung ueberhaupt aufloest.
 Mit Immo Punkt fuer Punkt sortiert. Die Liste auf der Seite hat seither eine
 Reihenfolge; was oben steht, traegt die Markierung "Als Naechstes".
 
-**Hoch:** Redispatch direkt von der ENTSO-E Transparency Platform holen statt
-von netztransparenz.de -- die Lizenzkette laeuft ohnehin ueber die ETP.
+**Hoch:** Warum die ENTSO-E-Reihe fuer Redispatch kuerzer ist als die von
+netztransparenz.de -- gemessen 24 bis 63 % der Arbeit und rund die Haelfte der
+Vorgaenge. Die am 03.09.2026 erwogene Umstellung auf die ETP ist damit vom Tisch;
+sie waere ein Rueckschritt. Beleg: `docs/beleg-redispatch.md`.
+
+**REDISPATCH BLEIBT BEI netztransparenz.de.** Der ENTSO-E-Zugang wird gebraucht,
+um die Lizenzkette zu belegen -- nicht als Datenquelle. Wer das aendern will,
+misst vorher nach: `documentType=A63&businessType=A85` mit den vier CTA-Codes,
+`curveType` A03 (ein Wert gilt bis zum naechsten Punkt), Einheit MWH je MTU.
 
 **Erledigt am 03.09.2026:** die Lizenzfrage (Punkt 1, siehe oben), der
 ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF
