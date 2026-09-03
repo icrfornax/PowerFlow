@@ -780,9 +780,15 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # Die zwei zurueckgenommenen Ursachen duerfen NICHT mehr als Erklaerung
     # dastehen. Geprueft wird auf die alte Formulierung, nicht auf das Wort --
     # es kommt in der Richtigstellung selbst vor.
-    for alt_satz in ("Darin stecken Netzverluste",
-                     "Netzverluste, der Bezug der Pumpspeicher"):
-        b.pruefe(alt_satz not in js,
+    # OHNE Ruecksicht auf Gross- und Kleinschreibung. Die erste Fassung dieser
+    # Pruefung suchte nach "Darin stecken Netzverluste" -- und uebersah dieselbe
+    # Aussage zwei Bildschirme weiter unten, wo sie mit kleinem "darin" begann.
+    # Gefunden habe ich sie erst im Bildschirmfoto. Eine Textsuche, die an der
+    # Schreibweise haengt, ist keine Pruefung.
+    js_klein = js.lower()
+    for alt_satz in ("stecken netzverluste",
+                     "netzverluste, der bezug der pumpspeicher"):
+        b.pruefe(alt_satz not in js_klein,
                  f"die zurueckgenommene Erklaerung steht nicht mehr da: {alt_satz!r}")
 
     # --- Kosten des Engpassmanagements ---

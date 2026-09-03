@@ -226,10 +226,23 @@ die Regelzonenbilanz.
 - **Lange Erklaerungen klappen auf, der erste Satz bleibt stehen.**
   `langtext()` teilt am ersten Satzende; darunter steht der Rest in einem
   `<details>`. Nicht umgekehrt -- was zaehlt, darf nicht hinter einem Klick
-  liegen. Unter 240 Zeichen bleibt es ein gewoehnlicher Absatz.
-- **Fliesstext hoert bei 82 Zeichen auf.** Auf einem breiten Bildschirm laeuft
-  ein Absatz sonst ueber 200 Zeichen, und das Auge verliert beim Zeilenwechsel
-  die Spur. Gilt nicht fuer Tabellen und Grafiken.
+  liegen. Unter 160 Zeichen bleibt es ein gewoehnlicher Absatz.
+  **Gefaltet wird in EINEM Durchgang** (`texteFalten()`) ueber den fertigen
+  Baum, nicht an jeder einzelnen Stelle -- sonst bleibt der naechste neue Text
+  wieder ein Klotz. Ausgenommen sind Knoten mit Auszeichnungen darin (fettes
+  "Als Naechstes", Verweise): sie ueber `textContent` neu zu bauen ebnete die
+  Auszeichnung ein.
+- **Die grossen Bloecke lassen sich zuklappen** -- Grenzen, Zeitliche
+  Reichweite, Datenqualitaet, Offene Punkte, Quellen. Zwei Regeln: was zum
+  GEWAEHLTEN ZEITRAUM gehoert, ist offen voreingestellt (ein Hinweis auf
+  fehlende Tage gehoert nicht hinter einen Klick), und jede Zusammenfassung
+  sagt, wie viel darin steht ("12 Maengel"). Der Zustand liegt in `Z.klapp`,
+  ueberlebt einen Zeitraumwechsel und endet beim Neuladen -- kein localStorage.
+- **KEINE harte Zeilenbreite auf Absaetzen.** Eine Grenze von 82 Zeichen hat
+  den Text mitten auf der Seite abbrechen lassen; das sah nach kaputtem Umbruch
+  aus, nicht nach Absicht, und ist zurueckgenommen. Lesbar wird es dadurch,
+  dass lange Texte gefaltet sind. Nur der AUFGEKLAPPTE Teil sitzt in einem
+  eigenen Feld mit Rand und bekommt dort eine Breite.
 - **Zwei Grafiken mit verschiedenen Zeitachsen im selben Abschnitt brauchen
   jede eine Achsenbeschriftung** und eine Ueberschrift, die den Bezug nennt --
   "ueber den Tag, 0 bis 24 Uhr" gegen "je Monat". Ohne das liest man die zweite
@@ -249,6 +262,11 @@ die Regelzonenbilanz.
   Browsertest die BEDINGUNG geprueft hat statt der Stelle, war es vorbei. Die
   Frage nach jeder Behebung lautet deshalb: welche Pruefung haette das
   gemeldet, und steht sie jetzt da?
+- **Eine Textsuche, die an der Schreibweise haengt, ist keine Pruefung.** Die
+  zurueckgenommene Netzverlust-Erklaerung stand nach der Berichtigung noch ein
+  zweites Mal auf der Seite -- mit kleinem "darin" statt grossem. Die Pruefung
+  suchte nach der grossen Schreibweise und war zufrieden. Gefunden habe ich es
+  im Bildschirmfoto. Seitdem sucht sie in Kleinschreibung.
 - Eigenen Fehler als solchen benennen und sagen, was ihn verursacht hat. Keine
   Beschoenigung.
 - Eine frueher aufgestellte Behauptung, die nach dem Nachrechnen nicht haelt,

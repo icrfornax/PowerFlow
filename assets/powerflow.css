@@ -881,13 +881,39 @@ details.pf-mehr { margin: 0; padding: 0; border: 0; background: none; }
 }
 .pf-mehr[open] > summary .pf-mehr-marke::after { content: " ▴"; }
 .pf-mehr:not([open]) > summary .pf-mehr-marke::after { content: " ▾"; }
-.pf-mehr > p { margin: 6px 0 0; }
+.pf-mehr > p {
+  margin: 7px 0 0; padding: 9px 12px; border-left: 2px solid var(--linie);
+  background: color-mix(in srgb, var(--schrift-still) 6%, transparent);
+  border-radius: 0 6px 6px 0;
+}
 
-/* LESBARE ZEILENLAENGE. Auf einem breiten Bildschirm laeuft ein Absatz sonst
-   ueber 200 Zeichen -- das Auge verliert beim Zeilenwechsel die Spur. Die
-   Grenze gilt nur fuer Fliesstext, nicht fuer Tabellen und Grafiken. */
-.pf-bezug, .pf-kasten li, .pf-kasten-vor, .pf-karte-warnung, .pf-mehr > p,
-.pf-mehr > summary, .pf-luecke, .pf-deckungstext { max-width: 82ch; }
+/* ---------- Grosse Abschnitte zum Zuklappen ---------- */
+.pf-klapp > .pf-klapp-details > summary {
+  cursor: pointer; list-style: none; display: flex; align-items: baseline;
+  gap: 12px; flex-wrap: wrap;
+}
+.pf-klapp > .pf-klapp-details > summary::-webkit-details-marker { display: none; }
+.pf-klapp > .pf-klapp-details > summary:focus-visible {
+  outline: 2px solid var(--teal); outline-offset: 3px;
+}
+.pf-klapp > .pf-klapp-details > summary h2 { margin: 0; }
+.pf-klapp-zahl {
+  font-size: 0.76rem; color: var(--schrift-still); letter-spacing: 0.03em;
+}
+/* Der Pfeil sitzt am Ende der Zeile, nicht vor der Ueberschrift -- sonst
+   ruecken alle Ueberschriften der Seite gegeneinander. */
+.pf-klapp-zahl::after { content: " ▾"; color: var(--teal); }
+.pf-klapp > .pf-klapp-details[open] > summary .pf-klapp-zahl::after { content: " ▴"; }
+.pf-klapp > .pf-klapp-details > summary:hover .pf-klapp-zahl { color: var(--teal); }
+
+/* KEINE harte Zeilenbreite auf Absaetzen. Eine Grenze von 82 Zeichen hat den
+   Text mitten auf der Seite abbrechen lassen und sah nach kaputtem Umbruch aus,
+   nicht nach Absicht. Lesbar wird es stattdessen dadurch, dass lange Texte
+   aufklappbar sind -- sichtbar bleibt der erste Satz.
+
+   Nur der AUFGEKLAPPTE Teil bekommt eine Breite: er sitzt in einem eigenen
+   Feld mit Rand und Einzug, dort liest sich die schmalere Spalte als Absicht. */
+.pf-mehr[open] > p { max-width: 92ch; }
 
 /* Jeder Rahmen, in dem eine Ablesung aufgehen kann, braucht einen Bezugspunkt. */
 .pf-rd-rahmen, .pf-kosten-gitter, .pf-zone-schiene { position: relative; }

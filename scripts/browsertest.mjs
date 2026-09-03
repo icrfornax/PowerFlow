@@ -484,6 +484,7 @@ try {
      liegen. */
   const aufklapp = await js(`(function () {
     const d = [...document.querySelectorAll("details.pf-mehr")];
+
     return {
       anzahl: d.length,
       zu: d.filter((x) => !x.open).length,
@@ -505,8 +506,20 @@ try {
       })()
     };
   })()`);
-  pruefe(aufklapp.anzahl >= 4,
+  /* Wie viele lange Absaetze NICHT gefaltet sind. Ungefaltet bleiben nur zwei
+     Sorten: solche mit Auszeichnungen darin (fettes "Als Nächstes", Verweise)
+     und solche ohne brauchbare Satzgrenze. Steigt die Zahl deutlich, ist der
+     Durchgang nicht mehr gelaufen -- genau das war er einmal nicht, weil zwei
+     Ersetzungen dieselbe Stelle getroffen hatten. */
+  const offenLang = await js(`
+    [...document.querySelectorAll("p.pf-bezug, p.pf-karte-warnung, .pf-kasten li")]
+      .filter((x) => !x.closest("details.pf-mehr") && !x.closest(".pf-rd-info")
+                  && !x.children.length
+                  && x.textContent.trim().length > 160).length`);
+  pruefe(aufklapp.anzahl >= 25,
     `${aufklapp.anzahl} lange Textbloecke sind aufklappbar`);
+  pruefe(offenLang <= 6,
+    `nur ${offenLang} lange Absaetze ohne Satzgrenze bleiben ungefaltet`);
   pruefe(aufklapp.zu === aufklapp.anzahl,
     "sie sind zugeklappt voreingestellt");
   pruefe(aufklapp.mitZusammenfassung === aufklapp.anzahl,
@@ -1318,7 +1331,9 @@ try {
 
   // Quellenverzeichnis und die vier Hinweiskaesten
   const qu = await js(`(function () {
-    const kopf = [...document.querySelectorAll(".pf-abschnitt > h2")].map((h) => h.textContent);
+    // Nicht mehr "> h2": die grossen Bloecke sind seit dem 04.09.2026 zum
+    // Zuklappen, ihre Ueberschrift sitzt in einem <summary>.
+    const kopf = [...document.querySelectorAll(".pf-abschnitt h2")].map((h) => h.textContent);
     const zeilen = [...document.querySelectorAll(".pf-abschnitt table.pf-tabelle tbody tr")];
     const quellenTab = zeilen.filter((r) => r.cells.length === 7);
     const quellenNamen = new Set(quellenTab.map((r) => r.cells[3].textContent));
@@ -1334,6 +1349,54 @@ try {
   pruefe(qu.kaesten.length === 4,
     `vier Hinweiskaesten: ${qu.kaesten.join(" | ")}`);
   pruefe(qu.quellenAbschnitt, "Abschnitt Quellen und Downloads vorhanden");
+
+  /* DIE GROSSEN BLOECKE LASSEN SICH ZUKLAPPEN. Wer die Seite oefter benutzt,
+     hat die Erklaerungen einmal gelesen. Geprueft wird dreierlei: dass es sie
+     gibt, dass die Hinweise zum GEWAEHLTEN ZEITRAUM offen voreingestellt sind
+     (eine Warnung gehoert nicht hinter einen Klick), und dass jede
+     Zusammenfassung sagt, wie viel darin steht. */
+  const klapp = await js(`(function () {
+    const d = [...document.querySelectorAll(".pf-klapp > .pf-klapp-details")];
+    const namen = d.map((x) => (x.querySelector("h2") || {}).textContent || "");
+    return {
+      anzahl: d.length,
+      namen: namen,
+      offen: namen.filter((n2, i) => d[i].open),
+      ohneZahl: namen.filter((n2, i) => !d[i].querySelector(".pf-klapp-zahl")),
+      // Zuklappen und wieder auf: der Inhalt muss danach wieder da sein.
+      probe: (function () {
+        const x = d.find((y) => !y.open);
+        if (!x) { return null; }
+        const vorher = x.querySelectorAll("li, tr, p").length;
+        x.open = true;
+        const nachher = x.querySelectorAll("li, tr, p").length;
+        x.open = false;
+        return { vorher: vorher, nachher: nachher };
+      })()
+    };
+  })()`);
+  pruefe(klapp.anzahl >= 5,
+    `${klapp.anzahl} grosse Bloecke sind zum Zuklappen (${klapp.namen.join(" | ")})`);
+  pruefe(klapp.offen.length === 1 && /Datenlage/.test(klapp.offen[0] || ""),
+    "nur die Hinweise zum gewaehlten Zeitraum sind offen voreingestellt",
+    klapp.offen.join(", "));
+  pruefe(klapp.ohneZahl.length === 0,
+    "jede Zusammenfassung sagt, wie viel darin steht",
+    klapp.ohneZahl.join(", "));
+  pruefe(klapp.probe && klapp.probe.vorher === klapp.probe.nachher
+    && klapp.probe.vorher > 0,
+    "zugeklappt geht nichts verloren -- der Inhalt bleibt im Dokument",
+    JSON.stringify(klapp.probe));
+  /* Und der Zustand haelt einen Zeitraumwechsel aus. Ohne das waere jedes
+     Aufklappen beim naechsten Klick wieder weg. */
+  await js(`document.querySelector(".pf-klapp > .pf-klapp-details").open = false;`);
+  await js(`[...document.querySelectorAll(".pf-schnell")].find((b) => b.textContent === "Letzte 30 Tage").click()`);
+  await schlafen(2500);
+  const nachWechsel = await js(`document.querySelector(".pf-klapp > .pf-klapp-details").open`);
+  pruefe(nachWechsel === false,
+    "und er ueberlebt einen Zeitraumwechsel");
+  await js(`[...document.querySelectorAll(".pf-schnell")].find((b) => b.textContent === "Letzte 7 Tage").click()`);
+  await schlafen(2500);
   pruefe(qu.datensaetze >= 10, `${qu.datensaetze} Datensaetze im Quellenverzeichnis`);
   /* Die Liste "Was noch fehlt" ist am 31.08.2026 durchgegangen worden und hat
      seither eine Reihenfolge: was oben steht, wird als Naechstes angefasst.

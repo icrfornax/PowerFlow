@@ -124,6 +124,9 @@
     redispatch: {},
     rdVerzeichnis: null,
     quellen: null,        // Monat -> geladene Monatsdatei mit Stundenwerten
+    /* Auf- und zugeklappte Abschnitte. Ueberlebt einen Zeitraumwechsel, aber
+       nicht das Neuladen -- kein localStorage, wie ueberall auf dieser Seite. */
+    klapp: {},
     von: null,          // erster Tag des Zeitraums
     bis: null,          // letzter Tag des Zeitraums, einschliesslich
     startVon: null,     // fuer den Zuruecksetzen-Knopf
@@ -654,6 +657,40 @@
     var a = el("section", { "class": "pf-abschnitt" });
     a.appendChild(el("h2", { text: titel }));
     a.appendChild(inhalt);
+    return a;
+  }
+
+  /* EIN ABSCHNITT ZUM ZUKLAPPEN.
+
+     Wer die Seite oefter benutzt, hat die Erklaerungen einmal gelesen und
+     scrollt danach jedes Mal daran vorbei. Deshalb lassen sich die grossen
+     Bloecke zuklappen -- Grenzen, Zeitliche Reichweite, Bekannte Maengel,
+     Offene Punkte, Quellen.
+
+     Zwei Regeln, die nicht aufgeweicht werden:
+
+       * Was zum GEWAEHLTEN ZEITRAUM gehoert, ist offen voreingestellt. Ein
+         Hinweis auf fehlende Tage darf nicht hinter einem Klick liegen.
+       * Die Zusammenfassung sagt, WIE VIEL darin steht ("12 Punkte"). Nichts
+         verschwindet stillschweigend -- es wird nur zusammengelegt.
+
+     Der Zustand haelt bis zum Neuladen. Er liegt in Z, nicht im localStorage
+     (den es auf dieser Seite nicht gibt) -- genau wie der Kartenausschnitt und
+     die Traegerauswahl, die einen Zeitraumwechsel ebenfalls ueberleben. */
+  function klappabschnitt(id, titel, inhalt, zaehler, offenVoreingestellt) {
+    if (!Object.prototype.hasOwnProperty.call(Z.klapp, id)) {
+      Z.klapp[id] = !!offenVoreingestellt;
+    }
+    var a = el("section", { "class": "pf-abschnitt pf-klapp" });
+    var d = el("details", { "class": "pf-klapp-details" });
+    if (Z.klapp[id]) { d.setAttribute("open", "open"); }
+    d.addEventListener("toggle", function () { Z.klapp[id] = d.open; });
+    var s = el("summary");
+    s.appendChild(el("h2", { text: titel }));
+    if (zaehler) { s.appendChild(el("span", { "class": "pf-klapp-zahl", text: zaehler })); }
+    d.appendChild(s);
+    d.appendChild(inhalt);
+    a.appendChild(d);
     return a;
   }
 
@@ -2377,7 +2414,7 @@
      `text` wird am ersten Punkt-Leerzeichen geteilt. Ist der Text kurz genug,
      kommt ein gewoehnlicher Absatz zurueck -- ein Aufklapper um zwei Zeilen
      waere Schikane. */
-  var AUFKLAPP_AB = 240;        // Zeichen; darunter bleibt es ein Absatz
+  var AUFKLAPP_AB = 160;        // Zeichen; darunter bleibt es ein Absatz
 
   function langtext(text, klasse) {
     if (text.length <= AUFKLAPP_AB) {
@@ -2404,6 +2441,43 @@
     d.appendChild(el("p", { "class": klasse || "pf-bezug",
       text: text.slice(schnitt).trim() }));
     return d;
+  }
+
+  /* ALLE LANGEN TEXTE FALTEN -- in EINEM Durchgang, nicht an dreissig Stellen.
+
+     Erst standen sechs Absaetze in langtext(), der Rest nicht. Das ist genau
+     die Sorte Halbheit, die spaeter niemand nachzieht: der naechste neue Text
+     waere wieder ein Klotz. Deshalb laeuft dieser Durchgang einmal ueber den
+     fertigen Baum und faltet ALLES, was zu lang ist.
+
+     Ausgenommen sind:
+       * die Ablesungen an den Grafiken -- sie sind ohnehin fluechtig, und ein
+         Aufklapper darin waere beim naechsten Zeigen wieder zu;
+       * was schon gefaltet ist;
+       * Ueberschriften, Zahlen, Tabellen. */
+  function texteFalten(wurzel) {
+    var auswahl = wurzel.querySelectorAll(
+      "p.pf-bezug, p.pf-karte-warnung, p.pf-kasten-vor, .pf-kasten li");
+    Array.prototype.slice.call(auswahl).forEach(function (knoten) {
+      if (knoten.closest(".pf-rd-info") || knoten.closest("details.pf-mehr")) { return; }
+      /* Nur reinen Text falten. Wo Auszeichnungen drinstehen -- das fette
+         "Als Nächstes." in den offenen Punkten, ein Verweis, eine Farbmarke --
+         wuerde das Falten sie ueber textContent einebnen. Genau das ist beim
+         ersten Versuch passiert und hat eine Pruefung zu Recht ausgeloest. */
+      if (knoten.children && knoten.children.length) { return; }
+      var text = (knoten.textContent || "").trim();
+      if (text.length <= AUFKLAPP_AB) { return; }
+      var ersatz = langtext(text, knoten.className || "pf-bezug");
+      if (ersatz.tagName !== "DETAILS") { return; }   // kein Satzende gefunden
+      if (knoten.tagName === "LI") {
+        // Ein <li> bleibt ein <li> -- sonst zerfaellt die Liste.
+        knoten.innerHTML = "";
+        ersatz.className = "pf-mehr";
+        knoten.appendChild(ersatz);
+      } else {
+        knoten.parentNode.replaceChild(ersatz, knoten);
+      }
+    });
   }
 
   /* DIE ABLESUNG -- EINE Funktion fuer alle Grafiken.
@@ -3493,6 +3567,7 @@
     if (!k) {
       neu.appendChild(el("div", { "class": "pf-fehler",
         text: "Für diesen Zeitraum liegen keine Daten vor." }));
+      texteFalten(neu);
       Z.wurzel.parentNode.replaceChild(neu, Z.wurzel);
       Z.wurzel = neu;
       return;
@@ -3754,7 +3829,11 @@
       var wul = el("ul");
       warnungen.forEach(function (w) { wul.appendChild(el("li", { text: w })); });
       warnkasten.appendChild(wul);
-      neu.appendChild(abschnitt("Hinweise zur Datenlage", warnkasten));
+      /* OFFEN voreingestellt: das betrifft den gewaehlten Zeitraum. Ein
+         Hinweis auf fehlende Tage gehoert nicht hinter einen Klick. */
+      neu.appendChild(klappabschnitt("datenlage", "Hinweise zur Datenlage",
+        warnkasten, warnungen.length + (warnungen.length === 1 ? " Hinweis" : " Hinweise"),
+        true));
     }
 
     // --- Zeitreihe ---
@@ -3866,9 +3945,11 @@
       rechnung.appendChild(summe);
       rechnung.appendChild(langtext(
         "Alles in GWh. " + nf2.format(k.rest / k.netzlast * 100) + " % der Netzlast. "
-          + "Der Rest geht nicht auf null auf und wird nicht dorthin gerechnet — darin "
-          + "stecken Netzverluste und die unterschiedliche zeitliche Auflösung von "
-          + "Erzeugung und Außenhandel."));
+          + "Der Rest geht nicht auf null auf und wird nicht dorthin gerechnet. "
+          + "Woran er liegt, ist am 03.09.2026 untersucht: er folgt der "
+          + "Residuallast, hat mit Redispatch nichts zu tun, und Netzverluste "
+          + "erklären ihn NICHT — die hätten das falsche Vorzeichen. Die "
+          + "Einzelheiten stehen unter „Datenqualität“."));
       netzInhalt.appendChild(rechnung);
     }
     fluss.appendChild(saeule("netz", "Netz · Regelzonen", gwh(k.netzlast, 1) + " GWh Netzlast",
@@ -4207,7 +4288,8 @@
         + "voreingestellt ausgeschaltet."
     ].forEach(function (t) { ul.appendChild(el("li", { text: t })); });
     nicht.appendChild(ul);
-    neu.appendChild(abschnitt("Grenzen", nicht));
+    neu.appendChild(klappabschnitt("grenzen", "Grenzen", nicht,
+      nicht.querySelectorAll("li").length + " Punkte", false));
 
     // --- Ab wann welche Reihe beginnt ---
     var beginn = el("div", { "class": "pf-kasten", "data-art": "offen" });
@@ -4252,7 +4334,8 @@
         + "Stunden verspätet nach. Ein fehlender Vortag ist deshalb in aller Regel "
         + "eine Lücke der Quelle und kein ausgefallener Abruf. Geholt wird täglich "
         + "um 07:12 Uhr; was dann noch fehlt, kommt am nächsten Tag mit." }));
-    neu.appendChild(abschnitt("Zeitliche Reichweite", beginn));
+    neu.appendChild(klappabschnitt("reichweite", "Zeitliche Reichweite", beginn,
+      beginn.querySelectorAll("tbody tr").length + " Reihen", false));
 
     // --- Bekannte Maengel der Daten ---
     var maengel = el("div", { "class": "pf-kasten" });
@@ -4318,7 +4401,11 @@
         + "Ankündigung ändern."
     ].forEach(function (t) { ul3.appendChild(el("li", { text: t })); });
     maengel.appendChild(ul3);
-    neu.appendChild(abschnitt("Datenqualität", maengel));
+    /* Zugeklappt, aber die Zusammenfassung sagt, wie viele Punkte darin
+       stehen. Weggelassen wird nichts -- die Regel "Nicht Belegbares bleibt
+       stehen" gilt weiter, es wird nur zusammengelegt. */
+    neu.appendChild(klappabschnitt("qualitaet", "Datenqualität", maengel,
+      ul3.querySelectorAll("li").length + " Mängel", false));
 
     // --- Was noch fehlt ---
     var offen = el("div", { "class": "pf-kasten", "data-art": "offen" });
@@ -4378,7 +4465,8 @@
       ul2.appendChild(li);
     });
     offen.appendChild(ul2);
-    neu.appendChild(abschnitt("Offene Punkte", offen));
+    neu.appendChild(klappabschnitt("offen", "Offene Punkte", offen,
+      offen.querySelectorAll("li").length + " Punkte", false));
 
     // --- Quellen und Downloads ---
     var qhuelle = el("div", { "class": "pf-verlauf" });
@@ -4457,7 +4545,8 @@
     pdfLink.appendChild(el("span", { text: "PDF" }));
     abzuege.appendChild(pdfLink);
     qhuelle.appendChild(abzuege);
-    neu.appendChild(abschnitt("Quellen und Downloads", qhuelle));
+    neu.appendChild(klappabschnitt("quellen", "Quellen und Downloads", qhuelle,
+      (Z.quellen ? Z.quellen.datensaetze.length + " Datensätze" : ""), false));
 
     // --- Fussnote ---
     var jahresdatei = Z.jahre[Number(von.slice(0, 4))];
@@ -4484,6 +4573,10 @@
     fuss.appendChild(el("p", { text: "Fassung " + VERSION + ". Belege unter docs/ im Repository." }));
     neu.appendChild(fuss);
 
+    /* Der letzte Schritt vor dem Einhaengen: alle langen Texte falten. Einmal
+       ueber den fertigen Baum -- so wird auch jeder kuenftige Text erfasst,
+       ohne dass jemand daran denken muss. */
+    texteFalten(neu);
     Z.wurzel.parentNode.replaceChild(neu, Z.wurzel);
     Z.wurzel = neu;
     auswahlZeigen();
