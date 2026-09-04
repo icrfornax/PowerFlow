@@ -413,7 +413,7 @@ try {
       titel: (k.querySelector("h4") || {}).textContent || "",
       monate: stapel.length,
       teile: Math.max(0, ...stapel.map((s) => s.querySelectorAll("i").length)),
-      massstab: [...k.querySelectorAll(".pf-saeule-massstab")]
+      massstab: [...k.querySelectorAll(".pf-kosten-massstab, .pf-saeule-massstab")]
         .map((x) => x.textContent).join(" | "),
       summe: [...k.querySelectorAll(".pf-rd-zahl .pf-titel")].map((x) => x.textContent),
       warnung: [...k.querySelectorAll(".pf-karte-warnung")].map((x) => x.textContent).join(" "),
@@ -536,20 +536,13 @@ try {
      Jahre in der Jahresreihe als solche gezeichnet sind. */
   const vergleichK = await js(`(function () {
     const marken = [...document.querySelectorAll(".pf-kosten-vorjahr")];
-    const hoehen = marken.map((x) => parseFloat(x.style.bottom));
-    const jahre = [...document.querySelectorAll(".pf-kosten-jahre .pf-balken")];
-    const namen = jahre.map((x) => x.querySelector(".pf-name").textContent);
+    const hoehen = marken.map((x) => parseFloat(x.style.height));
     return {
       marken: marken.length,
       spalten: document.querySelectorAll(".pf-kosten-monat").length,
       ueberRand: hoehen.filter((h) => h > 100.5).length,
-      jahre: namen,
-      unvollstaendig: jahre.filter((x) =>
-        x.querySelector(".pf-fuellung[data-unvollstaendig]")).length,
-      hinweis: [...document.querySelectorAll(".pf-kosten-jahre .pf-bezug, "
-        + ".pf-kosten-jahre details.pf-mehr")].map((x) => x.textContent).join(" "),
-      massstab: [...document.querySelectorAll(".pf-rd-kosten .pf-saeule-massstab")]
-        .map((x) => x.textContent).join(" | ")
+      massstab: [...document.querySelectorAll(".pf-rd-kosten .pf-kosten-massstab, "
+        + ".pf-rd-kosten .pf-saeule-massstab")].map((x) => x.textContent).join(" | ")
     };
   })()`);
   pruefe(vergleichK.marken >= vergleichK.spalten - 1,
@@ -557,23 +550,16 @@ try {
   pruefe(vergleichK.ueberRand === 0,
     "keine Vorjahresmarke liegt ueber dem Bildrand -- der Massstab schliesst sie ein",
     `${vergleichK.ueberRand} darueber`);
-  pruefe(/ein Jahr früher/.test(vergleichK.massstab),
-    "und der Massstab sagt, was die Marke ist");
-  pruefe(vergleichK.jahre.length >= 6,
-    `die Jahresreihe zeigt ${vergleichK.jahre.length} Jahre (${vergleichK.jahre.join(", ")})`);
-  pruefe(vergleichK.unvollstaendig >= 1,
-    "unvollstaendige Jahre sind als solche gezeichnet",
-    String(vergleichK.unvollstaendig));
-  pruefe(/nicht vergleichbar/.test(vergleichK.hinweis),
-    "und der Hinweis sagt, dass sie nicht vergleichbar sind",
-    vergleichK.hinweis.slice(0, 80));
-
+  pruefe(/ein Jahr früher/.test(vergleichK.massstab)
+    && /teilen einen Maßstab/.test(vergleichK.massstab),
+    "der Massstab sagt, was die Flaeche ist -- und dass beide ihn teilen",
+    vergleichK.massstab.slice(0, 90));
   await foto("kosten", ".pf-rd-kosten");
-  // Ablesung schliessen, sonst verdeckt sie im naechsten Bild die Jahresreihe.
+  // Ablesung schliessen, sonst verdeckt sie das naechste Bild.
   await js(`document.querySelector(".pf-kosten-gitter")`
     + `.dispatchEvent(new MouseEvent("mouseleave", { bubbles: false }))`);
   await schlafen(200);
-  await foto("kosten-jahre", ".pf-kosten-jahre");
+  await foto("kosten-monatsbalken", ".pf-kosten-gitter");
 
   /* Und die Gegenprobe: ein VOLLER Monat muss eine Summe ergeben. Ohne diesen
      Fall prueft der Test nur, dass nie eine Summe erscheint. */

@@ -123,24 +123,24 @@ Zeitraum ein Jahr früher mit **realen Messwerten** — kein Monatsmittel, keine
 geglättete Kurve. Bei Monatswerten heißt das: derselbe Kalendermonat des
 Vorjahres.
 
-- Im Monatsverlauf steht er als **waagerechte Marke** über dem Balken; die
-  Ablesung nennt den Wert und die Abweichung in Prozent.
+- Im Monatsverlauf steht er als **gestrichelte Fläche hinter dem Balken**; die
+  Ablesung nennt den Wert und die Abweichung in Prozent. Als bloßer Strich sah
+  er über hohen Vorjahreswerten aus wie eine verirrte Linie ohne Bezug — als
+  Fläche gehört er sichtbar zu seinem Monat. Er liegt **hinter** dem Balken:
+  das Gemessene des gewählten Zeitraums bleibt oben.
 - Der Maßstab der Grafik schließt die Vorjahreswerte **ein**. Ohne das läge die
   Marke in Jahren mit fallenden Kosten über dem Bildrand — 2022 auf 2023 wäre
   genau so ein Fall.
-- Für 2019 gibt es kein Vorjahr. Die Marke bleibt dann **weg**, statt auf null
+- Für 2019 gibt es kein Vorjahr. Die Fläche bleibt dann **weg**, statt auf null
   zu fallen.
+- Die Maßstabszeile sagt, dass **beide denselben Maßstab teilen**. Sie hieß
+  zuerst „Balken bis 392,0 Mio. €" — so hoch ist aber kein Balken, so hoch ist
+  die höchste Vorjahresfläche. Wer das liest und die Balken ansieht, hält die
+  Grafik für kaputt.
 
-Dazu eine **Jahresreihe** über alle acht Jahrgänge. Zwei davon sind
-unvollständig und werden gestreift gezeichnet:
-
-| Jahr | Mangel |
-|---|---|
-| 2021 | Dezember nur von drei der vier Regelzonen gemeldet (50Hertz mit Währung BAM, siehe oben) |
-| 2026 | nur sieben von zwölf Monaten |
-
-Ein unvollständiges Jahr neben vollen Jahren sieht aus wie ein Rückgang und ist
-keiner. Deshalb die Streifen und der Satz darunter.
+Eine zusätzliche Grafik mit den Jahressummen ist gebaut und wieder entfernt
+worden: sie zeigte dasselbe noch einmal, nur gröber. Der Vorjahresvergleich im
+Monatsverlauf reicht.
 
 ## Prüfungen
 
@@ -154,5 +154,5 @@ keiner. Deshalb die Streifen und der Satz darunter.
 - `browsertest.mjs`: der Block steht da, nennt seinen Maßstab, sagt, dass es
   keine Kosten je Maßnahme gibt, und zeigt bei einem Zeitraum ohne vollen Monat
   keine Summe. Dazu: die Vorjahresmarke ist an jedem Balken, **keine liegt über
-  dem Bildrand**, die Jahresreihe zeigt alle Jahrgänge, und die unvollständigen
-  sind als solche gezeichnet.
+  dem Bildrand** (der Maßstab schließt sie ein), und die Maßstabszeile sagt,
+  dass beide ihn teilen.

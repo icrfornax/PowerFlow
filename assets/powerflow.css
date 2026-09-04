@@ -1016,6 +1016,13 @@ details.pf-mehr { margin: 0; padding: 0; border: 0; background: none; }
   margin: 0 0 10px; font-size: 0.78rem; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--schrift-still); font-weight: 600;
 }
+/* EIGENE Massstabszeile fuer den Kostenblock. Die des Flussbildes zieht sich
+   mit einem negativen Aussenabstand unter ihre Ueberschrift -- hier lief sie
+   dadurch in den Warnkasten darueber hinein. Im Bildschirmfoto zu sehen, in
+   keiner Pruefung. */
+.pf-kosten-massstab {
+  margin: 10px 0 6px; font-size: 0.74rem; color: var(--schrift-still);
+}
 .pf-kosten-gitter {
   display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px;
   align-items: end; height: 110px; border-bottom: 1px solid var(--linie);
@@ -1028,15 +1035,19 @@ details.pf-mehr { margin: 0; padding: 0; border: 0; background: none; }
 .pf-kosten-stapel i { display: block; width: 100%; }
 .pf-kosten-monat { position: relative; }
 .pf-kosten-monat:hover .pf-kosten-stapel { outline: 1px solid var(--schrift); }
-/* Der Vorjahresmonat als waagerechte Marke ueber dem Balken. Eine Linie, keine
-   zweite Flaeche -- der Vergleich soll ablesbar sein, ohne den Balken selbst
-   zu ueberdecken. */
+/* Der Vorjahresmonat als GEISTERFLAECHE hinter dem Balken, nicht als frei
+   schwebende Linie. Als blosser Strich sah er ueber hohen Vorjahreswerten aus
+   wie eine verirrte Linie ohne Bezug; als Flaeche mit gestrichelter Oberkante
+   gehoert er sichtbar zu seinem Monat. Er liegt HINTER dem Balken -- das
+   Gemessene des Zeitraums bleibt oben. */
 .pf-kosten-vorjahr {
-  position: absolute; left: 0; right: 0; height: 0; pointer-events: none;
-  border-top: 2px solid var(--schrift);
-  opacity: 0.55;
+  position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none;
+  border-top: 2px dashed var(--schrift-leise);
+  background: color-mix(in srgb, var(--schrift-still) 10%, transparent);
+  border-radius: 2px 2px 0 0; z-index: 0;
 }
-.pf-kosten-monat[data-ausserhalb] .pf-kosten-vorjahr { opacity: 0.25; }
+.pf-kosten-stapel { position: relative; z-index: 1; }
+.pf-kosten-monat[data-ausserhalb] .pf-kosten-vorjahr { opacity: 0.45; }
 
 /* Die Jahresreihe. Unvollstaendige Jahre werden schraffiert -- sie sind mit
    den vollen nicht vergleichbar, und das muss man sehen, nicht lesen muessen. */
