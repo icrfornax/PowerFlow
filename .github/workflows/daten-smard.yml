@@ -68,7 +68,11 @@ jobs:
             echo "Secrets NT_CLIENT_ID und NT_CLIENT_SECRET setzen, dann laeuft es mit."
             exit 0
           fi
-          python scripts/fetch-redispatch.py --lizenz-geklaert "$(date -u +%Y)"
+          # Laufendes UND voriges Jahr, aus demselben Grund wie bei SMARD:
+          # netztransparenz meldet nach. Wer nur das laufende Jahr holt, verliert
+          # jede Nachmeldung fuer den Dezember, sobald der Januar begonnen hat --
+          # und merkt es nie.
+          python scripts/fetch-redispatch.py --lizenz-geklaert "$(date -u +%Y)" "$(( $(date -u +%Y) - 1 ))"
 
       - name: Methodik-PDF neu rechnen
         # Es traegt Zahlen aus den Daten; aendern die sich, aendert es sich mit.
