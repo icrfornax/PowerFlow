@@ -81,15 +81,18 @@ jobs:
           # und merkt es nie.
           python scripts/fetch-redispatch.py --lizenz-geklaert "$(date -u +%Y)" "$(( $(date -u +%Y) - 1 ))"
 
-      - name: Methodik-PDF neu rechnen
-        # Es traegt Zahlen aus den Daten; aendern die sich, aendert es sich mit.
-        run: python scripts/methodik.py
-
       - name: Quellenverzeichnis neu bauen
         # Muss VOR dem Tuersteher laufen: er prueft, dass das Verzeichnis alle
         # Dateien zaehlt. Und quellen.py bricht selbst ab, wenn eine Datei
         # unter data/ ohne Quellenzuordnung auftaucht.
         run: python scripts/quellen.py
+
+      - name: Methodik-PDF neu rechnen
+        # Es traegt Zahlen aus den Daten -- UND aus data/quellen.json.
+        # Deshalb NACH dem Quellenverzeichnis: lief es davor, war das PDF
+        # einen Schritt hinterher, und der Tuersteher schlug beim naechsten
+        # Push an. Genau das ist am 05.09.2026 passiert.
+        run: python scripts/methodik.py
 
       - name: Tuersteher
         run: |

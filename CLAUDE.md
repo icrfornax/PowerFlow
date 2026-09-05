@@ -252,6 +252,18 @@ die Regelzonenbilanz.
   `prefers-reduced-motion` beachten, Tabellen und Grafiken mit eigenem
   Scrollcontainer.
 
+## Reihenfolge beim Bauen
+
+`scripts/methodik.py` liest `data/quellen.json`. Deshalb gilt ueberall --
+von Hand wie im Workflow:
+
+    Abrufskripte  ->  quellen.py  ->  methodik.py  ->  validate.py
+
+Lief das PDF davor, war es einen Schritt hinterher, und der Tuersteher schlug
+beim naechsten Push an: vier Bytes Unterschied in einem komprimierten
+Datenstrom. Am 05.09.2026 passiert, in zwei Workflows gleichzeitig.
+`validate.py` prueft die Reihenfolge jetzt in jeder Workflow-Datei.
+
 ## Umgang mit Fehlern
 
 - **Jeder behobene Fehler bekommt eine Pruefung, nicht nur einen Flicken.**

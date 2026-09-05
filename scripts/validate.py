@@ -821,6 +821,22 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              "jede Monatsdatei beginnt am Ersten um 00 Uhr"
              + (f" -- {spaet[:4]}" if spaet else ""))
 
+    # DIE REIHENFOLGE IM WORKFLOW. methodik.py liest data/quellen.json; laeuft
+    # es davor, ist das PDF einen Schritt hinterher und der Tuersteher schlaegt
+    # beim naechsten Push an. Genau so ist es am 05.09.2026 passiert -- vier
+    # Bytes Unterschied in einem komprimierten Datenstrom, eine halbe Stunde
+    # Suche. Die Reihenfolge wird deshalb geprueft, nicht nur einmal richtig
+    # gestellt.
+    reihenfolge = []
+    for name, wf in workflows.items():
+        if "scripts/methodik.py" not in wf or "scripts/quellen.py" not in wf:
+            continue
+        if wf.index("scripts/quellen.py") > wf.index("scripts/methodik.py"):
+            reihenfolge.append(name)
+    b.pruefe(not reihenfolge,
+             "in jedem Workflow laeuft quellen.py VOR methodik.py"
+             + (f" -- verkehrt in {reihenfolge}" if reihenfolge else ""))
+
     # --- Erzeugung je Kraftwerksblock ---
     bv = json.loads(lade("data/blockerzeugung-verzeichnis.json"))
     b.pruefe(len(bv["jahre"]) >= 8,
