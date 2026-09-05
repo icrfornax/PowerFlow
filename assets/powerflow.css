@@ -1043,11 +1043,27 @@ details.pf-mehr { margin: 0; padding: 0; border: 0; background: none; }
   margin: 0 0 8px; font-size: 0.78rem; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--schrift-still); font-weight: 600;
 }
-.pf-vorschau-bild { width: 100%; height: 130px; display: block; }
-.pf-vorschau-bild text { fill: var(--schrift-still); font-size: 10px; }
-.pf-vorschau-linie {
-  stroke: var(--last-linie); stroke-width: 1.8;
-  vector-effect: non-scaling-stroke;
+.pf-vorschaubild { width: 100%; height: auto; display: block; }
+.pf-vorschau-rahmen { position: relative; }
+.pf-vorschau-morgen-marke { fill: var(--schrift-leise); font-size: 10px;
+  letter-spacing: 0.04em; }
+.pf-vorschau-zeiger { stroke: var(--schrift-still); stroke-width: 1; }
+.pf-vorschau text.pf-vorschau-marke { fill: var(--schrift-still); font-size: 11px; }
+/* Eigene Klassen, gleiche Optik wie im Verlauf -- siehe den Kommentar dort. */
+.pf-vorschau-gitter line { stroke: var(--linie); stroke-width: 1; }
+.pf-vorschau-gitter text { fill: var(--schrift-still); font-size: 10px;
+  font-variant-numeric: tabular-nums; }
+/* Die Einheit haengt AN der obersten Marke. Als eigener Titel darueber ragte
+   sie aus dem Bild, und die Preiseinheit lag auf der Datumsbeschriftung. */
+.pf-vorschau-gitter text.pf-achsentitel { fill: var(--schrift-leise); font-size: 10px; }
+.pf-vorschau-band { fill-opacity: 0.42; }
+.pf-vorschau-preis { stroke: var(--preis-linie); stroke-width: 1.6; fill: none; }
+.pf-vorschau-trenner { stroke: var(--schrift-still); stroke-dasharray: 3 3;
+  stroke-width: 1; }
+.pf-legende i.pf-vorschau-marke-legende {
+  width: 14px; height: 10px; display: inline-block; border-radius: 2px;
+  background: color-mix(in srgb, var(--teal) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
 }
 /* Der morgige Tag: leicht unterlegt. Das ist die eigentliche Vorschau -- was
    links davon steht, ist die Ankuendigung fuer den laufenden Tag. */

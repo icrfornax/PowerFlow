@@ -2543,103 +2543,65 @@
     return huelle;
   }
 
-  /* VORSCHAU UND PROGNOSEGUETE.
+  /* VORSCHAU AUF MORGEN.
 
-     Der ganze Rest dieser Seite zeigt, was WAR. Dieser Abschnitt zeigt, was
-     ANGEKUENDIGT ist -- und wie weit die Ankuendigung in der Vergangenheit
-     danebenlag. Zwei verschiedene Dinge, deshalb zwei Bloecke.
+     Der ganze Rest dieser Seite zeigt, was war. Dieser Abschnitt zeigt, was
+     fuer morgen schon feststeht -- und wie gut solche Ankuendigungen in der
+     Vergangenheit waren.
 
-     Beide Reihen stammen aus derselben Quelle und derselben Aufloesung
-     (ENTSO-E, PT15M): 6.1.B die Day-ahead-Prognose, 6.1.A die Messung. Der
-     Vergleich ist damit kein Aepfel-und-Birnen -- er waere es, wenn man die
-     Prognose gegen die SMARD-Last haelt, denn die ist anders erhoben.
+     WEITER ALS EINEN TAG GEHT ES NICHT, und das ist keine Bequemlichkeit: der
+     Day-ahead-Markt wird mittags fuer den Folgetag geraeumt, danach steht er
+     fest. Fuer uebermorgen gibt es weder Preis noch Erzeugungsprognose. Der
+     Satz dazu steht auf der Seite, damit niemand mehr sucht.
 
-     WAS HIER NICHT STEHT und warum: die Prognosen von netztransparenz.de
-     liefern leere Spalten (am 05.09.2026 geprueft), und die Spotmarktpreise
-     dort kommen erst rund einen Monat spaeter. Die Erzeugungsprognose fuer
-     Wind und Sonne (14.1.D) steht NICHT auf der Freigabeliste von ENTSO-E.
-     Bleibt die Last -- und die reicht fuer die Frage. */
+     Gezeigt wird dasselbe wie im grossen Verlauf und mit denselben Farben:
+     gestapelte Traeger, eine Linie, ein Preisstreifen mit eigener Achse. Wer
+     den Verlauf lesen kann, kann auch das hier lesen -- das ist der Zweck der
+     Wiederholung. */
+  /* EIN Band fuer Wind, nicht zwei. Die erste Fassung hatte Onshore und
+     Offshore getrennt -- beide mit --tr-wind, weil dieses Projekt genau EINE
+     Windfarbe kennt (der grosse Verlauf fasst sie in ELEMENTE zur Gruppe
+     "Wind" zusammen). Im Bild standen dadurch zwei gleichfarbige Baender
+     uebereinander, in der Legende zwei gleiche Punkte: die Aufteilung war
+     unsichtbar und die Legende irrefuehrend. Eine zweite Windfarbe waere die
+     schlechtere Antwort gewesen -- sie haette Wind Offshore auf derselben
+     Seite zwei Farben gegeben. Die Aufteilung steht jetzt in der Ablesung und
+     im Text, wo sie lesbar ist. Gefunden nur im Bildschirmfoto. */
+  var VORSCHAU_TRAEGER = [
+    { feld: "uebrige_mwh", name: "Übrige (konventionell, Biomasse, Wasser)",
+      token: "--tr-sonst" },
+    { feld: "wind_mwh", name: "Wind (an Land und auf See)", token: "--tr-wind" },
+    { feld: "photovoltaik_mwh", name: "Photovoltaik", token: "--tr-pv" }
+  ];
+
+  /* Eine Achse, die man ABLESEN kann. Vorher stand hier ceil(max/10)*10 durch
+     vier geteilt -- bei 70 GW ergab das Marken bei 17,5 / 35 / 52,5. Runde
+     Marken sind kein Geschmack, sie sind der Unterschied zwischen Ablesen und
+     Schaetzen. Gesucht wird der kleinste Schritt aus einer festen Leiter, mit
+     dem hoechstens sechs Marken herauskommen. */
+  function netteAchse(hoechst) {
+    var leiter = [1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+    for (var i = 0; i < leiter.length; i++) {
+      if (hoechst / leiter[i] <= 6) {
+        return { schritt: leiter[i],
+                 max: Math.ceil(hoechst / leiter[i]) * leiter[i] };
+      }
+    }
+    return { schritt: leiter[leiter.length - 1],
+             max: Math.ceil(hoechst / 1000) * 1000 };
+  }
+
   function vorschauAbschnitt(von, bis) {
     var huelle = el("div", { "class": "pf-verlauf" });
-
-    // ---- Teil 1: was fuer morgen angekuendigt ist -----------------------
     var V = Z.vorschau;
-    if (V && V.stunden && V.stunden.length) {
-      var heute = nachIso(new Date());
-      var kasten = el("div", { "class": "pf-vorschau" });
-      kasten.appendChild(el("h4", { text: "Angekündigte Netzlast · heute und morgen" }));
-
-      var maxV = Math.max.apply(null, V.prognose_mw);
-      var minV = Math.min.apply(null, V.prognose_mw);
-      var B = 900, H = 130, linksV = 44, obenV = 8;
-      var svgV = s("svg", { "class": "pf-vorschau-bild", viewBox: "0 0 " + B + " " + H,
-        role: "img",
-        "aria-label": "Angekündigte Netzlast für heute und morgen, viertelstündlich" });
-      var XV = function (i) {
-        return linksV + i / Math.max(1, V.stunden.length - 1) * (B - linksV - 8);
-      };
-      var YV = function (w) {
-        return obenV + (1 - (w - minV * 0.9) / (maxV - minV * 0.9)) * (H - obenV - 22);
-      };
-      // Tagesgrenze: alles rechts davon ist MORGEN und damit die eigentliche
-      // Vorschau. Links davon steht die Ankuendigung fuer heute.
-      var grenze = -1;
-      V.stunden.forEach(function (m, i) {
-        if (grenze < 0 && m.slice(0, 10) > heute) { grenze = i; }
-      });
-      if (grenze > 0) {
-        svgV.appendChild(s("rect", { "class": "pf-vorschau-morgen",
-          x: XV(grenze).toFixed(1), y: obenV,
-          width: (B - 8 - XV(grenze)).toFixed(1), height: (H - obenV - 22).toFixed(1) }));
-      }
-      var dV = "";
-      V.prognose_mw.forEach(function (w, i) {
-        dV += (dV ? "L" : "M") + XV(i).toFixed(1) + " " + YV(w).toFixed(1);
-      });
-      svgV.appendChild(s("path", { d: dV, fill: "none", "class": "pf-vorschau-linie" }));
-      // Beschriftung: Tagesanfaenge
-      V.stunden.forEach(function (m, i) {
-        if (m.slice(11) !== "00:00") { return; }
-        var tx = s("text", { x: XV(i).toFixed(1), y: H - 6, "text-anchor": "start" });
-        tx.textContent = ausIso(m.slice(0, 10)).toLocaleDateString("de-DE",
-          { weekday: "short", day: "2-digit", month: "2-digit" });
-        svgV.appendChild(tx);
-      });
-      var ty = s("text", { x: linksV - 6, y: YV(maxV) + 4, "text-anchor": "end" });
-      ty.textContent = nf0.format(maxV / 1000) + " GW";
-      svgV.appendChild(ty);
-      kasten.appendChild(svgV);
-
-      var morgen = [], morgenStellen = [];
-      V.stunden.forEach(function (m, i) {
-        if (m.slice(0, 10) > heute) { morgen.push(V.prognose_mw[i]); morgenStellen.push(i); }
-      });
-      if (morgen.length) {
-        var spitze = Math.max.apply(null, morgen);
-        var tief = Math.min.apply(null, morgen);
-        /* Die Stelle NUR unter den morgigen Werten suchen. Ueber das ganze
-           Feld gesucht, kann derselbe Wert heute vorkommen und die Uhrzeit
-           gehoert dann zum falschen Tag. */
-        var stelle = morgenStellen[morgen.indexOf(spitze)];
-        kasten.appendChild(langtext(
-          "Für morgen sind " + nf0.format(morgen.length) + " von 96 Viertelstunden "
-          + "angekündigt, mit einer Spitze von " + nf1.format(spitze / 1000)
-          + " GW um " + (stelle >= 0 ? V.stunden[stelle].slice(11) : "—")
-          + " Uhr und einem Tiefpunkt von " + nf1.format(tief / 1000) + " GW. "
-          + "Das ist eine ANKÜNDIGUNG der Übertragungsnetzbetreiber, keine "
-          + "Messung — sie wächst im Lauf des Tages und steht erst nach der "
-          + "Day-ahead-Auktion vollständig da. Wie gut solche Ankündigungen "
-          + "sind, steht darunter."));
-      }
-      huelle.appendChild(kasten);
-    } else {
+    if (!V || !V.stunden || !V.stunden.length) {
       huelle.appendChild(el("p", { "class": "pf-laden",
         text: "Für morgen liegt noch keine Ankündigung vor." }));
+    } else {
+      huelle.appendChild(vorschauBild(V));
     }
 
-    // ---- Teil 2: wie gut war die Prognose im Zeitraum -------------------
     var guete = el("div", { "class": "pf-prognoseguete" });
-    guete.appendChild(el("h4", { text: "Wie gut die Ankündigung war · im gewählten Zeitraum" }));
     guete.appendChild(el("p", { "class": "pf-laden", text: "wird geladen …" }));
     huelle.appendChild(guete);
     Promise.all(jahreImZeitraum(von, bis).map(prognoseLaden)).then(function () {
@@ -2649,9 +2611,286 @@
     return huelle;
   }
 
+  /* EIGENE Klassennamen, obwohl das Bild dem grossen Verlauf gleicht. Beim
+     ersten Anlauf hiess hier alles wie dort -- und prompt haben zwei Pruefungen
+     des Verlaufs die Vorschaubaender mitgezaehlt. Dieselbe Regel steht seit
+     zwei Tagen in CLAUDE.md, und ich habe sie sofort wieder gebrochen. */
+  function vorschauBild(V) {
+    var kasten = el("div", { "class": "pf-vorschau" });
+    var heute = nachIso(new Date());
+    var n = V.stunden.length;
+    var abMorgen = -1;
+    V.stunden.forEach(function (m, i) {
+      if (abMorgen < 0 && m.slice(0, 10) > heute) { abMorgen = i; }
+    });
+
+    // ---- Kennzahlen fuer MORGEN ----------------------------------------
+    var mI = [];
+    for (var i = (abMorgen < 0 ? n : abMorgen); i < n; i++) { mI.push(i); }
+    if (mI.length) {
+      var summe = 0, spitze = 0, ee = 0;
+      var preise = [];
+      mI.forEach(function (i) {
+        var g = V.gesamt_mwh[i];
+        if (g !== null) { summe += g; if (g * 4 > spitze) { spitze = g * 4; } }
+        ["wind_mwh", "photovoltaik_mwh"].forEach(
+          function (f) { if (V[f][i] !== null) { ee += V[f][i]; } });
+        if (V.preis_eur_mwh[i] !== null) { preise.push(V.preis_eur_mwh[i]); }
+      });
+      var kopf = el("div", { "class": "pf-guete-kopf" });
+      var zahlen = [
+        ["Erzeugung morgen", gwh(summe, 1) + " GWh", "violett"],
+        ["Höchste Leistung", nf1.format(spitze / 1000) + " GW", "teal"],
+        ["Wind und Sonne", nf0.format(summe ? ee / summe * 100 : 0) + " %", "gruen"]
+      ];
+      if (preise.length) {
+        zahlen.push(["Börsenpreis", nf0.format(Math.min.apply(null, preise))
+          + " bis " + nf0.format(Math.max.apply(null, preise)) + " €/MWh", "orange"]);
+      }
+      zahlen.forEach(function (k) {
+        var b = el("div", { "class": "pf-guete-zahl", "data-akzent": k[2] });
+        b.appendChild(el("span", { "class": "pf-titel", text: k[0] }));
+        b.appendChild(el("p", { "class": "pf-wert", text: k[1] }));
+        kopf.appendChild(b);
+      });
+      kasten.appendChild(kopf);
+    }
+
+    // ---- Das Bild --------------------------------------------------------
+    var B = 900, links = 62, rechts = 10, oben = 26;
+    var hoehe = 190, hoehePreis = 70, luecke = 26;
+    var yPreis = oben + hoehe + luecke;
+    var H = yPreis + hoehePreis + 30;
+    var svg = s("svg", { "class": "pf-vorschaubild", viewBox: "0 0 " + B + " " + H,
+      role: "img",
+      "aria-label": "Angekündigte Erzeugung nach Energieträger und "
+        + "Großhandelspreis für heute und morgen, viertelstündlich" });
+
+    var stapel = [], laufend = [], maxW = 0;
+    for (i = 0; i < n; i++) { laufend.push(0); }
+    VORSCHAU_TRAEGER.forEach(function (tr) {
+      var unten = laufend.slice();
+      laufend = laufend.map(function (x, k) { return x + (V[tr.feld][k] || 0); });
+      stapel.push({ tr: tr, unten: unten, oben: laufend.slice() });
+    });
+    laufend.forEach(function (x) { if (x > maxW) { maxW = x; } });
+    // In GW gerechnet: die Werte sind MWh je Viertelstunde, Leistung ist das
+    // Vierfache. Die Achse traegt GW, weil MWh je Viertelstunde niemand liest.
+    var achse = netteAchse(maxW * 4 / 1000 || 10);
+    var achseMax = achse.max;
+    var X = function (k) { return links + k / Math.max(1, n - 1) * (B - links - rechts); };
+    var Y = function (mwh) {
+      return oben + hoehe - (mwh * 4 / 1000) / achseMax * hoehe;
+    };
+
+    // Gitter mit lesbarer Achse -- das fehlte in der ersten Fassung.
+    var gitter = s("g", { "class": "pf-vorschau-gitter" });
+    for (var g2 = 0; g2 <= achseMax + 1e-9; g2 += achse.schritt) {
+      var y = Y(g2 * 1000 / 4);
+      gitter.appendChild(s("line", { x1: links, x2: B - rechts, y1: y, y2: y }));
+      var oberste = g2 + achse.schritt > achseMax + 1e-9;
+      var tx = s("text", { x: links - 7, y: y + 4, "text-anchor": "end",
+        "class": oberste ? "pf-achsentitel" : null });
+      tx.textContent = nf0.format(g2) + (oberste ? " GW" : "");
+      gitter.appendChild(tx);
+    }
+    svg.appendChild(gitter);
+
+    /* Morgen absetzen -- aber NICHT durch eine Flaeche ueber dem Bild. Die
+       erste Fassung legte ein getoentes Rechteck ueber die halbe Breite; weil
+       die Traegerbaender halbdurchsichtig sind, sah dieselbe Traegerfarbe
+       links und rechts verschieden aus. "Braunkohle ist ueberall dieselbe
+       Farbe" gilt auch fuer Wind auf derselben Grafik. Die Markierung sitzt
+       deshalb im Rand ueber dem Bild und beruehrt keine Flaeche. */
+    if (abMorgen > 0) {
+      svg.appendChild(s("rect", { "class": "pf-vorschau-morgen",
+        x: X(abMorgen).toFixed(1), y: oben - 20,
+        width: (B - rechts - X(abMorgen)).toFixed(1), height: 15 }));
+      var tm = s("text", { x: (X(abMorgen) + 7).toFixed(1), y: oben - 9,
+        "class": "pf-vorschau-morgen-marke" });
+      tm.textContent = "morgen · Day-ahead";
+      svg.appendChild(tm);
+      var th = s("text", { x: (X(abMorgen) - 7).toFixed(1), y: oben - 9,
+        "text-anchor": "end", "class": "pf-vorschau-morgen-marke" });
+      th.textContent = "heute";
+      svg.appendChild(th);
+      svg.appendChild(s("line", { "class": "pf-vorschau-trenner",
+        x1: X(abMorgen).toFixed(1), x2: X(abMorgen).toFixed(1),
+        y1: oben - 20, y2: yPreis + hoehePreis }));
+    }
+
+    var gFl = s("g", { "class": "pf-vorschau-flaechen" });
+    stapel.forEach(function (b) {
+      var d = "M" + X(0).toFixed(1) + " " + Y(b.unten[0]).toFixed(1), k;
+      for (k = 0; k < n; k++) { d += "L" + X(k).toFixed(1) + " " + Y(b.oben[k]).toFixed(1); }
+      for (k = n - 1; k >= 0; k--) { d += "L" + X(k).toFixed(1) + " " + Y(b.unten[k]).toFixed(1); }
+      gFl.appendChild(s("path", { d: d + "Z", "class": "pf-vorschau-band",
+        fill: "var(" + b.tr.token + ")" }));
+    });
+    svg.appendChild(gFl);
+
+    // Tagesbeschriftung
+    V.stunden.forEach(function (m, k) {
+      if (m.slice(11) !== "00:00" && m.slice(11) !== "12:00") { return; }
+      var t2 = s("text", { x: X(k).toFixed(1), y: oben + hoehe + 14,
+        "text-anchor": "middle", "class": "pf-vorschau-marke" });
+      t2.textContent = m.slice(11) === "00:00"
+        ? ausIso(m.slice(0, 10)).toLocaleDateString("de-DE",
+            { weekday: "short", day: "2-digit", month: "2-digit" })
+        : "12 Uhr";
+      svg.appendChild(t2);
+    });
+
+    // ---- Preisstreifen, eigene Achse ------------------------------------
+    var preisW = V.preis_eur_mwh.filter(function (x) { return x !== null; });
+    if (preisW.length) {
+      var pMin = Math.min(0, Math.floor(Math.min.apply(null, preisW) / 50) * 50);
+      var pMax = Math.max(100, Math.ceil(Math.max.apply(null, preisW) / 50) * 50);
+      var YP = function (p) {
+        return yPreis + hoehePreis - (p - pMin) / (pMax - pMin) * hoehePreis;
+      };
+      var gp = s("g", { "class": "pf-vorschau-gitter" });
+      var pSchritt = netteAchse(pMax - pMin).schritt;
+      var pMarken = [];
+      for (var pp = pMin; pp <= pMax + 1e-9; pp += pSchritt) { pMarken.push(pp); }
+      if (pMarken.indexOf(0) < 0) { pMarken.push(0); }
+      pMarken.forEach(function (p) {
+        if (p < pMin || p > pMax) { return; }
+        gp.appendChild(s("line", { x1: links, x2: B - rechts, y1: YP(p), y2: YP(p) }));
+        var obersteP = p + pSchritt > pMax + 1e-9;
+        var tp = s("text", { x: links - 7, y: YP(p) + 4, "text-anchor": "end",
+          "class": obersteP ? "pf-achsentitel" : null });
+        tp.textContent = nf0.format(p) + (obersteP ? " €/MWh" : "");
+        gp.appendChild(tp);
+      });
+      svg.appendChild(gp);
+      var dp = "", offenP = false;
+      V.preis_eur_mwh.forEach(function (p, k) {
+        if (p === null) { offenP = false; return; }
+        dp += (offenP ? "L" : "M") + X(k).toFixed(1) + " " + YP(p).toFixed(1);
+        offenP = true;
+      });
+      svg.appendChild(s("path", { d: dp, fill: "none", "class": "pf-vorschau-preis" }));
+    }
+    var rahmen = el("div", { "class": "pf-vorschau-rahmen" });
+    rahmen.appendChild(svg);
+    kasten.appendChild(rahmen);
+
+    /* ECHTE ABLESUNG, dieselbe wie beim Verlauf und beim Kostenblock. Die
+       erste Fassung dieses Abschnitts hatte gar keine -- man sah vier Baender
+       und konnte keinen einzigen Wert ablesen. Ein title-Attribut waere hier
+       wieder der falsche Weg gewesen; das ist in diesem Projekt schon zweimal
+       passiert. Hier steht auch die Aufteilung Wind an Land / auf See, die im
+       Bild bewusst EIN Band ist. */
+    var vAblese = ablesungAn(rahmen);
+    var zeiger = s("line", { "class": "pf-vorschau-zeiger",
+      y1: oben, y2: yPreis + hoehePreis, x1: 0, x2: 0, visibility: "hidden" });
+    svg.appendChild(zeiger);
+
+    function vorschauZeigen(k) {
+      if (k < 0 || k >= n) { return; }
+      zeiger.setAttribute("x1", X(k).toFixed(1));
+      zeiger.setAttribute("x2", X(k).toFixed(1));
+      zeiger.setAttribute("visibility", "visible");
+      var g = V.gesamt_mwh[k];
+      var zeilen = VORSCHAU_TRAEGER.slice().reverse().map(function (tr) {
+        var w = V[tr.feld][k];
+        return { name: tr.name, token: tr.token,
+                 wert: w === null ? "—"
+                   : nf1.format(w * 4 / 1000) + " GW · "
+                     + nf0.format(g ? w / g * 100 : 0) + " %" };
+      });
+      var wSee = V.wind_offshore_mwh[k], wLand = V.wind_onshore_mwh[k];
+      var teile = [{ titel: "Angekündigte Leistung", zeilen: zeilen }];
+      if (wSee !== null && wLand !== null) {
+        teile.push({ titel: "Davon Wind", zeilen: [
+          { name: "an Land", token: "--tr-wind",
+            wert: nf1.format(wLand * 4 / 1000) + " GW" },
+          { name: "auf See", token: "--tr-wind",
+            wert: nf1.format(wSee * 4 / 1000) + " GW" }
+        ] });
+      }
+      if (V.preis_eur_mwh[k] !== null) {
+        teile.push({ titel: "Großhandel Day-Ahead", zeilen: [
+          { name: "Preis dieser Viertelstunde", token: "--preis-linie",
+            wert: eur(V.preis_eur_mwh[k]) + "/MWh" }
+        ] });
+      }
+      vAblese.zeige({
+        kopf: datumLang(V.stunden[k].slice(0, 10)) + " · "
+          + V.stunden[k].slice(11) + " Uhr",
+        wert: g === null ? "—" : nf1.format(g * 4 / 1000),
+        einheit: "GW angekündigt",
+        bezug: V.stunden[k].slice(0, 10) > V.erzeugt_am
+          ? "morgen — Day-ahead-Ankündigung, keine Messung"
+          : "heute — Ankündigung; die Messung steht im Verlauf oben",
+        abschnitte: teile
+      }, (k + 0.5) / n);
+    }
+
+    svg.addEventListener("mousemove", function (e) {
+      var kasten2 = svg.getBoundingClientRect();
+      var rel = (e.clientX - kasten2.left) / kasten2.width * B;
+      var k = Math.round((rel - links) / (B - links - rechts) * (n - 1));
+      vorschauZeigen(Math.max(0, Math.min(n - 1, k)));
+    });
+    svg.addEventListener("mouseleave", function () {
+      zeiger.setAttribute("visibility", "hidden");
+      vAblese.verbirg();
+    });
+
+    // Legende in denselben Farben wie ueberall.
+    var legende = el("div", { "class": "pf-legende" });
+    VORSCHAU_TRAEGER.slice().reverse().forEach(function (tr) {
+      var sp = el("span");
+      sp.appendChild(el("i", { style: "background:var(" + tr.token + ");" }));
+      sp.appendChild(document.createTextNode(tr.name));
+      legende.appendChild(sp);
+    });
+    var spp = el("span");
+    spp.appendChild(el("i", { "class": "pf-strich pf-preis" }));
+    spp.appendChild(document.createTextNode("Großhandelspreis Day-Ahead"));
+    legende.appendChild(spp);
+    var spm = el("span");
+    spm.appendChild(el("i", { "class": "pf-vorschau-marke-legende" }));
+    spm.appendChild(document.createTextNode("rechts der gestrichelten Linie: morgen"));
+    legende.appendChild(spm);
+    kasten.appendChild(legende);
+
+    kasten.appendChild(langtext(
+      "Weiter als bis morgen 23:45 Uhr reicht diese Vorschau nicht, und das "
+      + "liegt nicht an dieser Seite: der Day-ahead-Markt wird mittags für den "
+      + "Folgetag geräumt, danach steht er fest — für übermorgen gibt es weder "
+      + "Preis noch Erzeugungsprognose. Wind Offshore und die übrige Erzeugung "
+      + "sind gerechnet: die Quelle veröffentlicht Wind und Photovoltaik "
+      + "zusammen sowie die Gesamtsumme, daraus ergibt sich der Rest. Die "
+      + "Filter-IDs von SMARD sind nicht dokumentiert; sie wurden über die "
+      + "Korrelation mit der späteren Messung zugeordnet (r zwischen 0,995 und "
+      + "0,999). Alles hier ist eine Ankündigung, keine Messung."));
+
+    infoKnopf(kasten, {
+      wert: "Prognostizierte Erzeugung je Energieträger und Großhandelspreis "
+        + "Day-Ahead, viertelstündlich, aus SMARD. Die Erzeugung steht dort in "
+        + "MWh je Viertelstunde; die Achse zeigt Leistung in GW, also den Wert "
+        + "mal vier.",
+      grenzenTitel: "Was daran Ankündigung ist",
+      grenzen: "Die Erzeugung ist eine Prognose der Übertragungsnetzbetreiber, "
+        + "der Preis das Ergebnis der Day-ahead-Auktion. Beides kann von der "
+        + "späteren Messung abweichen — wie stark, steht direkt darunter. Wind "
+        + "Offshore und die übrige Erzeugung sind aus zwei veröffentlichten "
+        + "Reihen gerechnet und dort auf null geklemmt, wo die Prognosestände "
+        + "nicht zusammenpassen.",
+      quellen: QUELLE_SMARD,
+      messung: "Ankündigung, keine Messung. Zwei der vier Bänder sind gerechnet; "
+        + "die Formel steht in data/vorschau.json."
+    }, "Vorschau auf morgen");
+    return kasten;
+  }
+
   function prognosegueteZeigen(ziel, von, bis) {
     ziel.textContent = "";
-    ziel.appendChild(el("h4", { text: "Wie gut die Ankündigung war · im gewählten Zeitraum" }));
+    ziel.appendChild(el("h4",
+      { text: "Wie gut die Ankündigung war · ein Balken je Tag des Zeitraums" }));
     var tage = [], fehler = [], abw = [];
     tageImZeitraum(von, bis).forEach(function (tag) {
       var d = Z.prognoseJahre[Number(tag.slice(0, 4))];
@@ -2698,8 +2937,8 @@
     // Ein Balken je Tag. Farbe ist nicht noetig -- es gibt nur eine Groesse.
     var maxF = Math.max.apply(null, fehler);
     ziel.appendChild(el("p", { "class": "pf-guete-massstab",
-      text: "Balken bis " + nf1.format(maxF) + " % · je Tag der mittlere "
-        + "absolute Fehler" }));
+      text: "Balken bis " + nf1.format(maxF) + " % — je Balken EIN TAG. Der "
+        + "Wert ist der mittlere Fehler der 96 Viertelstunden dieses Tages" }));
     var gitter = el("div", { "class": "pf-guete-gitter" });
     var spalten = [], aktivF = -1;
     var ablese = null;

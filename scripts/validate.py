@@ -868,6 +868,58 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("nicht gemeldet" in js and "gemeldeten Tage" in js,
              "die Seite unterscheidet gemeldete von nicht gemeldeten Tagen")
 
+    # --- Vorschau auf morgen ---
+    # Der einzige Abschnitt der Seite, der nicht von der Vergangenheit handelt.
+    # Er hat mich beim Bauen zwei Fehler gekostet, und beide werden hier
+    # geprueft: die EINHEIT (MWh je Viertelstunde, nicht MW -- gelesen als
+    # Leistung war das Ergebnis um den Faktor vier daneben) und die Zahl der
+    # Traeger im Bild (Wind ist EIN Band, weil dieses Projekt eine Windfarbe
+    # kennt; zwei gleichfarbige Baender waren unlesbar).
+    vs = json.loads(lade("data/vorschau.json"))
+    b.pruefe(vs["einheit_erzeugung"] == "MWh je Viertelstunde",
+             f"Vorschau: Einheit '{vs['einheit_erzeugung']}'")
+    b.pruefe(vs["einheit_preis"] == "EUR/MWh",
+             f"Vorschau: Preis in {vs['einheit_preis']}")
+    laengen = {k: len(v) for k, v in vs.items() if isinstance(v, list)}
+    b.pruefe(len(set(laengen.values())) == 1,
+             f"Vorschau: alle Reihen gleich lang -- {sorted(set(laengen.values()))}")
+    # Groessenordnung: eine Viertelstunde Erzeugung liegt zwischen 5 und 25 GWh
+    # (20 bis 100 GW Leistung). Wer MW mit MWh verwechselt, landet ausserhalb.
+    werte = [x for x in vs["gesamt_mwh"] if x is not None]
+    spitze_gw = max(werte) * 4 / 1000 if werte else 0
+    b.pruefe(20 <= spitze_gw <= 110,
+             f"Vorschau: hoechste Leistung {spitze_gw:,.1f} GW -- plausibel")
+    # Die gerechneten Groessen muessen aufgehen, und geklemmt werden darf nur
+    # ausnahmsweise. Ein Zaehler, den niemand prueft, ist kein Zaehler.
+    schief = [i for i in range(len(vs["stunden"]))
+              if None not in (vs["gesamt_mwh"][i], vs["wind_mwh"][i],
+                              vs["photovoltaik_mwh"][i], vs["uebrige_mwh"][i])
+              and abs(vs["wind_mwh"][i] + vs["photovoltaik_mwh"][i]
+                      + vs["uebrige_mwh"][i] - vs["gesamt_mwh"][i]) > 0.5]
+    b.pruefe(not schief,
+             f"Vorschau: Wind + PV + Uebrige ergibt die Gesamterzeugung "
+             f"({len(schief)} Abweichungen)")
+    geklemmt = (vs["geklemmt_wind"] + vs["geklemmt_offshore"]
+                + vs["geklemmt_uebrige"])
+    b.pruefe(geklemmt <= len(vs["stunden"]) * 0.05,
+             f"Vorschau: {geklemmt} geklemmte Werte von {len(vs['stunden'])}")
+    b.pruefe("Ankündigung" in js and "übermorgen" in js,
+             "die Seite nennt die Vorschau eine Ankuendigung und sagt, warum "
+             "sie nicht weiter reicht")
+    # Der Satz "96 von 96 Viertelstunden" stand hier einmal und sagt nichts.
+    b.pruefe("von 96 Viertelstunden" not in js,
+             "der nichtssagende Satz 'x von 96 Viertelstunden' ist weg")
+    # Genau drei Traeger im Bild -- ein viertes Band waere die zweite Windfarbe.
+    b.pruefe(js.count('feld: "wind_mwh"') == 1
+             and 'feld: "wind_onshore_mwh"' not in js,
+             "die Vorschau zeichnet EIN Windband, nicht zwei gleichfarbige")
+    # Und nur EIN Skript schreibt die Datei.
+    schreiber = [n for n in ("fetch-vorschau.py", "fetch-lastprognose.py")
+                 if "vorschau.json" in lade(f"scripts/{n}")
+                 and "VORSCHAU.write_text" in lade(f"scripts/{n}")]
+    b.pruefe(not schreiber,
+             f"nur fetch-vorschau.py schreibt data/vorschau.json -- {schreiber}")
+
     # --- Kosten des Engpassmanagements ---
     # Die eine Falle dieser Quelle: B04 ist die SUMME, nicht ein dritter Posten.
     # Wer alle drei Reihen addiert, verdoppelt -- beim ersten Lauf kamen so
@@ -1250,6 +1302,15 @@ def negativtests() -> int:
          lambda: {"engpasskosten": _kosten_doppelt(basis["engpasskosten"])}),
         ("Spanne der Redispatch-Schieflage im Text verstellt",
          lambda: {"js": basis["js"].replace("und +18,1 %", "und +25,4 %")}),
+        # Zwei gleichfarbige Windbaender -- genau die erste Fassung der
+        # Vorschau. Im Quelltext sah sie richtig aus, im Bild war die
+        # Aufteilung unsichtbar und die Legende irrefuehrend.
+        ("zweites Windband in der Vorschau",
+         lambda: {"js": basis["js"].replace('feld: "wind_mwh"',
+                                            'feld: "wind_onshore_mwh"')}),
+        ("nichtssagender Satz 'x von 96 Viertelstunden' zurueck im Text",
+         lambda: {"js": basis["js"]
+                  + chr(10) + '  // "96 von 96 Viertelstunden";' + chr(10)}),
         ("Farb-Token als Schriftfamilie eingesetzt",
          lambda: {"css": basis["css"]
                   + chr(10) + ".pf-probe { font-family: var(--schrift); }" + chr(10)}),

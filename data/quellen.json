@@ -224,12 +224,12 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/blockerzeugung"
   },
   {
-   "titel": "Angekuendigte Last",
-   "inhalt": "Day-ahead-Prognose der Netzlast fuer heute und morgen, viertelstuendlich in MW. Eine ANKUENDIGUNG, keine Messung.",
-   "quelle": "entsoe",
-   "beleg": "docs/beleg-lastprognose.md",
+   "titel": "Vorschau auf morgen",
+   "inhalt": "Prognostizierte Erzeugung je Energietraeger und Grosshandelspreis Day-Ahead fuer heute und morgen, viertelstuendlich. Erzeugung in MWh je Viertelstunde, Preis in EUR/MWh. ANKUENDIGUNG und Marktergebnis, keine Messung.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-vorschau.md",
    "dateien": 1,
-   "bytes": 5743,
+   "bytes": 14213,
    "zeitraum": "2026-09-05 bis 2026-09-06",
    "muster": "data/vorschau.json",
    "abzug": "data/vorschau.json",
@@ -325,7 +325,7 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 13460,
+   "bytes": 13561,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
@@ -333,5 +333,5 @@
   }
  ],
  "dateien_gesamt": 194,
- "bytes_gesamt": 33098784
+ "bytes_gesamt": 33107355
 }

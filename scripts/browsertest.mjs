@@ -308,28 +308,87 @@ try {
     const v = document.querySelector(".pf-vorschau");
     const g = document.querySelector(".pf-prognoseguete");
     return {
-      bild: v ? v.querySelectorAll("svg.pf-vorschau-bild path").length : 0,
+      baender: v ? v.querySelectorAll("svg .pf-vorschau-band").length : 0,
       morgen: v ? v.querySelectorAll(".pf-vorschau-morgen").length : 0,
+      morgenhoehe: v && v.querySelector(".pf-vorschau-morgen")
+        ? Number(v.querySelector(".pf-vorschau-morgen").getAttribute("height")) : 0,
+      achse: v ? v.querySelectorAll("svg .pf-vorschau-gitter text").length : 0,
+      achsentitel: v ? [...v.querySelectorAll("svg .pf-vorschau-gitter .pf-achsentitel")]
+        .map((x) => x.textContent).join(" ") : "",
+      preislinie: v ? v.querySelectorAll("svg .pf-vorschau-preis").length : 0,
+      achsenmarken: v ? [...v.querySelectorAll("svg .pf-vorschau-gitter text")]
+        .map((x) => Number(x.textContent.replace(/[^0-9,.\-]/g, "")
+          .replace(/\./g, "").replace(",", ".")))
+        .filter((x) => Number.isFinite(x)) : [],
+      ablesung: v ? v.querySelectorAll(".pf-vorschau-rahmen").length : 0,
+      kennzahlen: v ? v.querySelectorAll(".pf-guete-zahl").length : 0,
       vtext: v ? v.textContent : "",
-      kennzahlen: g ? g.querySelectorAll(".pf-guete-zahl").length : 0,
+      gzahlen: g ? g.querySelectorAll(".pf-guete-zahl").length : 0,
       balken: g ? g.querySelectorAll(".pf-guete-balken").length : 0,
       massstab: g ? (g.querySelector(".pf-guete-massstab") || {}).textContent || "" : "",
       gtext: g ? g.textContent : "",
       info: g ? g.querySelectorAll(".pf-info").length : 0
     };
   })()`);
-  pruefe(vorschau.bild >= 1, "die angekuendigte Last wird gezeichnet");
+  pruefe(vorschau.baender === 3,
+    `drei Traegerbaender in der Vorschau (${vorschau.baender})`);
+  pruefe(vorschau.achsenmarken.length >= 6
+    && vorschau.achsenmarken.every((x) => x % 5 === 0),
+    "die Achsenmarken stehen auf runden Zahlen", vorschau.achsenmarken.join(" "));
+  pruefe(vorschau.ablesung > 0, "die Vorschau hat eine echte Ablesung");
+
+  /* Und sie muss auch AUFGEHEN. Ein Rahmen allein ist keine Ablesung -- genau
+     dieser Unterschied ist beim Kostenblock zweimal durchgerutscht. */
+  const vhover = await js(`(function () {
+    const svg = document.querySelector("svg.pf-vorschaubild");
+    if (!svg) { return { text: "", zeiger: 0, danach: 1 }; }
+    const r = svg.getBoundingClientRect();
+    svg.dispatchEvent(new MouseEvent("mousemove",
+      { clientX: r.left + r.width * 0.7, clientY: r.top + r.height * 0.5,
+        bubbles: true }));
+    const k = document.querySelector(".pf-vorschau-rahmen .pf-rd-info");
+    const zeiger = [...svg.querySelectorAll(".pf-vorschau-zeiger")]
+      .filter((l) => l.getAttribute("visibility") !== "hidden").length;
+    const text = k && !k.hidden ? k.textContent : "";
+    svg.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    const k2 = document.querySelector(".pf-vorschau-rahmen .pf-rd-info");
+    return { text: text, zeiger: zeiger, danach: k2 && !k2.hidden ? 1 : 0 };
+  })()`);
+  pruefe(/GW angekündigt/.test(vhover.text),
+    "beim Ueberfahren steht die angekuendigte Leistung da",
+    vhover.text.slice(0, 90));
+  pruefe(/Wind/.test(vhover.text) && /Photovoltaik/.test(vhover.text),
+    "mit der Aufteilung nach Traegern");
+  pruefe(/an Land/.test(vhover.text) && /auf See/.test(vhover.text),
+    "und der Aufteilung des Windes, die im Bild EIN Band ist");
+  pruefe(/€/.test(vhover.text), "und dem Boersenpreis dieser Viertelstunde");
+  pruefe(vhover.zeiger === 1, "ein Zeiger markiert die Stelle");
+  pruefe(vhover.danach === 0, "die Ablesung schliesst wieder");
   pruefe(vorschau.morgen === 1, "der morgige Tag ist im Bild abgesetzt");
-  pruefe(/ANKÜNDIGUNG|Ankündigung/.test(vorschau.vtext),
+  pruefe(vorschau.achse >= 4,
+    `die Erzeugungsachse ist beschriftet (${vorschau.achse} Marken)`);
+  pruefe(/GW/.test(vorschau.achsentitel) && /€\/MWh/.test(vorschau.achsentitel),
+    "beide Achsen nennen ihre Einheit", vorschau.achsentitel);
+  pruefe(vorschau.preislinie === 1, "der Boersenpreis wird gezeichnet");
+  pruefe(vorschau.kennzahlen === 4,
+    `vier Kennzahlen fuer morgen (${vorschau.kennzahlen})`);
+  pruefe(/Ankündigung/.test(vorschau.vtext),
     "und ausdruecklich als Ankuendigung benannt, nicht als Messung");
-  pruefe(vorschau.kennzahlen === 3,
-    `drei Kennzahlen zur Prognosegüte (${vorschau.kennzahlen})`);
+  pruefe(vorschau.morgenhoehe > 0 && vorschau.morgenhoehe < 40,
+    "die Morgen-Markierung liegt im Rand und toent keine Traegerflaeche",
+    `Hoehe ${vorschau.morgenhoehe}`);
+  pruefe(/übermorgen/.test(vorschau.vtext),
+    "es steht da, warum es nicht weiter reicht");
+  pruefe(vorschau.gzahlen === 3,
+    `drei Kennzahlen zur Prognosegüte (${vorschau.gzahlen})`);
   pruefe(vorschau.balken >= 5,
     `ein Balken je Tag (${vorschau.balken})`);
   pruefe(/Balken bis/.test(vorschau.massstab),
     "der Massstab ist genannt", vorschau.massstab.slice(0, 70));
   pruefe(/absolute[rn]? Fehler/.test(vorschau.gtext),
     "es steht da, dass der Fehler ABSOLUT gerechnet ist");
+  pruefe(/je Balken EIN TAG/.test(vorschau.gtext),
+    "und dass ein Balken ein Tag ist, nicht eine Viertelstunde");
   pruefe(/aufheben/.test(vorschau.gtext),
     "und warum die Tagessumme kleiner ist als der Fehler je Viertelstunde");
   pruefe(vorschau.info === 1, "mit Info-Knopf");

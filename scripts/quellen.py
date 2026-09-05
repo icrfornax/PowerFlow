@@ -138,10 +138,11 @@ GRUPPEN = [
      "solche ID; sie decken 53 % der gefuehrten Leistung ab. Die Abdeckung "
      "schwankt stark nach Jahr -- 2018 nur 21 %, ab 2020 ueber 93 %.",
      "docs/beleg-kraftwerksdaten.md", "blockerzeugung-verzeichnis.json"),
-    ("vorschau.json", "entsoe", "Angekuendigte Last",
-     "Day-ahead-Prognose der Netzlast fuer heute und morgen, viertelstuendlich "
-     "in MW. Eine ANKUENDIGUNG, keine Messung.",
-     "docs/beleg-lastprognose.md", None),
+    ("vorschau.json", "smard", "Vorschau auf morgen",
+     "Prognostizierte Erzeugung je Energietraeger und Grosshandelspreis "
+     "Day-Ahead fuer heute und morgen, viertelstuendlich. Erzeugung in MWh je "
+     "Viertelstunde, Preis in EUR/MWh. ANKUENDIGUNG und Marktergebnis, keine "
+     "Messung.", "docs/beleg-vorschau.md", None),
     ("lastprognose-verzeichnis.json", "entsoe", "Verzeichnis der Prognosegueten",
      "Welche Jahresdatei welchen Zeitraum abdeckt.",
      "docs/beleg-lastprognose.md", None),

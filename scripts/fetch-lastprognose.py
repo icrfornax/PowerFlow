@@ -55,7 +55,6 @@ import entsoe
 
 WURZEL = pathlib.Path(__file__).resolve().parent.parent
 ZIEL = WURZEL / "data" / "lastprognose"
-VORSCHAU = WURZEL / "data" / "vorschau.json"
 VERZEICHNIS = WURZEL / "data" / "lastprognose-verzeichnis.json"
 
 DE_LU = "10Y1001A1001A82H"
@@ -177,35 +176,14 @@ def jahr_bauen(jahr: int) -> dict:
 TZ = None       # wird in main gesetzt, damit smard.TZ nicht doppelt geladen wird
 
 
-def vorschau_bauen() -> dict:
-    """Die Prognose fuer morgen, viertelstuendlich. Das ist die eigentliche Vorschau."""
-    heute = dt.datetime.now(TZ).date()
-    a = dt.datetime.combine(heute, dt.time(0), TZ).astimezone(dt.timezone.utc)
-    b = a + dt.timedelta(days=3)
-    prog = reihe("A01", a.strftime("%Y%m%d%H%M"), b.strftime("%Y%m%d%H%M"))
-    marken, werte = [], []
-    for t in sorted(prog):
-        lokal = t.astimezone(TZ)
-        if lokal.date() < heute:
-            continue
-        marken.append(lokal.strftime("%Y-%m-%dT%H:%M"))
-        werte.append(round(prog[t], 1))
-    return {
-        "_quelle": ("ENTSO-E Transparency Platform -- 6.1.B 'Day-ahead total "
-                    "load forecast', documentType A65, processType A01"),
-        "_lizenz": "CC BY 4.0",
-        "_namensnennung": "ENTSO-E Transparency Platform",
-        "_hinweis": (
-            "Die angekuendigte Netzlast, viertelstuendlich, in MW (Einheit der "
-            "Quelle: MAW, also Leistung). Sie reicht genau bis zum Ende des "
-            "morgigen Tages und WAECHST im Lauf des Tages -- die Werte fuer "
-            "morgen stehen erst nach der Day-ahead-Auktion vollstaendig da. "
-            "Was hier steht, ist eine ANKUENDIGUNG und keine Messung."),
-        "einheit": "MW",
-        "stunden": marken,
-        "prognose_mw": werte,
-    }
-
+# data/vorschau.json WIRD HIER NICHT MEHR GESCHRIEBEN.
+# Bis zum 05.09.2026 baute dieses Skript aus 6.1.B zusaetzlich eine Vorschau
+# nach data/vorschau.json -- dieselbe Datei, die fetch-vorschau.py schreibt.
+# Zwei Schreiber auf einer Datei sind ein stiller Ueberschreiber: wer zuletzt
+# lief, gewann, und im Workflow war das die Reihenfolge der Schritte. Die
+# Vorschau enthaelt heute Erzeugung je Traeger und den Boersenpreis, also
+# mehr als die Last allein; sie kommt aus SMARD. Dieses Skript liefert nur
+# noch die PROGNOSEGUETE der Vergangenheit -- das ist eine andere Frage.
 
 def main(argv: list[str]) -> int:
     global TZ
@@ -231,20 +209,15 @@ def main(argv: list[str]) -> int:
         verzeichnis.append({"jahr": jahr, "datei": f"data/lastprognose/{jahr}.json",
                             "tage": len(doc["tage"])})
         print(f"      geschrieben: {pfad.name} ({pfad.stat().st_size:,} Bytes)")
-    v = vorschau_bauen()
-    print(f"  Vorschau: {len(v['stunden'])} Viertelstunden"
-          + (f", {v['stunden'][0]} bis {v['stunden'][-1]}" if v["stunden"] else ""))
     if nur_lesen:
         print("\nNur gelesen. Es wurde nichts nach data/ geschrieben.")
         return 0
-    VORSCHAU.write_text(json.dumps(v, ensure_ascii=False, separators=(",", ":")) + "\n",
-                        encoding="utf-8", newline="\n")
     VERZEICHNIS.write_text(json.dumps({
         "_quelle": "ENTSO-E Transparency Platform",
         "_hinweis": "Welche Jahresdatei welchen Zeitraum abdeckt.",
         "jahre": verzeichnis,
     }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
-    print(f"  geschrieben: data/vorschau.json, {VERZEICHNIS.name}")
+    print(f"  geschrieben: {VERZEICHNIS.name}")
     return 0
 
 

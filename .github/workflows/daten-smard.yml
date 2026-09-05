@@ -52,16 +52,23 @@ jobs:
         run: |
           python scripts/fetch-blockerzeugung.py "$(date -u +%Y)" "$(( $(date -u +%Y) - 1 ))"
 
-      - name: Lastprognose und Vorschau (laufendes Jahr)
-        # Die Vorschau auf morgen muss TAEGLICH neu geholt werden, sonst zeigt
-        # die Seite die Ankuendigung von gestern. Die Historie holt der
+      - name: Vorschau auf morgen
+        # Sie muss TAEGLICH neu geholt werden, sonst zeigt die Seite die
+        # Ankuendigung von gestern. Quelle ist SMARD, kein Token noetig --
+        # deshalb steht sie VOR dem ENTSO-E-Schritt und nicht in ihm.
+        run: python scripts/fetch-vorschau.py
+
+      - name: Prognosegüte (laufendes Jahr)
+        # Nur noch die Guete der Vergangenheit. Die Vorschau schreibt dieses
+        # Skript seit dem 05.09.2026 nicht mehr -- zwei Schreiber auf einer
+        # Datei sind ein stiller Ueberschreiber. Die Historie holt der
         # monatliche ENTSO-E-Workflow.
         continue-on-error: true
         env:
           ENTSOE_TOKEN: ${{ secrets.ENTSOE_TOKEN }}
         run: |
           if [ -z "$ENTSOE_TOKEN" ]; then
-            echo "Kein ENTSOE_TOKEN hinterlegt -- Vorschau wird uebersprungen."
+            echo "Kein ENTSOE_TOKEN hinterlegt -- Prognosegüte wird uebersprungen."
             exit 0
           fi
           python scripts/fetch-lastprognose.py "$(date -u +%Y)"

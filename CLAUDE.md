@@ -684,6 +684,43 @@ zeitliche Aufloesung. Der Satz unter dem Bild rechnet es je Zeitraum vor.
 Schraffur ist hier kein Zuschaltmerkmal, sondern die Bedeutung: beide Flaechen
 sind KEINE Energietraeger. Die Traegerbaender bleiben glatt.
 
+## Vorschau auf morgen
+
+Erledigt am 05.09.2026. Beleg: `docs/beleg-vorschau.md`, Abruf durch
+`scripts/fetch-vorschau.py`.
+
+Der einzige Abschnitt der Seite, der nicht von der Vergangenheit handelt. Er
+reicht **bis morgen 23:45 und keine Minute laenger** -- der Day-ahead-Markt wird
+mittags fuer den Folgetag geraeumt, fuer uebermorgen gibt es nichts. Das steht
+auf der Seite, damit niemand die kurze Reichweite fuer einen Mangel dieser Seite
+haelt.
+
+- **Die Filter-IDs sind bei SMARD nicht dokumentiert und wurden GEMESSEN:** eine
+  Day-ahead-Prognose muss der spaeteren Messung derselben Groesse folgen.
+  123 = Wind Onshore (r = 0,995), 125 = Photovoltaik (0,999), 5097 = Wind+PV
+  (0,998), 122 = gesamt (0,996), 4169 = Preis. 715 und 3791 antworten auch,
+  liessen sich aber nicht eindeutig zuordnen und bleiben deshalb draussen.
+- **DIE EINHEIT IST MWh JE VIERTELSTUNDE, NICHT MW.** Als Leistung gelesen war
+  das Ergebnis um den Faktor vier daneben ("272 GWh, Spitze 16 GW"). Gefangen
+  hat es die Groessenordnungsprobe gegen den Vortag. `validate.py` prueft die
+  Einheit und rechnet die Spitze in GW nach.
+- **Wind ist EIN Band.** Dieses Projekt kennt genau eine Windfarbe, weil der
+  grosse Verlauf Onshore und Offshore zur Gruppe "Wind" zusammenfasst. Die erste
+  Fassung zeigte zwei Baender in derselben Farbe -- unsichtbare Aufteilung,
+  irrefuehrende Legende. Eine zweite Windfarbe waere schlechter gewesen. Die
+  Aufteilung steht in der Ablesung und in der Datei.
+- **`fetch-lastprognose.py` schreibt seit dem 05.09.2026 keine `vorschau.json`
+  mehr.** Zwei Schreiber auf einer Datei sind ein stiller Ueberschreiber; wer
+  zuletzt lief, gewann. `validate.py` prueft, dass es bei einem bleibt.
+
+**Drei Maengel, die nur das Bildschirmfoto gezeigt hat** -- keine der 213
+Browserpruefungen hat sie gemeldet: die Achse stand auf 0/17,5/35/52,5/70 GW
+(runde Marken sind der Unterschied zwischen Ablesen und Schaetzen, jetzt
+`netteAchse()`); die Einheiten kollidierten mit der obersten Marke und mit der
+Datumszeile (sie haengen jetzt an der Marke selbst); und die Unterlegung fuer
+"morgen" toente die halbdurchsichtigen Traegerbaender, sodass dieselbe Farbe
+links und rechts verschieden aussah (sie sitzt jetzt im Rand ueber dem Bild).
+
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
 Belegt in `docs/beleg-tagesreihen.md`. Diese drei Punkte duerfen weder
