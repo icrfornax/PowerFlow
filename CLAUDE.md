@@ -578,6 +578,35 @@ und das vorige Jahr.
 - Auf der Karte tragen Anlagen mit Reihe einen hellen Ring. **Keine zweite
   Farbe** -- die gehoert dem Energietraeger.
 
+## Vorschau und Prognosegüte
+
+Eingebunden am 05.09.2026. Beleg: `docs/beleg-lastprognose.md`, Abruf durch
+`scripts/fetch-lastprognose.py`. Taeglich im SMARD-Workflow (nur das laufende
+Jahr, wegen der Vorschau auf morgen), monatlich im ENTSO-E-Workflow die ganze
+Historie.
+
+**Zwei der drei erhofften Wege tragen nicht**, geprueft und dokumentiert:
+`netztransparenz /data/prognose/*` liefert leere Wertespalten,
+`/data/Spotmarktpreise` erst rund einen Monat spaeter (ct/kWh, Komma!), und die
+ENTSO-E-Erzeugungsprognose 14.1.D steht nicht auf der Freigabeliste. Es traegt
+die LASTPROGNOSE, 6.1.B, CC BY 4.0.
+
+- **Einheit MAW ist LEISTUNG, nicht Arbeit.** Energie je Viertelstunde ist
+  Leistung mal 0,25 h. Das Skript bricht ab, wenn die Einheit je etwas anderes
+  ist.
+- **Die Vorschau reicht genau EINEN Tag** und waechst im Lauf des Tages. Sie ist
+  eine ANKUENDIGUNG und wird auf der Seite so genannt -- nie als Messung.
+- **Verglichen wird gegen 6.1.A, die Messung DERSELBEN Quelle**, nicht gegen
+  SMARD. Sonst maesse man den Unterschied zweier Erhebungen mit. 6.1.A steht
+  nicht auf der Freigabeliste und wird deshalb nicht veroeffentlicht -- in die
+  Datei geht nur die Prognose und die Abweichung.
+- **Der mittlere absolute Fehler steht in der DATEI**, nicht in der Anzeige: aus
+  Tagessummen ist er nicht zu bilden, weil sich zu hohe und zu niedrige
+  Viertelstunden aufheben. Gemessen liegt er ueber alle Jahre bei rund 4 %.
+- **Gleiche Optik ist kein Grund fuer gleiche Klassennamen.** Der Block hat
+  zuerst die Klassen des Kostenblocks geerbt, und prompt haben drei Pruefungen
+  des Redispatch die Prognosebalken mitgezaehlt.
+
 ## Kosten des Engpassmanagements
 
 Eingebunden am 03.09.2026. Quelle: ENTSO-E Transparency Platform, Datenpunkt

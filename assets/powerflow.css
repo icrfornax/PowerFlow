@@ -1034,6 +1034,56 @@ details.pf-mehr { margin: 0; padding: 0; border: 0; background: none; }
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Vorschau: angekuendigte Last ----------
+   Die einzige Stelle der Seite, die in die Zukunft zeigt. Sie traegt deshalb
+   eine eigene, zurueckhaltende Farbe -- keine der Traegerfarben, damit sie
+   nicht als Erzeugung gelesen wird. */
+.pf-vorschau { margin-bottom: 20px; }
+.pf-vorschau > h4, .pf-prognoseguete > h4 {
+  margin: 0 0 8px; font-size: 0.78rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still); font-weight: 600;
+}
+.pf-vorschau-bild { width: 100%; height: 130px; display: block; }
+.pf-vorschau-bild text { fill: var(--schrift-still); font-size: 10px; }
+.pf-vorschau-linie {
+  stroke: var(--last-linie); stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
+}
+/* Der morgige Tag: leicht unterlegt. Das ist die eigentliche Vorschau -- was
+   links davon steht, ist die Ankuendigung fuer den laufenden Tag. */
+.pf-vorschau-morgen {
+  fill: var(--teal); fill-opacity: 0.09;
+}
+.pf-prognoseguete {
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--linie);
+}
+/* EIGENE Klassen, obwohl die Darstellung der des Kostenblocks gleicht. Beim
+   ersten Anlauf haben sie dessen Namen geerbt -- und prompt haben drei
+   Pruefungen des Redispatch die Prognosebalken mitgezaehlt. Gleiche Optik ist
+   kein Grund fuer gleiche Namen. */
+.pf-guete-kopf { display: flex; flex-wrap: wrap; gap: 22px 40px; margin-bottom: 6px; }
+.pf-guete-zahl .pf-titel { font-size: 0.75rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--schrift-still); display: block; }
+.pf-guete-zahl .pf-wert { font-family: var(--schrift-zahl); font-size: 1.4rem;
+  margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+.pf-guete-zahl[data-akzent="teal"] .pf-wert { color: var(--teal); }
+.pf-guete-zahl[data-akzent="orange"] .pf-wert { color: var(--orange); }
+.pf-guete-zahl[data-akzent="violett"] .pf-wert { color: var(--violett); }
+.pf-guete-massstab {
+  margin: 12px 0 6px; font-size: 0.74rem; color: var(--schrift-still);
+}
+.pf-guete-gitter {
+  position: relative; display: grid; grid-auto-flow: column;
+  grid-auto-columns: 1fr; gap: 2px; align-items: end; height: 96px;
+  border-bottom: 1px solid var(--linie);
+}
+.pf-guete-gitter:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.pf-guete-tag { height: 100%; display: flex; align-items: flex-end; }
+.pf-guete-balken { width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; }
+.pf-guete-tag[data-aktiv] .pf-guete-balken {
+  outline: 1px solid var(--schrift); outline-offset: 1px;
+}
+
 /* ---------- Redispatch: Kosten des Engpassmanagements ----------
    Monatsbalken, gestapelt aus zwei Posten. Dieselben zwei Farben wie oben bei
    den Gruenden: Orange fuer den Netzengpass, Teal fuer den Countertrade an der

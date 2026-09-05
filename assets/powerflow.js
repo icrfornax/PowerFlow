@@ -129,6 +129,9 @@
     klapp: {},
     blockJahre: {},        // Jahr -> Erzeugung je Kraftwerksblock
     blockVerzeichnis: null,
+    vorschau: null,        // angekuendigte Last fuer heute und morgen
+    prognoseJahre: {},     // Jahr -> Prognosegüte
+    prognoseVerzeichnis: null,
     von: null,          // erster Tag des Zeitraums
     bis: null,          // letzter Tag des Zeitraums, einschliesslich
     startVon: null,     // fuer den Zuruecksetzen-Knopf
@@ -203,6 +206,20 @@
       raus.push([tag, (i >= 0 && r) ? r[i] : null]);
     });
     return raus;
+  }
+
+  function prognoseLaden(jahr) {
+    if (Object.prototype.hasOwnProperty.call(Z.prognoseJahre, jahr)) {
+      return Promise.resolve(Z.prognoseJahre[jahr]);
+    }
+    var e = ((Z.prognoseVerzeichnis && Z.prognoseVerzeichnis.jahre) || [])
+      .filter(function (j) { return j.jahr === jahr; })[0];
+    if (!e) { Z.prognoseJahre[jahr] = null; return Promise.resolve(null); }
+    return fetch(e.datei + "?v=" + VERSION).then(function (r) {
+      if (!r.ok) { throw new Error(e.datei); }
+      return r.json();
+    }).then(function (d) { Z.prognoseJahre[jahr] = d; return d; })
+      .catch(function () { Z.prognoseJahre[jahr] = null; return null; });
   }
 
   function jahrLaden(jahr) {
@@ -2526,6 +2543,218 @@
     return huelle;
   }
 
+  /* VORSCHAU UND PROGNOSEGUETE.
+
+     Der ganze Rest dieser Seite zeigt, was WAR. Dieser Abschnitt zeigt, was
+     ANGEKUENDIGT ist -- und wie weit die Ankuendigung in der Vergangenheit
+     danebenlag. Zwei verschiedene Dinge, deshalb zwei Bloecke.
+
+     Beide Reihen stammen aus derselben Quelle und derselben Aufloesung
+     (ENTSO-E, PT15M): 6.1.B die Day-ahead-Prognose, 6.1.A die Messung. Der
+     Vergleich ist damit kein Aepfel-und-Birnen -- er waere es, wenn man die
+     Prognose gegen die SMARD-Last haelt, denn die ist anders erhoben.
+
+     WAS HIER NICHT STEHT und warum: die Prognosen von netztransparenz.de
+     liefern leere Spalten (am 05.09.2026 geprueft), und die Spotmarktpreise
+     dort kommen erst rund einen Monat spaeter. Die Erzeugungsprognose fuer
+     Wind und Sonne (14.1.D) steht NICHT auf der Freigabeliste von ENTSO-E.
+     Bleibt die Last -- und die reicht fuer die Frage. */
+  function vorschauAbschnitt(von, bis) {
+    var huelle = el("div", { "class": "pf-verlauf" });
+
+    // ---- Teil 1: was fuer morgen angekuendigt ist -----------------------
+    var V = Z.vorschau;
+    if (V && V.stunden && V.stunden.length) {
+      var heute = nachIso(new Date());
+      var kasten = el("div", { "class": "pf-vorschau" });
+      kasten.appendChild(el("h4", { text: "Angekündigte Netzlast · heute und morgen" }));
+
+      var maxV = Math.max.apply(null, V.prognose_mw);
+      var minV = Math.min.apply(null, V.prognose_mw);
+      var B = 900, H = 130, linksV = 44, obenV = 8;
+      var svgV = s("svg", { "class": "pf-vorschau-bild", viewBox: "0 0 " + B + " " + H,
+        role: "img",
+        "aria-label": "Angekündigte Netzlast für heute und morgen, viertelstündlich" });
+      var XV = function (i) {
+        return linksV + i / Math.max(1, V.stunden.length - 1) * (B - linksV - 8);
+      };
+      var YV = function (w) {
+        return obenV + (1 - (w - minV * 0.9) / (maxV - minV * 0.9)) * (H - obenV - 22);
+      };
+      // Tagesgrenze: alles rechts davon ist MORGEN und damit die eigentliche
+      // Vorschau. Links davon steht die Ankuendigung fuer heute.
+      var grenze = -1;
+      V.stunden.forEach(function (m, i) {
+        if (grenze < 0 && m.slice(0, 10) > heute) { grenze = i; }
+      });
+      if (grenze > 0) {
+        svgV.appendChild(s("rect", { "class": "pf-vorschau-morgen",
+          x: XV(grenze).toFixed(1), y: obenV,
+          width: (B - 8 - XV(grenze)).toFixed(1), height: (H - obenV - 22).toFixed(1) }));
+      }
+      var dV = "";
+      V.prognose_mw.forEach(function (w, i) {
+        dV += (dV ? "L" : "M") + XV(i).toFixed(1) + " " + YV(w).toFixed(1);
+      });
+      svgV.appendChild(s("path", { d: dV, fill: "none", "class": "pf-vorschau-linie" }));
+      // Beschriftung: Tagesanfaenge
+      V.stunden.forEach(function (m, i) {
+        if (m.slice(11) !== "00:00") { return; }
+        var tx = s("text", { x: XV(i).toFixed(1), y: H - 6, "text-anchor": "start" });
+        tx.textContent = ausIso(m.slice(0, 10)).toLocaleDateString("de-DE",
+          { weekday: "short", day: "2-digit", month: "2-digit" });
+        svgV.appendChild(tx);
+      });
+      var ty = s("text", { x: linksV - 6, y: YV(maxV) + 4, "text-anchor": "end" });
+      ty.textContent = nf0.format(maxV / 1000) + " GW";
+      svgV.appendChild(ty);
+      kasten.appendChild(svgV);
+
+      var morgen = [], morgenStellen = [];
+      V.stunden.forEach(function (m, i) {
+        if (m.slice(0, 10) > heute) { morgen.push(V.prognose_mw[i]); morgenStellen.push(i); }
+      });
+      if (morgen.length) {
+        var spitze = Math.max.apply(null, morgen);
+        var tief = Math.min.apply(null, morgen);
+        /* Die Stelle NUR unter den morgigen Werten suchen. Ueber das ganze
+           Feld gesucht, kann derselbe Wert heute vorkommen und die Uhrzeit
+           gehoert dann zum falschen Tag. */
+        var stelle = morgenStellen[morgen.indexOf(spitze)];
+        kasten.appendChild(langtext(
+          "Für morgen sind " + nf0.format(morgen.length) + " von 96 Viertelstunden "
+          + "angekündigt, mit einer Spitze von " + nf1.format(spitze / 1000)
+          + " GW um " + (stelle >= 0 ? V.stunden[stelle].slice(11) : "—")
+          + " Uhr und einem Tiefpunkt von " + nf1.format(tief / 1000) + " GW. "
+          + "Das ist eine ANKÜNDIGUNG der Übertragungsnetzbetreiber, keine "
+          + "Messung — sie wächst im Lauf des Tages und steht erst nach der "
+          + "Day-ahead-Auktion vollständig da. Wie gut solche Ankündigungen "
+          + "sind, steht darunter."));
+      }
+      huelle.appendChild(kasten);
+    } else {
+      huelle.appendChild(el("p", { "class": "pf-laden",
+        text: "Für morgen liegt noch keine Ankündigung vor." }));
+    }
+
+    // ---- Teil 2: wie gut war die Prognose im Zeitraum -------------------
+    var guete = el("div", { "class": "pf-prognoseguete" });
+    guete.appendChild(el("h4", { text: "Wie gut die Ankündigung war · im gewählten Zeitraum" }));
+    guete.appendChild(el("p", { "class": "pf-laden", text: "wird geladen …" }));
+    huelle.appendChild(guete);
+    Promise.all(jahreImZeitraum(von, bis).map(prognoseLaden)).then(function () {
+      if (!guete.parentNode) { return; }
+      prognosegueteZeigen(guete, von, bis);
+    });
+    return huelle;
+  }
+
+  function prognosegueteZeigen(ziel, von, bis) {
+    ziel.textContent = "";
+    ziel.appendChild(el("h4", { text: "Wie gut die Ankündigung war · im gewählten Zeitraum" }));
+    var tage = [], fehler = [], abw = [];
+    tageImZeitraum(von, bis).forEach(function (tag) {
+      var d = Z.prognoseJahre[Number(tag.slice(0, 4))];
+      if (!d) { return; }
+      var i = d.tage.indexOf(tag);
+      if (i < 0 || d.mape_prozent[i] === null) { return; }
+      tage.push(tag);
+      fehler.push(d.mape_prozent[i]);
+      abw.push(d.abweichung_mwh[i]);
+    });
+    if (!tage.length) {
+      ziel.appendChild(el("p", { "class": "pf-bezug",
+        text: "Für diesen Zeitraum liegt kein Vergleich vor. Die Reihe beginnt "
+          + "2019." }));
+      return;
+    }
+    var mittel = fehler.reduce(function (a, b) { return a + b; }, 0) / fehler.length;
+    var schlecht = fehler.indexOf(Math.max.apply(null, fehler));
+    var gut = fehler.indexOf(Math.min.apply(null, fehler));
+    var summeAbw = abw.reduce(function (a, b) { return a + (b || 0); }, 0);
+
+    var kopf = el("div", { "class": "pf-guete-kopf" });
+    [["Mittlerer Fehler", nf2.format(mittel) + " %", "violett"],
+     ["Bester Tag", nf2.format(fehler[gut]) + " %", "teal"],
+     ["Schlechtester Tag", nf2.format(fehler[schlecht]) + " %", "orange"]]
+      .forEach(function (k) {
+        var b = el("div", { "class": "pf-guete-zahl", "data-akzent": k[2] });
+        b.appendChild(el("span", { "class": "pf-titel", text: k[0] }));
+        b.appendChild(el("p", { "class": "pf-wert", text: k[1] }));
+        kopf.appendChild(b);
+      });
+    ziel.appendChild(kopf);
+    ziel.appendChild(langtext(
+      "Mittlerer absoluter Fehler je Viertelstunde über " + tage.length
+      + (tage.length === 1 ? " Tag" : " Tage") + ", in Prozent der gemessenen Last. "
+      + "Bester Tag " + datumKurz(tage[gut]) + ", schlechtester "
+      + datumKurz(tage[schlecht]) + ". Über den ganzen Zeitraum lag die "
+      + "Ankündigung in der Summe " + (summeAbw >= 0 ? "um " : "um ")
+      + gwh(Math.abs(summeAbw), 1) + " GWh " + (summeAbw >= 0 ? "über" : "unter")
+      + " der Messung — diese Zahl ist kleiner als der Fehler je Viertelstunde, "
+      + "weil sich zu hohe und zu niedrige Viertelstunden darin aufheben. "
+      + "Deshalb steht der absolute Fehler oben und die Summe nur hier."));
+
+    // Ein Balken je Tag. Farbe ist nicht noetig -- es gibt nur eine Groesse.
+    var maxF = Math.max.apply(null, fehler);
+    ziel.appendChild(el("p", { "class": "pf-guete-massstab",
+      text: "Balken bis " + nf1.format(maxF) + " % · je Tag der mittlere "
+        + "absolute Fehler" }));
+    var gitter = el("div", { "class": "pf-guete-gitter" });
+    var spalten = [], aktivF = -1;
+    var ablese = null;
+    tage.forEach(function (tag, k) {
+      var sp = el("div", { "class": "pf-guete-tag" });
+      sp.appendChild(el("div", { "class": "pf-guete-balken",
+        style: "height:" + (fehler[k] / maxF * 100).toFixed(1)
+          + "%;background:var(--violett);" }));
+      gitter.appendChild(sp);
+      spalten.push(sp);
+    });
+    ablese = ablesungAn(gitter);
+    spalten.forEach(function (sp, k) {
+      sp.addEventListener("mouseenter", function () {
+        if (aktivF >= 0) { spalten[aktivF].removeAttribute("data-aktiv"); }
+        aktivF = k;
+        sp.setAttribute("data-aktiv", "ja");
+        ablese.zeige({
+          kopf: datumLang(tage[k]),
+          wert: nf2.format(fehler[k]), einheit: "% mittlerer Fehler",
+          bezug: "je Viertelstunde, in Prozent der gemessenen Last",
+          abschnitte: [{ titel: "Über den Tag", zeilen: [
+            { name: abw[k] >= 0 ? "zu hoch angekündigt" : "zu niedrig angekündigt",
+              wert: gwh(Math.abs(abw[k] || 0), 1) + " GWh",
+              token: abw[k] >= 0 ? "--orange" : "--teal" }
+          ] }]
+        }, (k + 0.5) / tage.length);
+      });
+    });
+    gitter.addEventListener("mouseleave", function () {
+      if (aktivF >= 0) { spalten[aktivF].removeAttribute("data-aktiv"); }
+      aktivF = -1; ablese.verbirg();
+    });
+    ziel.appendChild(gitter);
+    ziel.appendChild(el("p", { "class": "pf-achsenfuss", text: "Tag" }));
+
+    infoKnopf(ziel, {
+      wert: "Day-ahead-Prognose (ENTSO-E 6.1.B) gegen die gemessene Last "
+        + "(6.1.A), beide viertelstündlich aus derselben Quelle. Der Fehler ist "
+        + "der mittlere ABSOLUTE Abstand je Viertelstunde, in Prozent der "
+        + "Messung.",
+      grenzenTitel: "Was die Zahl nicht ist",
+      grenzen: "Sie ist kein Urteil über einen einzelnen Netzbetreiber — die "
+        + "Prognose gilt für die Gebotszone Deutschland/Luxemburg als Ganzes. "
+        + "Und sie ist nicht mit der Netzlast dieser Seite zu verrechnen: die "
+        + "kommt aus SMARD und ist anders erhoben. Deshalb wird hier gegen die "
+        + "Messung DERSELBEN Quelle verglichen. Die Reihe beginnt 2019; für "
+        + "2015 bis 2018 hat die Plattform keine Prognose.",
+      quellen: [{ text: "ENTSO-E Transparency Platform — 6.1.B",
+                  url: "https://transparency.entsoe.eu/" }],
+      messung: "Die Prognose ist eine Ankündigung, keine Messung. Der Fehler ist "
+        + "aus zwei Reihen GERECHNET; die Formel steht oben."
+    }, "Prognosegüte");
+  }
+
   // ---- Redispatch ---------------------------------------------------------
   /* Eingriffe der Uebertragungsnetzbetreiber ins Kraftwerkseinsatzprogramm.
      Das ist die gemessene Antwort auf die Frage nach dem Netzengpass -- und
@@ -4065,6 +4294,10 @@
         + (stuendlich ? " · Stundenwerte" : " · Tageswerte"),
       zeitreihenDiagramm(von, bis)));
 
+    // --- Vorschau und Prognosegüte ---
+    neu.appendChild(abschnitt("Vorschau · angekündigte Last und Prognosegüte",
+      vorschauAbschnitt(von, bis)));
+
     // --- Flussbild ---
     var fluss = el("div", { "class": "pf-fluss" });
     var ll = laender(von, bis);
@@ -4863,7 +5096,11 @@
       hole("data/engpasskosten.json").catch(function () { return null; }),
       /* Nur das VERZEICHNIS, nicht die Jahresdateien: die kommen erst, wenn
          jemand ein Kraftwerk anklickt. */
-      hole("data/blockerzeugung-verzeichnis.json").catch(function () { return null; })
+      hole("data/blockerzeugung-verzeichnis.json").catch(function () { return null; }),
+      /* Die Vorschau auf morgen. Wenige Kilobyte, und sie steht ganz oben im
+         neuen Abschnitt -- also gleich mitladen. */
+      hole("data/vorschau.json").catch(function () { return null; }),
+      hole("data/lastprognose-verzeichnis.json").catch(function () { return null; })
     ]).then(function (teile) {
       Z.verzeichnis = teile[0];
       Z.grundkarte = teile[1];
@@ -4873,6 +5110,8 @@
       Z.ahPreis = teile[8] || null;
       Z.kosten = teile[9] || null;
       Z.blockVerzeichnis = teile[10] || null;
+      Z.vorschau = teile[11] || null;
+      Z.prognoseVerzeichnis = teile[12] || null;
       var jahre = Z.verzeichnis.jahre;
       Z.minTag = jahre[0].erster_tag;
       var letzte = jahre[jahre.length - 1];

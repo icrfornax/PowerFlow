@@ -1,0 +1,46 @@
+{
+ "_quelle": "ENTSO-E Transparency Platform",
+ "_hinweis": "Welche Jahresdatei welchen Zeitraum abdeckt.",
+ "jahre": [
+  {
+   "jahr": 2019,
+   "datei": "data/lastprognose/2019.json",
+   "tage": 365
+  },
+  {
+   "jahr": 2020,
+   "datei": "data/lastprognose/2020.json",
+   "tage": 366
+  },
+  {
+   "jahr": 2021,
+   "datei": "data/lastprognose/2021.json",
+   "tage": 365
+  },
+  {
+   "jahr": 2022,
+   "datei": "data/lastprognose/2022.json",
+   "tage": 365
+  },
+  {
+   "jahr": 2023,
+   "datei": "data/lastprognose/2023.json",
+   "tage": 365
+  },
+  {
+   "jahr": 2024,
+   "datei": "data/lastprognose/2024.json",
+   "tage": 366
+  },
+  {
+   "jahr": 2025,
+   "datei": "data/lastprognose/2025.json",
+   "tage": 365
+  },
+  {
+   "jahr": 2026,
+   "datei": "data/lastprognose/2026.json",
+   "tage": 249
+  }
+ ]
+}

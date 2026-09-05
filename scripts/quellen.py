@@ -138,6 +138,18 @@ GRUPPEN = [
      "solche ID; sie decken 53 % der gefuehrten Leistung ab. Die Abdeckung "
      "schwankt stark nach Jahr -- 2018 nur 21 %, ab 2020 ueber 93 %.",
      "docs/beleg-kraftwerksdaten.md", "blockerzeugung-verzeichnis.json"),
+    ("vorschau.json", "entsoe", "Angekuendigte Last",
+     "Day-ahead-Prognose der Netzlast fuer heute und morgen, viertelstuendlich "
+     "in MW. Eine ANKUENDIGUNG, keine Messung.",
+     "docs/beleg-lastprognose.md", None),
+    ("lastprognose-verzeichnis.json", "entsoe", "Verzeichnis der Prognosegueten",
+     "Welche Jahresdatei welchen Zeitraum abdeckt.",
+     "docs/beleg-lastprognose.md", None),
+    ("lastprognose/*.json", "entsoe", "Prognosegueten je Jahr",
+     "Je Tag: Summe der Day-ahead-Prognose, mittlerer absoluter Fehler je "
+     "Viertelstunde und die Abweichung zur Messung. Beide Reihen aus derselben "
+     "Quelle und Aufloesung.", "docs/beleg-lastprognose.md",
+     "lastprognose-verzeichnis.json"),
     ("engpasskosten.json", "entsoe", "Kosten des Engpassmanagements",
      "Je MONAT und Regelzone, in Euro: Gesamtkosten sowie die Posten Redispatch "
      "und Countertrade. Eine feinere Aufloesung gibt es nicht -- Kosten je "

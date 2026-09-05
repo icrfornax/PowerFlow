@@ -297,6 +297,45 @@ try {
   pruefe(!deckung.text || /Netzverluste/.test(deckung.text) === /Übrig bleiben/.test(deckung.text),
     "und was danach uebrig bleibt, wird benannt statt weggerechnet");
 
+  /* VORSCHAU UND PROGNOSEGUETE. Die einzige Stelle der Seite, die in die
+     Zukunft zeigt -- sie muss als ANKUENDIGUNG kenntlich sein und darf nicht
+     wie eine Messung aussehen. */
+  const vorschau = await js(`(async function () {
+    for (let i = 0; i < 50; i++) {
+      if (document.querySelector(".pf-prognoseguete .pf-guete-gitter")) { break; }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    const v = document.querySelector(".pf-vorschau");
+    const g = document.querySelector(".pf-prognoseguete");
+    return {
+      bild: v ? v.querySelectorAll("svg.pf-vorschau-bild path").length : 0,
+      morgen: v ? v.querySelectorAll(".pf-vorschau-morgen").length : 0,
+      vtext: v ? v.textContent : "",
+      kennzahlen: g ? g.querySelectorAll(".pf-guete-zahl").length : 0,
+      balken: g ? g.querySelectorAll(".pf-guete-balken").length : 0,
+      massstab: g ? (g.querySelector(".pf-guete-massstab") || {}).textContent || "" : "",
+      gtext: g ? g.textContent : "",
+      info: g ? g.querySelectorAll(".pf-info").length : 0
+    };
+  })()`);
+  pruefe(vorschau.bild >= 1, "die angekuendigte Last wird gezeichnet");
+  pruefe(vorschau.morgen === 1, "der morgige Tag ist im Bild abgesetzt");
+  pruefe(/ANKÜNDIGUNG|Ankündigung/.test(vorschau.vtext),
+    "und ausdruecklich als Ankuendigung benannt, nicht als Messung");
+  pruefe(vorschau.kennzahlen === 3,
+    `drei Kennzahlen zur Prognosegüte (${vorschau.kennzahlen})`);
+  pruefe(vorschau.balken >= 5,
+    `ein Balken je Tag (${vorschau.balken})`);
+  pruefe(/Balken bis/.test(vorschau.massstab),
+    "der Massstab ist genannt", vorschau.massstab.slice(0, 70));
+  pruefe(/absolute[rn]? Fehler/.test(vorschau.gtext),
+    "es steht da, dass der Fehler ABSOLUT gerechnet ist");
+  pruefe(/aufheben/.test(vorschau.gtext),
+    "und warum die Tagessumme kleiner ist als der Fehler je Viertelstunde");
+  pruefe(vorschau.info === 1, "mit Info-Knopf");
+  await foto("vorschau", ".pf-vorschau");
+  await foto("prognoseguete", ".pf-prognoseguete");
+
   await foto("verlauf-woche", ".pf-verlauf");
 
   /* Zufluss/Abfluss und die Regelzonen. Nachgerechnet wird die Bilanz aus den

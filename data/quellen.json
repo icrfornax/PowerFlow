@@ -224,6 +224,42 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/blockerzeugung"
   },
   {
+   "titel": "Angekuendigte Last",
+   "inhalt": "Day-ahead-Prognose der Netzlast fuer heute und morgen, viertelstuendlich in MW. Eine ANKUENDIGUNG, keine Messung.",
+   "quelle": "entsoe",
+   "beleg": "docs/beleg-lastprognose.md",
+   "dateien": 1,
+   "bytes": 5743,
+   "zeitraum": "2026-09-05 bis 2026-09-06",
+   "muster": "data/vorschau.json",
+   "abzug": "data/vorschau.json",
+   "alle": null
+  },
+  {
+   "titel": "Verzeichnis der Prognosegueten",
+   "inhalt": "Welche Jahresdatei welchen Zeitraum abdeckt.",
+   "quelle": "entsoe",
+   "beleg": "docs/beleg-lastprognose.md",
+   "dateien": 1,
+   "bytes": 796,
+   "zeitraum": null,
+   "muster": "data/lastprognose-verzeichnis.json",
+   "abzug": "data/lastprognose-verzeichnis.json",
+   "alle": null
+  },
+  {
+   "titel": "Prognosegueten je Jahr",
+   "inhalt": "Je Tag: Summe der Day-ahead-Prognose, mittlerer absoluter Fehler je Viertelstunde und die Abweichung zur Messung. Beide Reihen aus derselben Quelle und Aufloesung.",
+   "quelle": "entsoe",
+   "beleg": "docs/beleg-lastprognose.md",
+   "dateien": 8,
+   "bytes": 119500,
+   "zeitraum": null,
+   "muster": "data/lastprognose/*.json",
+   "abzug": "data/lastprognose-verzeichnis.json",
+   "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/lastprognose"
+  },
+  {
    "titel": "Kosten des Engpassmanagements",
    "inhalt": "Je MONAT und Regelzone, in Euro: Gesamtkosten sowie die Posten Redispatch und Countertrade. Eine feinere Aufloesung gibt es nicht -- Kosten je Massnahme veroeffentlicht die Quelle nicht.",
    "quelle": "entsoe",
@@ -289,13 +325,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 12184,
+   "bytes": 13460,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 184,
- "bytes_gesamt": 32971469
+ "dateien_gesamt": 194,
+ "bytes_gesamt": 33098784
 }

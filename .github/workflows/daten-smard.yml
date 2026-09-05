@@ -52,6 +52,20 @@ jobs:
         run: |
           python scripts/fetch-blockerzeugung.py "$(date -u +%Y)" "$(( $(date -u +%Y) - 1 ))"
 
+      - name: Lastprognose und Vorschau (laufendes Jahr)
+        # Die Vorschau auf morgen muss TAEGLICH neu geholt werden, sonst zeigt
+        # die Seite die Ankuendigung von gestern. Die Historie holt der
+        # monatliche ENTSO-E-Workflow.
+        continue-on-error: true
+        env:
+          ENTSOE_TOKEN: ${{ secrets.ENTSOE_TOKEN }}
+        run: |
+          if [ -z "$ENTSOE_TOKEN" ]; then
+            echo "Kein ENTSOE_TOKEN hinterlegt -- Vorschau wird uebersprungen."
+            exit 0
+          fi
+          python scripts/fetch-lastprognose.py "$(date -u +%Y)"
+
       - name: Luecken nachholen und Buch fuehren
         # Der Schritt darueber holt das laufende und das vorige Jahr sowie die
         # letzten vier Wochen. Aelteres fasst er nie wieder an -- eine Luecke
