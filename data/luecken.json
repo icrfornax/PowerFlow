@@ -2,83 +2,44 @@
  "_quelle": "SMARD, Bundesnetzagentur -- https://www.smard.de/",
  "_lizenz": "CC BY 4.0",
  "_namensnennung": "Bundesnetzagentur | SMARD.de",
- "_hinweis": "SELBST ERHOBEN aus den eigenen Dateien unter data/tage/ und data/verlauf/: welche Kalendertage und Stunden die Quelle bis heute nicht geliefert hat. Der laufende Tag und der Vortag bleiben aussen vor (2 Tage Karenz) -- dass sie noch nicht vollstaendig sind, ist der normale Meldeverzug und kein Mangel. 'seit' ist der Tag, an dem die Luecke zuerst aufgefallen ist, nicht der Tag der Luecke selbst. Ein Zeitstempel des letzten Laufs steht bewusst NICHT hier: er wuerde die Datei jeden Tag aendern, auch wenn sich nichts getan hat. scripts/validate.py prueft diese Liste bei jedem Lauf gegen die Dateien nach.",
+ "_hinweis": "SELBST ERHOBEN aus den eigenen Dateien unter data/tage/ und data/verlauf/: welche Kalendertage und Stunden die Quelle bis heute nicht geliefert hat. Der laufende Tag und der Vortag bleiben aussen vor (2 Tage Karenz) -- dass sie noch nicht vollstaendig sind, ist der normale Meldeverzug und kein Mangel. 'seit' ist der Tag, an dem die Luecke zuerst aufgefallen ist, nicht der Tag der Luecke selbst. 'zuletzt_geschlossen' zaehlt NUR, was dieser Lauf selbst geschlossen hat -- der taegliche Abruf laeuft vorher und fuellt das laufende Jahr ohnehin neu; was er schon gefuellt hat, sieht dieses Skript gar nicht mehr als Luecke. Eine leere Liste heisst also nicht, dass nichts nachkommt. Ein Zeitstempel des letzten Laufs steht bewusst NICHT hier: er wuerde die Datei jeden Tag aendern, auch wenn sich nichts getan hat. scripts/validate.py prueft diese Liste bei jedem Lauf gegen die Dateien nach.",
  "erzeugt_von": "scripts/nachholen.py",
  "karenz_tage": 2,
- "offene_tage": [
-  {
-   "tag": "2026-08-31",
-   "seit": "2026-09-03"
-  },
-  {
-   "tag": "2026-09-01",
-   "seit": "2026-09-03"
-  }
- ],
- "offene_stunden": [
-  {
-   "stunde": "2026-08-31T22",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-08-31T23",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T00",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T01",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T02",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T03",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T04",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T05",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T06",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T07",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T08",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T09",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T10",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T11",
-   "seit": "2026-09-03"
-  },
-  {
-   "stunde": "2026-09-01T12",
-   "seit": "2026-09-03"
-  }
- ],
+ "offene_tage": [],
+ "offene_stunden": [],
  "zuletzt_geschlossen": {
-  "tage": [],
-  "stunden": []
+  "tage": [
+   "2026-08-31",
+   "2026-09-01",
+   "2026-09-03"
+  ],
+  "stunden": [
+   "2026-08-31T22",
+   "2026-08-31T23",
+   "2026-09-01T00",
+   "2026-09-01T01",
+   "2026-09-01T02",
+   "2026-09-01T03",
+   "2026-09-01T04",
+   "2026-09-01T05",
+   "2026-09-01T06",
+   "2026-09-01T07",
+   "2026-09-01T08",
+   "2026-09-01T09",
+   "2026-09-01T10",
+   "2026-09-01T11",
+   "2026-09-01T12",
+   "2026-09-03T13",
+   "2026-09-03T14",
+   "2026-09-03T15",
+   "2026-09-03T16",
+   "2026-09-03T17",
+   "2026-09-03T18",
+   "2026-09-03T19",
+   "2026-09-03T20",
+   "2026-09-03T21",
+   "2026-09-03T22",
+   "2026-09-03T23"
+  ]
  }
 }

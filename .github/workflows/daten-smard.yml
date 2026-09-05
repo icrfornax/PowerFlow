@@ -45,6 +45,13 @@ jobs:
       - name: Stundenwerte nachtragen (letzte vier Wochen)
         run: python scripts/fetch-verlauf.py --wochen 4
 
+      - name: Erzeugung je Kraftwerksblock (laufendes und voriges Jahr)
+        # Nur zwei Jahrgaenge: die Reihe je Block liegt als TAGESreihe vor, ein
+        # Jahr sind rund 210 Abrufe. Aeltere Jahre aendern sich nicht mehr --
+        # und wenn doch, holt sie ein Lauf von Hand.
+        run: |
+          python scripts/fetch-blockerzeugung.py "$(date -u +%Y)" "$(( $(date -u +%Y) - 1 ))"
+
       - name: Luecken nachholen und Buch fuehren
         # Der Schritt darueber holt das laufende und das vorige Jahr sowie die
         # letzten vier Wochen. Aelteres fasst er nie wieder an -- eine Luecke

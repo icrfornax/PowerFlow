@@ -804,6 +804,33 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-auswahl-fuss { margin: 9px 0 0; font-size: 0.78rem; color: var(--schrift-still);
   border-top: 1px solid var(--linie); padding-top: 7px; }
 
+/* Was die Anlage im Zeitraum TATSAECHLICH erzeugt hat. Steht unter den
+   Stammdaten, durch eine Linie getrennt: das eine ist ein Stammdatum, das
+   andere eine Messung. */
+.pf-auswahl-kurve {
+  margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--linie);
+}
+.pf-auswahl-wert {
+  font-family: var(--schrift-zahl); font-size: 1.3rem; margin: 2px 0 6px;
+  color: var(--teal); font-variant-numeric: tabular-nums;
+}
+.pf-auswahl-wert span {
+  font-family: var(--schrift-familie); font-size: 0.75rem;
+  color: var(--schrift-leise); margin-left: 5px;
+}
+.pf-blockkurve {
+  width: 100%; height: 46px; display: block; margin: 6px 0 2px;
+  overflow: visible;
+}
+.pf-auswahl-kurve .pf-karte-warnung { margin: 6px 0; font-size: 0.78rem; }
+
+/* Kraftwerke MIT Erzeugungsreihe: ein heller Ring, keine zweite Farbe. Die
+   Farbe gehoert dem Energietraeger -- das ist auf dieser Seite eine feste
+   Zuordnung und wird nicht fuer eine zweite Aussage geliehen. */
+.pf-geo-anlage circle[data-reihe] {
+  stroke: var(--schrift); stroke-width: 1.1px; stroke-opacity: 0.75;
+}
+
 /* ---------- Redispatch ---------- */
 .pf-rd-kopf { display: flex; flex-wrap: wrap; gap: 22px 40px; margin-bottom: 4px; }
 .pf-rd-zahl .pf-titel { font-size: 0.75rem; letter-spacing: 0.05em;
@@ -838,7 +865,7 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
     var(--teal) 0 2px, transparent 2px 5px),
     color-mix(in srgb, var(--teal) 16%, transparent);
 }
-.pf-legende i.pf-luecke {
+.pf-legende i.pf-legende-luecke {
   background: repeating-linear-gradient(-45deg,
     var(--orange) 0 2px, transparent 2px 5px),
     color-mix(in srgb, var(--orange) 16%, transparent);

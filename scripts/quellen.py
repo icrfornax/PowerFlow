@@ -130,6 +130,14 @@ GRUPPEN = [
      "Tagesaggregate: Arbeit nach Richtung, anweisendem Netzbetreiber und "
      "Primaerenergieart, in MWh.", "docs/beleg-redispatch.md",
      "redispatch-verzeichnis.json"),
+    ("blockerzeugung-verzeichnis.json", "smard", "Verzeichnis der Blockerzeugung",
+     "Welche Jahresdatei welche Kraftwerksbloecke enthaelt, mit der Abdeckung "
+     "je Jahr.", "docs/beleg-kraftwerksdaten.md", None),
+    ("blockerzeugung/*.json", "smard", "Erzeugung je Kraftwerksblock",
+     "Tageswerte in MWh je production_id. Nur 211 der 1.956 Bloecke tragen eine "
+     "solche ID; sie decken 53 % der gefuehrten Leistung ab. Die Abdeckung "
+     "schwankt stark nach Jahr -- 2018 nur 21 %, ab 2020 ueber 93 %.",
+     "docs/beleg-kraftwerksdaten.md", "blockerzeugung-verzeichnis.json"),
     ("engpasskosten.json", "entsoe", "Kosten des Engpassmanagements",
      "Je MONAT und Regelzone, in Euro: Gesamtkosten sowie die Posten Redispatch "
      "und Countertrade. Eine feinere Aufloesung gibt es nicht -- Kosten je "

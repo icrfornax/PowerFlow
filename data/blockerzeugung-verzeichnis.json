@@ -1,0 +1,77 @@
+{
+ "_quelle": "SMARD, Bundesnetzagentur -- https://www.smard.de/",
+ "_hinweis": "Welche Jahresdatei welche Bloecke enthaelt.",
+ "bloecke_mit_id": 211,
+ "jahre": [
+  {
+   "jahr": 2017,
+   "datei": "data/blockerzeugung/2017.json",
+   "bloecke": 135,
+   "abdeckung_prozent": 98.7,
+   "bytes": 305745
+  },
+  {
+   "jahr": 2018,
+   "datei": "data/blockerzeugung/2018.json",
+   "bloecke": 136,
+   "abdeckung_prozent": 21.0,
+   "bytes": 269549
+  },
+  {
+   "jahr": 2019,
+   "datei": "data/blockerzeugung/2019.json",
+   "bloecke": 117,
+   "abdeckung_prozent": 61.1,
+   "bytes": 245464
+  },
+  {
+   "jahr": 2020,
+   "datei": "data/blockerzeugung/2020.json",
+   "bloecke": 118,
+   "abdeckung_prozent": 96.4,
+   "bytes": 260354
+  },
+  {
+   "jahr": 2021,
+   "datei": "data/blockerzeugung/2021.json",
+   "bloecke": 131,
+   "abdeckung_prozent": 93.4,
+   "bytes": 287334
+  },
+  {
+   "jahr": 2022,
+   "datei": "data/blockerzeugung/2022.json",
+   "bloecke": 136,
+   "abdeckung_prozent": 94.3,
+   "bytes": 299752
+  },
+  {
+   "jahr": 2023,
+   "datei": "data/blockerzeugung/2023.json",
+   "bloecke": 138,
+   "abdeckung_prozent": 98.1,
+   "bytes": 292474
+  },
+  {
+   "jahr": 2024,
+   "datei": "data/blockerzeugung/2024.json",
+   "bloecke": 137,
+   "abdeckung_prozent": 94.1,
+   "bytes": 294221
+  },
+  {
+   "jahr": 2025,
+   "datei": "data/blockerzeugung/2025.json",
+   "bloecke": 129,
+   "abdeckung_prozent": 97.1,
+   "bytes": 276971
+  },
+  {
+   "jahr": 2026,
+   "datei": "data/blockerzeugung/2026.json",
+   "bloecke": 128,
+   "abdeckung_prozent": 63.1,
+   "bytes": 262544
+  }
+ ]
+}

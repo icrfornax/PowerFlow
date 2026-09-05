@@ -146,3 +146,83 @@ python scripts/fetch-kraftwerke.py
 python scripts/validate.py
 python scripts/validate.py --negativtests
 ```
+
+---
+
+## Eingebunden am 05.09.2026: die Erzeugung je Block auf der Karte
+
+Der Befund von oben — 211 Blöcke mit `production_id` — ist jetzt benutzt.
+Abrufskript `scripts/fetch-blockerzeugung.py`, Daten unter
+`data/blockerzeugung/<jahr>.json`.
+
+### Warum es überhaupt tragbar ist
+
+Der Filter kennt **alle** Auflösungen, auch `index_day`. Damit sind es **zehn
+Jahresblöcke je Block statt 365 Viertelstundenblöcken** — 2.110 Abrufe für die
+ganze Reihe statt über hunderttausend. Der tägliche Workflow holt nur das
+laufende und das vorige Jahr, also rund 420.
+
+**Gegenprobe, Block 4046 am 19.08.2026:**
+
+| Weg | Wert |
+|---|---|
+| Tagesreihe (`index_day`) | 25.086,0 MWh |
+| Summe von 96 Viertelstunden | 25.086,0 MWh |
+
+Abweichung 0,028 MWh, reine Rundung. Die Tagesreihe ist also die Summe der
+Viertelstunden und keine eigene Größe. Der Wert stimmt außerdem mit dem
+überein, der am 19.08.2026 von Hand geprüft und weiter oben notiert wurde.
+
+### Der wichtigste Vorbehalt: die Abdeckung schwankt stark
+
+Das war nicht zu erwarten und ist beim Nachrechnen aufgefallen — die
+Jahressumme 2018 lag bei 48 TWh zwischen 194 (2017) und 99 (2019). Das ist
+kein Rückgang der Erzeugung, sondern eine Meldelücke:
+
+| Jahr | Abdeckung | Median Tage je Block |
+|---|---|---|
+| 2017 | 98,7 % | 365 |
+| **2018** | **21,0 %** | **23** |
+| **2019** | **61,1 %** | 196 |
+| 2020 | 96,4 % | 366 |
+| 2021 | 93,4 % | 362 |
+| 2022 | 94,3 % | 361 |
+| 2023 | 98,1 % | 365 |
+| 2024 | 94,1 % | 366 |
+| 2025 | 97,1 % | 364 |
+| 2026 | 63,1 % | 241 (Jahr läuft) |
+
+An der Quelle nachgesehen, Block 876 (Boxberg, 840 MW): 366 Werte in 2016,
+365 in 2017, **22 in 2018**. Es ist die Quelle, nicht der Abruf.
+
+Die Zahl steht als `abdeckung_prozent` in jeder Jahresdatei, und
+`scripts/validate.py` rechnet sie nach.
+
+### Was die Seite daraus macht
+
+Beim Klick auf ein Kraftwerk steht unter den Stammdaten:
+
+- **die tatsächliche Erzeugung im Zeitraum** in GWh,
+- **wie viele Tage des Zeitraums überhaupt gemeldet sind** — steht als Warnung
+  da, sobald es weniger sind als der Zeitraum hat,
+- **die Auslastung**, gerechnet über die **gemeldeten** Tage. Über den ganzen
+  Zeitraum gerechnet würde jede Meldelücke sie nach unten ziehen, und aus einem
+  fehlenden Wert würde ein stillstehender Block. Sie kann über 100 % gehen; die
+  Nettoleistung ist ein Stammdatum und keine Obergrenze der Messung.
+- **der Verlauf** als kleine Linie, an nicht gemeldeten Tagen unterbrochen,
+- **die Aufteilung auf die Blöcke** der Anlage,
+- und die Zahl der Blöcke **ohne** Reihe, mit dem Hinweis, dass das eine Grenze
+  der Quelle ist.
+
+Auf der Karte tragen Anlagen mit Reihe einen hellen Ring — keine zweite Farbe:
+die Farbe gehört dem Energieträger.
+
+### Was dabei aufgefallen ist und nichts mit Blöcken zu tun hat
+
+Beim Nachrechnen hat die Gegenprobe „Stundenwerte reproduzieren den Tageswert"
+angeschlagen. Ursache war **ein Fehler im Nachtrag der Stundenwerte**: er hing
+alles an, wenn die erste geholte Marke nicht in der Datei stand. Der September
+2026 hatte danach 164 Einträge mit **48 Doubletten**, und die erste Stunde des
+Monats fehlte. Der Schnitt ist jetzt chronologisch, und `validate.py` prüft
+direkt auf doppelte Stundenmarken — erlaubt ist genau eine je Jahr, die Stunde
+02 am Tag der Rückstellung im Oktober.

@@ -85,8 +85,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3126859,
-   "zeitraum": "2015-01-01 bis 2026-09-02",
+   "bytes": 3127652,
+   "zeitraum": "2015-01-01 bis 2026-09-04",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/tage"
@@ -97,7 +97,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 1,
-   "bytes": 13004,
+   "bytes": 13005,
    "zeitraum": null,
    "muster": "data/verlauf-verzeichnis.json",
    "abzug": "data/verlauf-verzeichnis.json",
@@ -109,8 +109,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 141,
-   "bytes": 14042891,
-   "zeitraum": "2015-01-01 bis 2026-09-03",
+   "bytes": 14052654,
+   "zeitraum": "2015-01-01 bis 2026-09-05",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
@@ -200,6 +200,30 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
   },
   {
+   "titel": "Verzeichnis der Blockerzeugung",
+   "inhalt": "Welche Jahresdatei welche Kraftwerksbloecke enthaelt, mit der Abdeckung je Jahr.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-kraftwerksdaten.md",
+   "dateien": 1,
+   "bytes": 1557,
+   "zeitraum": null,
+   "muster": "data/blockerzeugung-verzeichnis.json",
+   "abzug": "data/blockerzeugung-verzeichnis.json",
+   "alle": null
+  },
+  {
+   "titel": "Erzeugung je Kraftwerksblock",
+   "inhalt": "Tageswerte in MWh je production_id. Nur 211 der 1.956 Bloecke tragen eine solche ID; sie decken 53 % der gefuehrten Leistung ab. Die Abdeckung schwankt stark nach Jahr -- 2018 nur 21 %, ab 2020 ueber 93 %.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-kraftwerksdaten.md",
+   "dateien": 10,
+   "bytes": 2794408,
+   "zeitraum": null,
+   "muster": "data/blockerzeugung/*.json",
+   "abzug": "data/blockerzeugung-verzeichnis.json",
+   "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/blockerzeugung"
+  },
+  {
    "titel": "Kosten des Engpassmanagements",
    "inhalt": "Je MONAT und Regelzone, in Euro: Gesamtkosten sowie die Posten Redispatch und Countertrade. Eine feinere Aufloesung gibt es nicht -- Kosten je Massnahme veroeffentlicht die Quelle nicht.",
    "quelle": "entsoe",
@@ -217,7 +241,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-tagesreihen.md",
    "dateien": 1,
-   "bytes": 1991,
+   "bytes": 1790,
    "zeitraum": null,
    "muster": "data/luecken.json",
    "abzug": "data/luecken.json",
@@ -265,13 +289,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 11209,
+   "bytes": 12184,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 173,
- "bytes_gesamt": 30164173
+ "dateien_gesamt": 184,
+ "bytes_gesamt": 32971469
 }

@@ -127,6 +127,8 @@
     /* Auf- und zugeklappte Abschnitte. Ueberlebt einen Zeitraumwechsel, aber
        nicht das Neuladen -- kein localStorage, wie ueberall auf dieser Seite. */
     klapp: {},
+    blockJahre: {},        // Jahr -> Erzeugung je Kraftwerksblock
+    blockVerzeichnis: null,
     von: null,          // erster Tag des Zeitraums
     bis: null,          // letzter Tag des Zeitraums, einschliesslich
     startVon: null,     // fuer den Zuruecksetzen-Knopf
@@ -169,6 +171,38 @@
       if (!r.ok) { throw new Error(NETZDATEI[name] + ": HTTP " + r.status); }
       return r.json();
     }).then(function (d) { Z.netz[name] = d; return d; });
+  }
+
+  /* ERZEUGUNG JE KRAFTWERKSBLOCK. Wird erst geladen, wenn jemand ein Kraftwerk
+     anklickt -- die Jahresdateien sind je einige hundert Kilobyte, und die
+     meisten Besucher sehen sie nie. */
+  function blockLaden(jahr) {
+    if (Object.prototype.hasOwnProperty.call(Z.blockJahre, jahr)) {
+      return Promise.resolve(Z.blockJahre[jahr]);
+    }
+    var eintrag = ((Z.blockVerzeichnis && Z.blockVerzeichnis.jahre) || [])
+      .filter(function (j) { return j.jahr === jahr; })[0];
+    if (!eintrag) { Z.blockJahre[jahr] = null; return Promise.resolve(null); }
+    return fetch(eintrag.datei + "?v=" + VERSION).then(function (r) {
+      if (!r.ok) { throw new Error(eintrag.datei); }
+      return r.json();
+    }).then(function (d) { Z.blockJahre[jahr] = d; return d; })
+      .catch(function () { Z.blockJahre[jahr] = null; return null; });
+  }
+
+  /* Tageswerte eines Blocks im Zeitraum. Gibt eine Liste von [Tag, Wert] mit
+     null fuer nicht gemeldete Tage zurueck -- der Unterschied zwischen "stand
+     still" und "nicht gemeldet" bleibt bis in die Anzeige erhalten. */
+  function blockReihe(id, von, bis) {
+    var raus = [];
+    tageImZeitraum(von, bis).forEach(function (tag) {
+      var d = Z.blockJahre[Number(tag.slice(0, 4))];
+      if (!d) { raus.push([tag, null]); return; }
+      var i = d.tage.indexOf(tag);
+      var r = d.bloecke[String(id)];
+      raus.push([tag, (i >= 0 && r) ? r[i] : null]);
+    });
+    return raus;
   }
 
   function jahrLaden(jahr) {
@@ -1086,6 +1120,10 @@
           "data-traeger": TRAEGERGRUPPE_ANZEIGE[a.energietraeger] || "Sonstige"
         });
         var bloecke = (a.bloecke || []).filter(function (b) { return b.production_id; });
+        /* Anlagen, zu denen SMARD eine Erzeugungsreihe fuehrt, bekommen eine
+           Marke. Sie ist bewusst zurueckhaltend -- ein Ring, keine zweite
+           Farbe: die Farbe gehoert dem Energietraeger, hier wie ueberall. */
+        if (bloecke.length) { c.setAttribute("data-reihe", "ja"); }
         waehlbar(c, {
           art: "Kraftwerk", titel: (a.ort || "Kraftwerk") + (a.betreiber ? " · " + a.betreiber : ""),
           zeilen: [["Energieträger", a.energietraeger || "—"],
@@ -1095,8 +1133,12 @@
                      ? " (" + a.staat + ")" : "")],
                    ["Blöcke", (a.bloecke || []).length + " (" + bloecke.length
                      + " mit Erzeugungsreihe)"]],
-          fuss: "Stammdatum aus SMARD. Die Nettoleistung sagt, was die Anlage kann — "
-            + "nicht, was sie an diesem Tag erzeugt hat."
+          bloecke: bloecke,
+          ohneReihe: (a.bloecke || []).length - bloecke.length,
+          energietraeger: a.energietraeger,
+          fuss: "Stammdatum aus SMARD. Die Nettoleistung sagt, was die Anlage kann; "
+            + "was sie im Zeitraum getan hat, steht darüber — sofern SMARD für ihre "
+            + "Blöcke eine Reihe führt."
         });
         gPunkte.appendChild(c);
       });
@@ -1302,7 +1344,147 @@
       liste.appendChild(el("dd", { text: z[1] }));
     });
     kasten.appendChild(liste);
+    /* WAS DIE ANLAGE TATSAECHLICH ERZEUGT HAT.
+
+       Die Stammdaten sagen, was ein Kraftwerk KANN. Was es im gewaehlten
+       Zeitraum GETAN hat, steht seit dem 05.09.2026 daneben -- fuer die 211
+       Bloecke, zu denen SMARD eine Reihe fuehrt. Fuer alle uebrigen steht da,
+       dass es keine gibt; das ist eine Grenze der Quelle und keine Auswahl.
+
+       Geladen wird erst hier, beim Klick. Die Jahresdateien sind je einige
+       hundert Kilobyte, und die meisten Besucher sehen nie ein Kraftwerk von
+       innen. */
+    if (a.bloecke && a.bloecke.length) {
+      var kurve = el("div", { "class": "pf-auswahl-kurve" });
+      kurve.appendChild(el("p", { "class": "pf-laden", text: "Erzeugung wird geladen …" }));
+      kasten.appendChild(kurve);
+      Promise.all(jahreImZeitraum(Z.von, Z.bis).map(blockLaden)).then(function () {
+        // Der Kasten kann inzwischen einer anderen Auswahl gehoeren.
+        if (Z.karte.auswahl !== a || !kurve.parentNode) { return; }
+        blockErzeugungZeigen(kurve, a);
+      });
+    }
     kasten.appendChild(el("p", { "class": "pf-auswahl-fuss", text: a.fuss }));
+  }
+
+  /* Erzeugung der Bloecke einer Anlage im Zeitraum: Summe, Auslastung, Verlauf.
+
+     AUSLASTUNG ist eine RECHNUNG und wird als solche benannt: Erzeugung
+     geteilt durch (Nettoleistung mal Stunden des Zeitraums). Sie sagt, welcher
+     Anteil des Moeglichen gelaufen ist. Ueber 100 % kann sie gehen -- die
+     Nettoleistung ist ein Stammdatum und keine Obergrenze der Messung; das
+     wird nicht geklemmt, sondern gezeigt. */
+  function blockErzeugungZeigen(ziel, a) {
+    ziel.textContent = "";
+    var stunden = anzahlTage(Z.von, Z.bis) * 24;
+    var zeilen = [], summe = 0, leistungMit = 0, gefunden = false;
+    var tagesSumme = {};
+    a.bloecke.forEach(function (b) {
+      var reihe = blockReihe(b.production_id, Z.von, Z.bis);
+      var s = 0, belegt = 0;
+      reihe.forEach(function (x) {
+        if (x[1] === null) { return; }
+        s += x[1]; belegt++;
+        tagesSumme[x[0]] = (tagesSumme[x[0]] || 0) + x[1];
+      });
+      if (!belegt) { return; }
+      gefunden = true;
+      summe += s;
+      if (b.leistung_mw) { leistungMit += b.leistung_mw; }
+      zeilen.push({ id: b.production_id, leistung: b.leistung_mw, mwh: s,
+                    tage: belegt, traeger: b.energietraeger, status: b.status });
+    });
+    if (!gefunden) {
+      ziel.appendChild(el("p", { "class": "pf-bezug",
+        text: "Für diesen Zeitraum liegt zu den Blöcken dieser Anlage keine "
+          + "Erzeugung vor. Die Reihe beginnt 2017." }));
+      return;
+    }
+    ziel.appendChild(el("p", { "class": "pf-auswahl-art", text: "Tatsächlich erzeugt" }));
+    var w = el("p", { "class": "pf-auswahl-wert", text: gwh(summe, 1) });
+    w.appendChild(el("span", { text: "GWh im Zeitraum" }));
+    ziel.appendChild(w);
+    /* WIE VIELE TAGE DES ZEITRAUMS SIND UEBERHAUPT GEMELDET? Diese Zahl ist
+       der wichtigste Vorbehalt: die Reihe je Block hat grosse Loecher. 2018
+       sind nur 21 % der moeglichen Blocktage gemeldet, 2019 61 %, ab 2020 dann
+       93 bis 98 %. Ohne diese Angabe haelt man eine Meldeluecke fuer einen
+       stillstehenden Block. */
+    var tageZeitraum = anzahlTage(Z.von, Z.bis);
+    var tageGemeldet = Object.keys(tagesSumme).length;
+    if (tageGemeldet < tageZeitraum) {
+      ziel.appendChild(el("p", { "class": "pf-karte-warnung",
+        text: "Nur an " + tageGemeldet + " von " + tageZeitraum + " Tagen des "
+          + "Zeitraums ist für diese Anlage überhaupt etwas gemeldet. Die Summe "
+          + "oben ist die Summe dieser Tage — nicht des Zeitraums. Die Lücke "
+          + "liegt bei der Quelle." }));
+    }
+    if (leistungMit && tageGemeldet) {
+      /* Gerechnet wird ueber die GEMELDETEN Tage, nicht ueber den Zeitraum.
+         Sonst zieht jede Meldeluecke die Auslastung nach unten, und aus einem
+         fehlenden Wert wird ein stillstehender Block. */
+      var stundenGemeldet = tageGemeldet * 24;
+      var auslast = summe / (leistungMit * stundenGemeldet) * 100;
+      ziel.appendChild(el("p", { "class": "pf-bezug",
+        text: "Auslastung " + nf1.format(auslast) + " % — Erzeugung geteilt durch "
+          + nf0.format(leistungMit) + " MW mal " + nf0.format(stundenGemeldet)
+          + " Stunden der gemeldeten Tage. Eine Rechnung, keine Angabe der "
+          + "Quelle; über 100 % ist möglich, weil die Nettoleistung ein "
+          + "Stammdatum ist und keine Obergrenze der Messung." }));
+    }
+
+    /* Der Verlauf. Eine kleine Flaeche, keine Achsen: sie steht in einem
+       schmalen Kasten ueber der Karte, und die Zahlen stehen darueber. Ein
+       nicht gemeldeter Tag UNTERBRICHT die Flaeche -- dieselbe Regel wie im
+       grossen Verlauf. */
+    var tage = tageImZeitraum(Z.von, Z.bis);
+    if (tage.length > 1) {
+      var maxT = 0;
+      tage.forEach(function (tg) {
+        if ((tagesSumme[tg] || 0) > maxT) { maxT = tagesSumme[tg]; }
+      });
+      if (maxT > 0) {
+        var B = 260, H = 46;
+        var svgK = s("svg", { "class": "pf-blockkurve", viewBox: "0 0 " + B + " " + H,
+          role: "img",
+          "aria-label": "Verlauf der Erzeugung dieser Anlage im Zeitraum" });
+        var X = function (i) {
+          return tage.length < 2 ? 0 : i / (tage.length - 1) * B;
+        };
+        var Y = function (v) { return H - (v / maxT) * (H - 3) - 1; };
+        var d2 = "", offen2 = false;
+        tage.forEach(function (tg, i) {
+          var v = tagesSumme[tg];
+          if (v === undefined) { offen2 = false; return; }
+          d2 += (offen2 ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1);
+          offen2 = true;
+        });
+        if (d2) {
+          svgK.appendChild(s("path", { d: d2, fill: "none",
+            stroke: traegerFarbe(a.energietraeger || ""), "stroke-width": "1.6" }));
+        }
+        ziel.appendChild(svgK);
+        ziel.appendChild(el("p", { "class": "pf-bezug",
+          text: "Tageswerte, Spitze " + gwh(maxT, 1) + " GWh. Nicht gemeldete "
+            + "Tage unterbrechen die Linie." }));
+      }
+    }
+
+    if (zeilen.length > 1) {
+      var bl = el("dl", { "class": "pf-auswahl-liste" });
+      zeilen.sort(function (x, y) { return y.mwh - x.mwh; }).forEach(function (z) {
+        bl.appendChild(el("dt", { text: "Block " + z.id
+          + (z.leistung ? " · " + nf0.format(z.leistung) + " MW" : "") }));
+        bl.appendChild(el("dd", { text: gwh(z.mwh, 1) + " GWh" }));
+      });
+      ziel.appendChild(bl);
+    }
+    if (a.ohneReihe) {
+      ziel.appendChild(el("p", { "class": "pf-bezug",
+        text: a.ohneReihe + (a.ohneReihe === 1 ? " Block dieser Anlage hat" : " Blöcke dieser Anlage haben")
+          + " keine Erzeugungsreihe bei SMARD. Das ist eine Grenze der Quelle: "
+          + "nur 211 der 1.956 Blöcke tragen eine, sie decken 53 % der geführten "
+          + "Leistung ab." }));
+    }
   }
 
   /* Ebenen-Schalter. Das ist KEIN Regler im Sinne der Datendisziplin: er
@@ -2072,7 +2254,10 @@
       legende.appendChild(spf);
     }
     var spd = el("span");
-    spd.appendChild(el("i", { "class": "pf-schraffiert pf-luecke" }));
+    /* Eigener Name: "pf-luecke" heisst schon das Band ueber den Kennzahlen,
+       das fehlende Tage meldet. Zwei verschiedene Dinge unter einem Namen --
+       eine Pruefung hat prompt die Legendenmarke fuer das Band gehalten. */
+    spd.appendChild(el("i", { "class": "pf-schraffiert pf-legende-luecke" }));
     spd.appendChild(document.createTextNode(
       "Lücke: weder Erzeugung noch Einfuhr"));
     legende.appendChild(spd);
@@ -4675,7 +4860,10 @@
       hole("data/aussenhandel-preis.json").catch(function () { return null; }),
       /* Kosten des Engpassmanagements, ENTSO-E 13.1.C. Monatswerte, wenige
          Kilobyte. Faellt der Abruf aus, fehlt nur der Kostenblock. */
-      hole("data/engpasskosten.json").catch(function () { return null; })
+      hole("data/engpasskosten.json").catch(function () { return null; }),
+      /* Nur das VERZEICHNIS, nicht die Jahresdateien: die kommen erst, wenn
+         jemand ein Kraftwerk anklickt. */
+      hole("data/blockerzeugung-verzeichnis.json").catch(function () { return null; })
     ]).then(function (teile) {
       Z.verzeichnis = teile[0];
       Z.grundkarte = teile[1];
@@ -4684,6 +4872,7 @@
       Z.quellen = teile[4];
       Z.ahPreis = teile[8] || null;
       Z.kosten = teile[9] || null;
+      Z.blockVerzeichnis = teile[10] || null;
       var jahre = Z.verzeichnis.jahre;
       Z.minTag = jahre[0].erster_tag;
       var letzte = jahre[jahre.length - 1];

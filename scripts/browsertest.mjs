@@ -863,6 +863,51 @@ try {
   pruefe(/Kuppelstelle/.test(pfeil), "Klick auf eine Kuppelstelle zeigt Richtung und Menge", pfeil);
   await masse(1280, 1500);
   await schlafen(500);
+  /* ERZEUGUNG JE KRAFTWERK. Die Stammdaten sagen, was eine Anlage KANN. Seit
+     dem 05.09.2026 steht daneben, was sie im Zeitraum GETAN hat -- fuer die
+     211 Bloecke, zu denen SMARD eine Reihe fuehrt. Geprueft wird, dass die
+     Zahl kommt, dass die Rechnung dabeisteht und dass die Grenze der Quelle
+     benannt wird. */
+  const kraftwerk = await js(`(async function () {
+    const punkte = [...document.querySelectorAll(
+      ".pf-karte .pf-geo-anlage circle[data-reihe]")];
+    if (!punkte.length) { return { keine: true }; }
+    // Das groesste Kraftwerk zuerst: es hat am ehesten eine Reihe.
+    punkte.sort((a, b) => parseFloat(b.getAttribute("r") || 0)
+                        - parseFloat(a.getAttribute("r") || 0));
+    for (const p of punkte.slice(0, 12)) {
+      p.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      for (let i = 0; i < 40; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        if (document.querySelector(".pf-auswahl-wert")) { break; }
+      }
+      const w = document.querySelector(".pf-auswahl-wert");
+      if (w) {
+        const k = document.querySelector(".pf-auswahl-kurve");
+        return {
+          titel: (document.querySelector("#pf-auswahl h3") || {}).textContent || "",
+          wert: w.textContent,
+          text: k ? k.textContent : "",
+          kurve: k ? k.querySelectorAll("svg.pf-blockkurve path").length : 0
+        };
+      }
+    }
+    return { keineReihe: true,
+             text: (document.querySelector(".pf-auswahl-kurve") || {}).textContent || "" };
+  })()`);
+  if (kraftwerk.wert) {
+    pruefe(/GWh im Zeitraum/.test(kraftwerk.wert),
+      `ein Kraftwerk zeigt seine Erzeugung (${kraftwerk.titel}: ${kraftwerk.wert})`);
+    pruefe(/Auslastung/.test(kraftwerk.text) && /Rechnung/.test(kraftwerk.text),
+      "mit der Auslastung, ausdruecklich als Rechnung benannt");
+    pruefe(/gemeldeten Tage/.test(kraftwerk.text),
+      "und die Auslastung rechnet ueber die GEMELDETEN Tage");
+    pruefe(kraftwerk.kurve >= 1, "der Verlauf wird gezeichnet");
+  } else {
+    pruefe(!!kraftwerk.keineReihe, "kein Kraftwerk mit Reihe im Zeitraum gefunden");
+  }
+  await foto("kraftwerk-erzeugung", "#pf-auswahl");
+
   await foto("karte-auswahl", ".pf-karte");
 
   // Farbgebung und Hervorheben
@@ -1052,7 +1097,7 @@ try {
     + `document.getElementById("pf-bis").dispatchEvent(new Event("change", { bubbles: true }));`);
   await schlafen(2500);
   const luecke = await js(`(function () {
-    const band = document.querySelector(".pf-luecke");
+    const band = document.querySelector("p.pf-luecke");
     const kacheln = document.querySelector(".pf-kacheln");
     const hinweise = [...document.querySelectorAll(".pf-kasten li")]
       .map((x) => x.textContent).join(" ");
@@ -1089,7 +1134,7 @@ try {
     pruefe(!/liegen nur/.test(luecke.hinweisText),
       "ohne Band meldet auch der Hinweis keine fehlenden Tage");
   }
-  await foto("luecke", ".pf-luecke");
+  await foto("luecke", "p.pf-luecke, .pf-kacheln");
   await js(`[...document.querySelectorAll(".pf-schnell")].find((b) => b.textContent === "Letzte 7 Tage").click()`);
   await schlafen(2500);
 
@@ -1407,8 +1452,17 @@ try {
   })()`);
   pruefe(klapp.anzahl >= 5,
     `${klapp.anzahl} grosse Bloecke sind zum Zuklappen (${klapp.namen.join(" | ")})`);
-  pruefe(klapp.offen.length === 1 && /Datenlage/.test(klapp.offen[0] || ""),
-    "nur die Hinweise zum gewaehlten Zeitraum sind offen voreingestellt",
+  /* Gibt es fuer den Zeitraum nichts zu warnen, fehlt der Kasten ganz -- seit
+     die Luecken vom 30.08. bis 01.09.2026 geschlossen sind, ist das der
+     Normalfall. Geprueft wird deshalb die Bedingung: WENN es ihn gibt, ist er
+     offen, und sonst ist nichts offen. */
+  const datenlage = klapp.namen.filter((n2) => /Datenlage/.test(n2));
+  pruefe(datenlage.length
+    ? (klapp.offen.length === 1 && /Datenlage/.test(klapp.offen[0] || ""))
+    : klapp.offen.length === 0,
+    datenlage.length
+      ? "nur die Hinweise zum gewaehlten Zeitraum sind offen voreingestellt"
+      : "ohne Hinweise zum Zeitraum ist kein Block offen voreingestellt",
     klapp.offen.join(", "));
   pruefe(klapp.ohneZahl.length === 0,
     "jede Zusammenfassung sagt, wie viel darin steht",
@@ -1546,7 +1600,7 @@ try {
     + `document.getElementById("pf-bis").dispatchEvent(new Event("change", { bubbles: true }));`);
   await schlafen(2500);
   const vergleich = await js(`(function () {
-    const band = document.querySelector(".pf-luecke");
+    const band = document.querySelector("p.pf-luecke");
     const bezuege = [...document.querySelectorAll(".pf-kachel .pf-bezug")]
       .map((x) => x.textContent);
     return {
@@ -1580,7 +1634,7 @@ try {
     return {
       kachel: k ? k.querySelector(".pf-bezug").textContent : "",
       abschnitt: abschnitt ? abschnitt.textContent : "",
-      luecke: !!document.querySelector(".pf-luecke")
+      luecke: !!document.querySelector("p.pf-luecke")
     };
   })()`);
   if (anteil.luecke) {

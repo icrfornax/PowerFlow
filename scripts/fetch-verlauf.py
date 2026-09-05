@@ -193,13 +193,27 @@ def nachtragen(wochen: int | None = None, bloecke: list[int] | None = None) -> i
             doc = {"monat": monat, "stunden": [], "netzlast": [], "erzeugung": {}}
         # Vorhandene Stunden ueber ihre Stelle ansprechen. Die Marke ist am Tag
         # der Rueckstellung nicht eindeutig -- deshalb wird ueber die Reihenfolge
-        # gearbeitet und nur angehaengt, was noch fehlt.
-        vorhanden = len(doc["stunden"])
+        # gearbeitet, nicht ueber ein Woerterbuch.
         neue_marken = [marke(ts) for ts in neue]
-        # Alles ab der ersten geholten Marke wird ersetzt.
-        schnitt = vorhanden
-        if neue_marken and neue_marken[0] in doc["stunden"]:
-            schnitt = doc["stunden"].index(neue_marken[0])
+        # DER SCHNITT LAG FALSCH und hat am 05.09.2026 echten Schaden angerichtet:
+        # er war "die Stelle der ersten geholten Marke, sonst ans Ende anhaengen".
+        # Stand die erste geholte Marke nicht in der Datei -- weil die Datei
+        # spaeter beginnt als der geholte Block --, wurde alles angehaengt. Der
+        # September 2026 hatte danach 164 Eintraege mit 48 Doubletten, und die
+        # Gegenprobe gegen die Tageswerte meldete das Anderthalbfache.
+        #
+        # Richtig ist ein CHRONOLOGISCHER Schnitt: behalte, was VOR der ersten
+        # geholten Marke liegt, und ersetze den Rest. Die Marken sind ISO-Text
+        # und damit sortierbar; die doppelte Stunde der Rueckstellung faellt
+        # dabei auf die richtige Seite, weil beide Vorkommen dieselbe Marke
+        # tragen und der Vergleich echt kleiner ist.
+        schnitt = len(doc["stunden"])
+        if neue_marken:
+            schnitt = 0
+            for m in doc["stunden"]:
+                if m >= neue_marken[0]:
+                    break
+                schnitt += 1
         doc["stunden"] = doc["stunden"][:schnitt] + neue_marken
         doc["netzlast"] = doc["netzlast"][:schnitt] + [daten["netzlast"].get(ts) for ts in neue]
         preis_neu = [daten["preis_eur_mwh"].get(ts) for ts in neue]

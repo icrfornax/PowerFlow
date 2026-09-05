@@ -542,6 +542,30 @@ Fuenf Regeln aus der Belegarbeit, die nicht verloren gehen duerfen:
   `validate.py` rechnet die Spanne jetzt aus den Jahresdateien nach und
   vergleicht sie mit dem Seitentext; ein Negativtest verstellt sie absichtlich.
 
+## Erzeugung je Kraftwerksblock
+
+Eingebunden am 05.09.2026. Beleg: `docs/beleg-kraftwerksdaten.md`, Abruf durch
+`scripts/fetch-blockerzeugung.py`, taeglich im SMARD-Workflow fuer das laufende
+und das vorige Jahr.
+
+- **`index_day` gibt es auch fuer production_id-Filter.** Das ist der Grund,
+  warum es tragbar ist: zehn Jahresbloecke je Block statt 365
+  Viertelstundenbloecken. Die Domaene ist die REGELZONE der Anlage; mit DE
+  antwortet SMARD mit 404.
+- **Gegenprobe:** Tagesreihe 25.086,0 gegen 96 Viertelstunden 25.086,0 MWh
+  (Block 4046, 19.08.2026). Die Tagesreihe ist die Summe der Viertelstunden.
+- **DIE ABDECKUNG SCHWANKT STARK und ist der wichtigste Vorbehalt:** 2018 sind
+  nur 21 % der moeglichen Blocktage gemeldet, 2019 61 %, ab 2020 dann 93 bis
+  98 %. Das ist die Quelle, nicht der Abruf (Block 876: 365 Werte in 2017, 22 in
+  2018). `abdeckung_prozent` steht in jeder Jahresdatei, `validate.py` rechnet
+  sie nach.
+- **Die Auslastung wird ueber die GEMELDETEN Tage gerechnet**, nicht ueber den
+  Zeitraum. Sonst zieht jede Meldeluecke sie nach unten, und aus einem
+  fehlenden Wert wird ein stillstehender Block. Ueber 100 % ist moeglich -- die
+  Nettoleistung ist ein Stammdatum und keine Obergrenze der Messung.
+- Auf der Karte tragen Anlagen mit Reihe einen hellen Ring. **Keine zweite
+  Farbe** -- die gehoert dem Energietraeger.
+
 ## Kosten des Engpassmanagements
 
 Eingebunden am 03.09.2026. Quelle: ENTSO-E Transparency Platform, Datenpunkt
@@ -658,7 +682,13 @@ stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
    den gewaehlten Zeitraum nachgerechnet. Diese Abweichung war von der auf 2019
    gesetzten Toleranzgrenze verdeckt -- eine Grenze, die man setzt, muss man
    auch daraufhin ansehen, was sie sonst noch zudeckt.
-3. **Tages- und Stundenwerte muessen im SELBEN Lauf geholt werden.** SMARD
+3. **Der Nachtrag der Stundenwerte schneidet CHRONOLOGISCH.** Bis zum
+   05.09.2026 hing er alles an, wenn die erste geholte Marke nicht in der Datei
+   stand -- der September 2026 hatte danach 164 Eintraege mit 48 Doubletten und
+   ohne die erste Stunde des Monats. `validate.py` prueft jetzt direkt auf
+   doppelte Stundenmarken; erlaubt ist genau eine je Jahr, die Stunde 02 am Tag
+   der Rueckstellung im Oktober.
+4. **Tages- und Stundenwerte muessen im SELBEN Lauf geholt werden.** SMARD
    meldet zurueckliegende Werte nach: am 30.08.2026 stand der 28.08. zuerst bei
    1.214.078,00 MWh und nach dem naechsten Abruf bei 1.213.793,75 MWh. Wer die
    beiden Reihen zu verschiedenen Zeiten holt, bekommt zwei Staende, und die

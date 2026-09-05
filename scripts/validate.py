@@ -791,6 +791,67 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         b.pruefe(alt_satz not in js_klein,
                  f"die zurueckgenommene Erklaerung steht nicht mehr da: {alt_satz!r}")
 
+    # KEINE DOPPELTEN STUNDEN. Am 05.09.2026 hatte der September 164 Eintraege
+    # mit 48 Doubletten: der Nachtrag hing alles an, wenn die erste geholte
+    # Marke nicht in der Datei stand. Die Gegenprobe gegen die Tageswerte hat
+    # es gemeldet -- aber erst ueber den Umweg einer Summe. Jetzt wird es direkt
+    # geprueft.
+    #
+    # ERLAUBT ist genau eine Doublette je Jahr: die Stunde 02 am Tag der
+    # Rueckstellung im Oktober. Sie ist keine Doublette, sondern die Wahrheit.
+    doppelt = []
+    for monat, doc in verlauf.items():
+        zaehler: dict[str, int] = {}
+        for m in doc["stunden"]:
+            zaehler[m] = zaehler.get(m, 0) + 1
+        for m, n in zaehler.items():
+            if n == 1:
+                continue
+            erlaubt = (m[5:7] == "10" and m[11:13] == "02" and n == 2)
+            if not erlaubt:
+                doppelt.append(f"{m} ({n}x)")
+    b.pruefe(not doppelt,
+             "keine Stundenmarke kommt doppelt vor -- ausser 02 Uhr im Oktober"
+             + (f" -- {doppelt[:4]}" if doppelt else ""))
+    # Und die Monatsdatei muss LUECKENLOS beginnen: faengt sie mitten im Monat
+    # an, hat der Nachtrag den Anfang verschluckt.
+    spaet = [monat for monat, doc in verlauf.items()
+             if doc["stunden"] and doc["stunden"][0] != monat + "-01T00"]
+    b.pruefe(not spaet,
+             "jede Monatsdatei beginnt am Ersten um 00 Uhr"
+             + (f" -- {spaet[:4]}" if spaet else ""))
+
+    # --- Erzeugung je Kraftwerksblock ---
+    bv = json.loads(lade("data/blockerzeugung-verzeichnis.json"))
+    b.pruefe(len(bv["jahre"]) >= 8,
+             f"Blockerzeugung: {len(bv['jahre'])} Jahresdateien")
+    b.pruefe(bv["bloecke_mit_id"] == 211,
+             f"Blockerzeugung: {bv['bloecke_mit_id']} Bloecke mit production_id")
+    schlecht = []
+    for eintrag in bv["jahre"]:
+        be = json.loads(lade(eintrag["datei"]))
+        # Die Reihen muessen zur Tagesachse passen -- eine Spalte, die kuerzer
+        # ist als das Jahr, verschiebt jeden Wert dahinter.
+        falsch = [k for k, r in be["bloecke"].items() if len(r) != len(be["tage"])]
+        if falsch:
+            schlecht.append(f"{eintrag['jahr']}: {len(falsch)} Reihen falscher Laenge")
+        # Und die Abdeckung muss in der Datei stehen: sie ist der wichtigste
+        # Vorbehalt dieser Reihe.
+        if be.get("abdeckung_prozent") is None:
+            schlecht.append(f"{eintrag['jahr']}: keine Abdeckung verzeichnet")
+        gerechnet = (sum(1 for r in be["bloecke"].values() for x in r if x is not None)
+                     / max(1, len(be["bloecke"]) * len(be["tage"])) * 100)
+        if abs(gerechnet - (be.get("abdeckung_prozent") or 0)) > 0.15:
+            schlecht.append(f"{eintrag['jahr']}: Abdeckung {be['abdeckung_prozent']} "
+                            f"statt {gerechnet:.1f}")
+    b.pruefe(not schlecht,
+             "Blockerzeugung: jede Reihe passt zur Tagesachse und die Abdeckung stimmt"
+             + (f" -- {schlecht[:3]}" if schlecht else ""))
+    # Die grosse Luecke von 2018 muss auf der Seite stehen, nicht nur in der
+    # Datei. Sonst liest jemand eine Meldeluecke als stillstehendes Kraftwerk.
+    b.pruefe("nicht gemeldet" in js and "gemeldeten Tage" in js,
+             "die Seite unterscheidet gemeldete von nicht gemeldeten Tagen")
+
     # --- Kosten des Engpassmanagements ---
     # Die eine Falle dieser Quelle: B04 ist die SUMME, nicht ein dritter Posten.
     # Wer alle drei Reihen addiert, verdoppelt -- beim ersten Lauf kamen so
