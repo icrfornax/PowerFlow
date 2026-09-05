@@ -735,6 +735,9 @@ try {
     pruefe(f.grund !== f.schrift && f.grund !== "rgba(0, 0, 0, 0)",
       `Schema ${thema}: Grund ${f.grund}, Schrift ${f.schrift}, Karte ${f.karte}`);
     await foto("thema-" + thema);
+    // Die Vorschau in BEIDEN Schemata ansehen. Ihr Bild ist neu und traegt
+    // gedaempfte Flaechen -- die tragen im hellen Schema anders als im dunklen.
+    await foto("vorschau-" + thema, ".pf-vorschau");
   }
   await js(`document.documentElement.setAttribute("data-thema", "dunkel")`);
 
