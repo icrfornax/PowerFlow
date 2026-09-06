@@ -261,7 +261,7 @@
    "quelle": "entsoe",
    "beleg": "docs/beleg-lastprognose.md",
    "dateien": 8,
-   "bytes": 119500,
+   "bytes": 119540,
    "zeitraum": null,
    "muster": "data/lastprognose/*.json",
    "abzug": "data/lastprognose-verzeichnis.json",
@@ -353,5 +353,5 @@
   }
  ],
  "dateien_gesamt": 195,
- "bytes_gesamt": 33120826
+ "bytes_gesamt": 33120866
 }
