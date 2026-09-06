@@ -1621,6 +1621,28 @@ try {
       grenzen: grenzen ? grenzen.textContent : ""
     };
   })()`);
+  /* Die Schieflage-Spanne wird GERECHNET. Geprueft wird, dass der Satz auf der
+     Seite dieselben Zahlen nennt wie das Verzeichnis -- und dass er sich
+     mitbewegt, statt als feste Zahl dazustehen. Genau daran ist der taegliche
+     Workflow am 06.09.2026 rot geworden. */
+  const schieflage = await js(`(async function () {
+    const v = await fetch("data/redispatch-verzeichnis.json").then((r) => r.json());
+    const w = v.jahre.map((j) => j.schieflage_prozent).filter((x) => x !== null);
+    const de = (x) => x.toLocaleString("de-DE",
+      { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const li = [...document.querySelectorAll(".pf-kasten li, .pf-kasten li p")]
+      .map((e) => e.textContent).find((x) => /Hochfahren meist größer/.test(x)) || "";
+    return { satz: li, klein: de(Math.min(...w)), gross: de(Math.max(...w)),
+             jahre: w.length };
+  })()`);
+  pruefe(schieflage.satz !== "", "der Satz zur Redispatch-Schieflage steht da");
+  pruefe(schieflage.satz.includes(schieflage.klein)
+    && schieflage.satz.includes(schieflage.gross),
+    `er nennt die gerechnete Spanne (${schieflage.klein} bis ${schieflage.gross} %)`,
+    schieflage.satz.slice(0, 120));
+  pruefe(schieflage.satz.includes(String(schieflage.jahre) + " Jahre"),
+    `und die Zahl der Jahre (${schieflage.jahre})`);
+
   pruefe(offen && offen.anzahl === 7,
     `sieben offene Punkte (${offen && offen.anzahl})`);
   pruefe(offen && offen.hoch === 1,

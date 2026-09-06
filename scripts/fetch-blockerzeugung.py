@@ -222,6 +222,25 @@ def main(argv: list[str]) -> int:
     if nur_lesen:
         print("\nNur gelesen. Es wurde nichts nach data/ geschrieben.")
         return 0
+
+    # DAS VERZEICHNIS WIRD AUS DEM ORDNER GEBAUT, NICHT AUS DIESEM LAUF.
+    # Bis zum 06.09.2026 stand hier nur, was gerade geholt wurde -- und der
+    # taegliche Workflow holt zwei Jahre. Er haette das Verzeichnis von zehn
+    # auf zwei Jahre gekuerzt, obwohl alle Jahresdateien weiter dalagen; die
+    # Seite haette danach acht Jahre Blockerzeugung nicht mehr gefunden.
+    # Gefangen hat es der Tuersteher, der auf mindestens acht Jahresdateien
+    # prueft -- eine Pruefung, die genau dafuer da ist.
+    verzeichnis = []
+    for pfad in sorted(ZIEL.glob("*.json")):
+        if not pfad.stem.isdigit():
+            continue
+        d = json.loads(pfad.read_text(encoding="utf-8"))
+        verzeichnis.append({"jahr": int(pfad.stem),
+                            "datei": f"data/blockerzeugung/{pfad.name}",
+                            "bloecke": len(d["bloecke"]),
+                            "abdeckung_prozent": d["abdeckung_prozent"],
+                            "bytes": pfad.stat().st_size})
+
     VERZEICHNIS.write_text(json.dumps({
         "_quelle": "SMARD, Bundesnetzagentur -- https://www.smard.de/",
         "_hinweis": "Welche Jahresdatei welche Bloecke enthaelt.",

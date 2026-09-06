@@ -189,7 +189,7 @@
    "quelle": "netztransparenz",
    "beleg": "docs/beleg-redispatch.md",
    "dateien": 1,
-   "bytes": 1222,
+   "bytes": 1597,
    "zeitraum": null,
    "muster": "data/redispatch-verzeichnis.json",
    "abzug": "data/redispatch-verzeichnis.json",
@@ -225,7 +225,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-kraftwerksdaten.md",
    "dateien": 10,
-   "bytes": 2794408,
+   "bytes": 2794404,
    "zeitraum": null,
    "muster": "data/blockerzeugung/*.json",
    "abzug": "data/blockerzeugung-verzeichnis.json",
@@ -353,5 +353,5 @@
   }
  ],
  "dateien_gesamt": 195,
- "bytes_gesamt": 33120866
+ "bytes_gesamt": 33121237
 }

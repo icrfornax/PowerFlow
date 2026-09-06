@@ -442,7 +442,54 @@ def kopf(jahr: int) -> dict:
     }
 
 
+def verzeichnis_bauen() -> int:
+    """Baut data/redispatch-verzeichnis.json aus den Dateien auf der Platte.
+
+    Ohne Netz und ohne Zugangsdaten aufrufbar: --nur-verzeichnis. Das wird
+    gebraucht, wenn sich der ZUSCHNITT des Verzeichnisses aendert und nicht
+    die Daten -- etwa als schieflage_prozent dazukam.
+    """
+    # Verzeichnis immer aus den Dateien auf der Platte bauen, damit ein
+    # Teillauf die uebrigen Jahre nicht verliert.
+    verzeichnis = []
+    for pf in sorted(ZIEL.glob("*.json")):
+        doc = json.loads(pf.read_text(encoding="utf-8"))
+        tage = sorted(doc["tage"])
+        # DIE SCHIEFLAGE GEHOERT IN DIE DATEI, nicht in den Seitentext.
+        # Sie stand dort zweimal als feste Zahl und ist zweimal veraltet: erst
+        # mit 3,6 bis 25,4 % aus den durch das Dezimalkomma lueckenhaften
+        # Werten, dann mit "in jedem Jahr groesser", was 2026 nicht mehr galt.
+        # Beim dritten Mal war es der taegliche Workflow selbst, der sie
+        # ueberholt hat -- das laufende Jahr waechst, und die Zahl bewegt sich
+        # mit. Eine Zahl, die sich taeglich bewegt, darf nicht in Prosa stehen:
+        # die Seite rechnet die Spanne jetzt aus DIESEM Feld.
+        hoch = sum(x["erhoehen_mwh"] for x in doc["tage"].values())
+        runter = sum(x["reduzieren_mwh"] for x in doc["tage"].values())
+        verzeichnis.append({"jahr": doc["jahr"], "datei": f"data/redispatch/{doc['jahr']}.json",
+                            "erster_tag": tage[0] if tage else None,
+                            "letzter_tag": tage[-1] if tage else None,
+                            "tage_mit_massnahmen": len(tage),
+                            "schieflage_prozent": (round((hoch - runter)
+                                                         / (hoch + runter) * 100, 1)
+                                                   if hoch + runter else None)})
+    (WURZEL / "data" / "redispatch-verzeichnis.json").write_text(json.dumps({
+        "abgerufen": dt.datetime.now(TZ).isoformat(timespec="seconds"),
+        "hinweis": ("Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. "
+                    "Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage "
+                    "ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null. "
+                    "schieflage_prozent ist (hoch - runter) / (hoch + runter): "
+                    "wie stark das Hochfahren das Herunterfahren ueberwiegt. Die "
+                    "Seite rechnet ihre Spanne daraus, damit die Zahl im Text "
+                    "nicht veraltet."),
+        "jahre": verzeichnis,
+    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    print(f"  geschrieben: data/redispatch-verzeichnis.json ({len(verzeichnis)} Jahre)")
+    return 0
+
+
 def main(argv: list[str]) -> int:
+    if "--nur-verzeichnis" in argv:
+        return verzeichnis_bauen()
     if "--pruefen" in argv:
         i = argv.index("--pruefen")
         von, bis = argv[i + 1], argv[i + 2]
@@ -490,24 +537,7 @@ def main(argv: list[str]) -> int:
                         encoding="utf-8", newline="\n")
         print(f"  {jahr}: {len(e['tage'])} Tage, {pfad.stat().st_size:,} Bytes")
 
-    # Verzeichnis immer aus den Dateien auf der Platte bauen, damit ein
-    # Teillauf die uebrigen Jahre nicht verliert.
-    verzeichnis = []
-    for pf in sorted(ZIEL.glob("*.json")):
-        doc = json.loads(pf.read_text(encoding="utf-8"))
-        tage = sorted(doc["tage"])
-        verzeichnis.append({"jahr": doc["jahr"], "datei": f"data/redispatch/{doc['jahr']}.json",
-                            "erster_tag": tage[0] if tage else None,
-                            "letzter_tag": tage[-1] if tage else None,
-                            "tage_mit_massnahmen": len(tage)})
-    (WURZEL / "data" / "redispatch-verzeichnis.json").write_text(json.dumps({
-        "abgerufen": dt.datetime.now(TZ).isoformat(timespec="seconds"),
-        "hinweis": ("Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. "
-                    "Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage "
-                    "ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null."),
-        "jahre": verzeichnis,
-    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
-    print(f"  geschrieben: data/redispatch-verzeichnis.json ({len(verzeichnis)} Jahre)")
+    return verzeichnis_bauen()
     return 0
 
 

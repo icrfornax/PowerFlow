@@ -1,48 +1,54 @@
 {
- "abgerufen": "2026-09-03T18:38:51+02:00",
- "hinweis": "Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null.",
+ "abgerufen": "2026-09-06T14:15:16+02:00",
+ "hinweis": "Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null. schieflage_prozent ist (hoch - runter) / (hoch + runter): wie stark das Hochfahren das Herunterfahren ueberwiegt. Die Seite rechnet ihre Spanne daraus, damit die Zahl im Text nicht veraltet.",
  "jahre": [
   {
    "jahr": 2021,
    "datei": "data/redispatch/2021.json",
    "erster_tag": "2021-01-01",
    "letzter_tag": "2021-12-31",
-   "tage_mit_massnahmen": 362
+   "tage_mit_massnahmen": 362,
+   "schieflage_prozent": 18.1
   },
   {
    "jahr": 2022,
    "datei": "data/redispatch/2022.json",
    "erster_tag": "2022-01-01",
    "letzter_tag": "2022-12-31",
-   "tage_mit_massnahmen": 361
+   "tage_mit_massnahmen": 361,
+   "schieflage_prozent": 4.3
   },
   {
    "jahr": 2023,
    "datei": "data/redispatch/2023.json",
    "erster_tag": "2023-01-01",
    "letzter_tag": "2023-12-31",
-   "tage_mit_massnahmen": 360
+   "tage_mit_massnahmen": 360,
+   "schieflage_prozent": 12.7
   },
   {
    "jahr": 2024,
    "datei": "data/redispatch/2024.json",
    "erster_tag": "2024-01-01",
    "letzter_tag": "2024-12-31",
-   "tage_mit_massnahmen": 364
+   "tage_mit_massnahmen": 364,
+   "schieflage_prozent": 9.3
   },
   {
    "jahr": 2025,
    "datei": "data/redispatch/2025.json",
    "erster_tag": "2025-01-01",
    "letzter_tag": "2025-12-31",
-   "tage_mit_massnahmen": 362
+   "tage_mit_massnahmen": 362,
+   "schieflage_prozent": 10.9
   },
   {
    "jahr": 2026,
    "datei": "data/redispatch/2026.json",
    "erster_tag": "2026-01-01",
    "letzter_tag": "2026-09-03",
-   "tage_mit_massnahmen": 246
+   "tage_mit_massnahmen": 246,
+   "schieflage_prozent": -3.2
   }
  ]
 }

@@ -788,6 +788,41 @@ Destatis auf der Jahressumme" angekuendigt, die es nie gab -- und stand noch
 da, als die Gegenprobe laengst gebaut war und gegen Eurostat lief. Eine Zusage
 in Prosa veraltet still, genau wie eine Zahl.
 
+## Zwei Fehler aus dem taeglichen Lauf vom 06.09.2026
+
+Der Workflow "Daten SMARD" ist am 06.09.2026 um 09:22 rot geworden -- am
+Tuersteher, nicht am Abruf. Beide Ursachen waren meine.
+
+**1. Ein Verzeichnis wurde aus dem LAUF gebaut statt aus dem ORDNER.**
+`fetch-blockerzeugung.py` schrieb `blockerzeugung-verzeichnis.json` mit genau
+den Jahren, die es gerade geholt hatte -- und der taegliche Lauf holt zwei. Er
+haette das Verzeichnis von zehn auf zwei Jahre gekuerzt, obwohl alle zehn
+Jahresdateien weiter dalagen; die Seite haette acht Jahre Blockerzeugung nicht
+mehr gefunden. `fetch-redispatch.py` machte es schon richtig -- ich hatte das
+Muster beim zweiten Skript nicht uebernommen.
+
+Die Pruefung "mindestens acht Jahresdateien" hat es gefangen. Richtig, aber
+ungenau. **Die Bedingung lautet: Verzeichnis gleich Ordner**, und so prueft
+`validate.py` es jetzt fuer beide Verzeichnisse.
+
+**2. Eine Zahl in Prosa, die sich TAEGLICH bewegt.** Der Seitentext nannte die
+Redispatch-Schieflage als "zwischen −3,2 und +18,1 %". `validate.py` rechnete
+sie aus den Jahresdateien nach und verglich mit dem Text -- gut gemeint, aber
+falsch gebaut: das laufende Jahr waechst, die Zahl wandert (an diesem Tag von
+−3,2 auf −3,1), und der Workflow wird rot, ohne dass irgendetwas falsch ist.
+
+**Eine Pruefung, die taeglich ohne Fehler anschlaegt, erzieht dazu, sie zu
+uebergehen.** Die Zahl gehoert deshalb nicht in den Text: `fetch-redispatch.py`
+schreibt `schieflage_prozent` je Jahr ins Verzeichnis, `schieflageSatz()` in
+`powerflow.js` rechnet den Satz daraus, und der Tuersteher vergleicht
+**Daten gegen Daten** statt Prosa gegen Daten. Der Browsertest prueft, dass der
+Satz auf der Seite dieselben Zahlen nennt wie das Verzeichnis.
+
+Merksatz aus beidem: *ein Verzeichnis wird aus dem Ordner gebaut, und eine Zahl,
+die sich bewegt, wird gerechnet -- nicht geschrieben.*
+`fetch-redispatch.py --nur-verzeichnis` baut das Verzeichnis ohne Netz und ohne
+Zugangsdaten neu, wenn sich sein Zuschnitt aendert.
+
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
 Belegt in `docs/beleg-tagesreihen.md`. Diese drei Punkte duerfen weder

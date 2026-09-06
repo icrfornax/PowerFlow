@@ -898,6 +898,31 @@
      zaehlt die Einspeisung ins oeffentliche Netz, Eurostat die gesamte
      Erzeugung einschliesslich Eigenverbrauch der Industrie. Der Abstand ist
      deshalb keine Fehlerquote, und er wird nirgends so genannt. */
+
+  /* Der Satz zur Redispatch-Schieflage, aus den Daten gerechnet. Gibt es das
+     Verzeichnis nicht, faellt der Satz weg statt zu luegen. */
+  function schieflageSatz() {
+    var jahre = ((Z.rdVerzeichnis || {}).jahre || []).filter(function (j) {
+      return typeof j.schieflage_prozent === "number";
+    });
+    if (!jahre.length) { return null; }
+    var werte = jahre.map(function (j) { return j.schieflage_prozent; });
+    var klein = Math.min.apply(null, werte);
+    var gross = Math.max.apply(null, werte);
+    var umgekehrt = jahre.filter(function (j) { return j.schieflage_prozent < 0; })
+      .map(function (j) { return j.jahr; });
+    return "Beim Redispatch ist das Hochfahren meist größer als das "
+      + "Herunterfahren — über die " + nf0.format(jahre.length)
+      + " Jahre zwischen " + nf1.format(klein) + " und " + nf1.format(gross)
+      + " % der gesamten Arbeit."
+      + (umgekehrt.length
+          ? " Umgekehrt ist es in " + umgekehrt.join(", ") + "."
+          : " In keinem Jahr ist es umgekehrt.")
+      + " Kein Fehler: bei grenzüberschreitenden Maßnahmen wird nur der "
+      + "deutsche Teil veröffentlicht. Die Spanne wird aus den Jahresdateien "
+      + "gerechnet, nicht hier eingetragen.";
+  }
+
   function gegenprobeBauen() {
     var G = Z.gegenprobe;
     if (!G || !G.gesamt || !G.gesamt.length) { return null; }
@@ -5359,16 +5384,15 @@
       "Ein Wert der Quelle ist falsch: der Schweiz-Import am 09.02.2015 steht mit "
         + "25.009.206 MWh in den Rohdaten — 25 TWh an einem Tag. Er wird als fehlend "
         + "geführt, nicht korrigiert; der Originalwert bleibt in den Dateien sichtbar.",
-      /* Die Spanne wird von validate.py gegen die Jahresdateien nachgerechnet.
-         Sie stand hier zweimal falsch: erst mit 3,6 bis 25,4 % aus den durch
-         das Dezimalkomma lueckenhaften Zahlen, dann mit 3,2 bis 18,1 % und dem
-         Satz "in jedem Jahr" -- der 2026 nicht mehr galt. Wer sie aendert,
-         rechnet nach; wer sie nicht aendert, wird vom Tuersteher erinnert. */
-      "Beim Redispatch ist das Hochfahren meist größer als das Herunterfahren — "
-        + "über die sechs Jahre zwischen −3,2 und +18,1 % der gesamten Arbeit. "
-        + "Im laufenden Jahr 2026 ist es bislang umgekehrt. Kein Fehler: bei "
-        + "grenzüberschreitenden Maßnahmen wird nur der deutsche Teil "
-        + "veröffentlicht.",
+      /* DIE SPANNE WIRD GERECHNET, NICHT HINGESCHRIEBEN. Sie stand hier
+         dreimal falsch: erst mit 3,6 bis 25,4 % aus den durch das
+         Dezimalkomma lueckenhaften Zahlen, dann mit "in jedem Jahr", was 2026
+         nicht mehr galt -- und beim dritten Mal hat der taegliche Workflow sie
+         selbst ueberholt: das laufende Jahr waechst, die Zahl bewegt sich mit,
+         und der Tuersteher schlug an. Eine Zahl, die sich taeglich bewegt,
+         gehoert nicht in Prosa. Sie kommt jetzt aus schieflage_prozent im
+         Verzeichnis. */
+      schieflageSatz(),
       "Eine Redispatch-Maßnahme zählt zum Tag ihres Beginns. Im August 2026 lagen "
         + "22,2 % der Arbeit in Maßnahmen über Mitternacht. Das ist eine Annahme, "
         + "keine Messung.",
@@ -5379,7 +5403,8 @@
       "Der SMARD-Endpunkt für die Kraftwerksstammdaten ist in keiner Dokumentation "
         + "beschrieben. Er wurde aus dem Frontend rekonstruiert und kann sich ohne "
         + "Ankündigung ändern."
-    ].forEach(function (t) { ul3.appendChild(el("li", { text: t })); });
+    ].filter(function (t) { return t; })
+      .forEach(function (t) { ul3.appendChild(el("li", { text: t })); });
     maengel.appendChild(ul3);
     /* Zugeklappt, aber die Zusammenfassung sagt, wie viele Punkte darin
        stehen. Weggelassen wird nichts -- die Regel "Nicht Belegbares bleibt

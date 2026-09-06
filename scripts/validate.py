@@ -308,7 +308,7 @@ def tagesbefunde(jahr: int, d: dict) -> list[str]:
 def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  kraftwerke: dict, grundkarte: dict, netz: dict,
                  css: str, verlauf: dict, workflows: dict,
-                 engpasskosten: dict) -> Befund:
+                 engpasskosten: dict, rdv: dict) -> Befund:
     b = Befund()
 
     for name in PFLICHTDATEIEN:
@@ -696,7 +696,8 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              + (f" -- ohne Regel: {ohne_regel}" if ohne_regel else ""))
 
     # --- Redispatch ---
-    rdv = json.loads(lade("data/redispatch-verzeichnis.json"))
+    # rdv kommt als Eingabe herein, damit die Negativtests es verfaelschen
+    # koennen -- die Spanne der Schieflage wird daraus gerechnet.
     b.pruefe(len(rdv["jahre"]) >= 5, f"Redispatch: {len(rdv['jahre'])} Jahresdateien")
     b.pruefe(rdv["jahre"][0]["jahr"] == 2021,
              "Redispatch beginnt 2021 -- frueher liefert die Quelle HTTP 400")
@@ -782,34 +783,37 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  + (f" -- {len(schief)} Abweichungen, z.B. {schief[:3]}"
                     if schief else ""))
 
-    # Die Spanne der Redispatch-Schieflage steht als ZAHL im Seitentext. Eine
-    # Zahl in Prosa veraltet still: sie stand dort erst mit 3,6 bis 25,4 %
-    # (aus den durch das Dezimalkomma lueckenhaften Werten) und danach mit
-    # "in jedem Jahr groesser" -- was 2026 nicht mehr galt. Beides ist niemandem
-    # aufgefallen, weil niemand nachgerechnet hat. Jetzt rechnet der Tuersteher.
-    schieflagen = []
+    # DIE SPANNE STEHT NICHT MEHR IN DER PROSA. Sie wird von der Seite aus
+    # schieflage_prozent im Verzeichnis gerechnet, und geprueft wird deshalb
+    # DATEN GEGEN DATEN: stimmt der Wert im Verzeichnis mit dem ueberein, der
+    # aus der Jahresdatei folgt?
+    #
+    # Der alte Zuschnitt war richtig gemeint und trotzdem falsch gebaut: er
+    # verglich eine fest eingetragene Zahl mit einem Wert, der sich JEDEN TAG
+    # bewegt, weil das laufende Jahr waechst. Am 06.09.2026 ist der taegliche
+    # Workflow daran rot geworden -- die Zahl war von -3,2 auf -3,1 gewandert,
+    # und nichts war falsch ausser der Prosa. Eine Pruefung, die taeglich
+    # anschlaegt, ohne dass ein Fehler vorliegt, erzieht dazu, sie zu
+    # uebergehen. Die Zahl gehoert also nicht in den Text, sondern in die Datei.
+    schief_falsch = []
     for eintrag in rdv["jahre"]:
         d = json.loads(lade(eintrag["datei"]))
         h = sum(x["erhoehen_mwh"] for x in d["tage"].values())
         r = sum(x["reduzieren_mwh"] for x in d["tage"].values())
-        if h + r:
-            schieflagen.append((h - r) / (h + r) * 100)
-    if schieflagen:
-        def de(x: float) -> str:
-            return f"{x:.1f}".replace(".", ",")
-        erwartet = (f"zwischen −{de(abs(min(schieflagen)))} und "
-                    f"+{de(max(schieflagen))} %")
-        # Die Meldung selbst bleibt in ASCII: die Konsole unter Windows kann
-        # das Minuszeichen U+2212 nicht ausgeben und wirft sonst mitten im
-        # Lauf eine UnicodeEncodeError.
-        b.pruefe(erwartet in js,
-                 "der Seitentext nennt die gemessene Schieflage ("
-                 + erwartet.replace("−", "-") + ")")
-        # Und die Richtung der Aussage: "meist groesser" nur, solange es
-        # ueberhaupt Jahre mit umgekehrtem Vorzeichen gibt.
-        b.pruefe(("in jedem Jahr größer" in js)
-                 == all(x > 0 for x in schieflagen),
-                 "die Aussage 'in jedem Jahr' steht nur da, wenn sie stimmt")
+        soll = round((h - r) / (h + r) * 100, 1) if h + r else None
+        if eintrag.get("schieflage_prozent") != soll:
+            schief_falsch.append(f"{eintrag['jahr']}: "
+                                 f"{eintrag.get('schieflage_prozent')} statt {soll}")
+    b.pruefe(not schief_falsch,
+             f"Redispatch: schieflage_prozent stimmt in allen "
+             f"{len(rdv['jahre'])} Jahren"
+             + (f" -- {schief_falsch}" if schief_falsch else ""))
+    # Und die Seite muss sie RECHNEN, nicht eintragen.
+    b.pruefe("schieflage_prozent" in js and "schieflageSatz" in js,
+             "die Seite rechnet die Spanne aus dem Verzeichnis")
+    # Keine feste Spanne mehr im Text -- sonst faengt es wieder von vorn an.
+    b.pruefe("zwischen −3,2 und +18,1" not in js,
+             "keine fest eingetragene Schieflage-Spanne mehr im Seitentext")
 
     # --- Der Bilanzrest, untersucht am 03.09.2026 ---
     # Die Seite nennt jetzt Zahlen aus dieser Untersuchung. Sie stehen in Prosa
@@ -911,6 +915,28 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # Datei. Sonst liest jemand eine Meldeluecke als stillstehendes Kraftwerk.
     b.pruefe("nicht gemeldet" in js and "gemeldeten Tage" in js,
              "die Seite unterscheidet gemeldete von nicht gemeldeten Tagen")
+
+    # EIN VERZEICHNIS MUSS JEDE DATEI NENNEN, DIE DA IST.
+    # Am 06.09.2026 hat der taegliche Workflow das Blockerzeugungs-Verzeichnis
+    # von zehn auf zwei Jahre gekuerzt: das Abrufskript baute es aus dem
+    # LAUF statt aus dem ORDNER, und der taegliche Lauf holt zwei Jahre. Alle
+    # zehn Jahresdateien lagen weiter da; die Seite haette acht davon nicht
+    # mehr gefunden. Angeschlagen hat damals die Zahlpruefung (mindestens acht
+    # Jahre) -- richtig, aber ungenau. Die Bedingung lautet: Verzeichnis gleich
+    # Ordner.
+    for name, verz, ordner in (
+            ("Blockerzeugung", "data/blockerzeugung-verzeichnis.json",
+             "data/blockerzeugung"),
+            ("Redispatch", "data/redispatch-verzeichnis.json", "data/redispatch")):
+        d = json.loads(lade(verz))
+        genannt = sorted(str(j["jahr"]) for j in d["jahre"])
+        vorhanden = sorted(pf.stem for pf in (WURZEL / ordner).glob("*.json")
+                           if pf.stem.isdigit())
+        b.pruefe(genannt == vorhanden,
+                 f"{name}: das Verzeichnis nennt genau die {len(vorhanden)} "
+                 "Jahresdateien, die da sind"
+                 + (f" -- genannt {genannt}, vorhanden {vorhanden}"
+                    if genannt != vorhanden else ""))
 
     # --- Gegenprobe gegen eine andere Erhebung ---
     # Die EINZIGE Zahl dieser Seite, die nicht mittelbar von ENTSO-E stammt.
@@ -1251,7 +1277,7 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
 # Reihenfolge der Eingaben von eingaben(). Die Negativtests arbeiten ueber
 # diese Namen statt ueber Stellungsargumente.
 FELDER = ("jahre", "index_html", "js", "kraftwerke", "grundkarte", "netz",
-          "css", "verlauf", "workflows", "engpasskosten")
+          "css", "verlauf", "workflows", "engpasskosten", "rdv")
 
 
 def _kosten_doppelt(doc: dict) -> dict:
@@ -1276,7 +1302,29 @@ def eingaben() -> tuple:
             json.loads(lade("data/kraftwerke.json")),
             json.loads(lade("data/grundkarte.json")),
             netzdateien(), lade("assets/powerflow.css"), verlaufdateien(),
-            workflowdateien(), json.loads(lade("data/engpasskosten.json")))
+            workflowdateien(), json.loads(lade("data/engpasskosten.json")),
+            json.loads(lade("data/redispatch-verzeichnis.json")))
+
+
+def _ohne_erstes_jahr(rdv: dict) -> dict:
+    """Laesst ein vorhandenes Jahr aus dem Verzeichnis fallen."""
+    import copy
+    k = copy.deepcopy(rdv)
+    k["jahre"] = k["jahre"][1:]
+    return k
+
+
+def _schieflage_verstellt(rdv: dict) -> dict:
+    """Setzt die verzeichnete Schieflage eines Jahres auf einen falschen Wert.
+
+    Frueher stand die Spanne als feste Zahl im Seitentext und wurde dort
+    verstellt. Sie steht jetzt in der Datei, aus der die Seite sie rechnet --
+    also wird die Datei verstellt.
+    """
+    import copy
+    k = copy.deepcopy(rdv)
+    k["jahre"][0]["schieflage_prozent"] = 99.9
+    return k
 
 
 def negativtests() -> int:
@@ -1410,8 +1458,15 @@ def negativtests() -> int:
         # Posten addiert, verdoppelt. Genau das war mein erster Lauf.
         ("Engpasskosten doppelt gezaehlt",
          lambda: {"engpasskosten": _kosten_doppelt(basis["engpasskosten"])}),
-        ("Spanne der Redispatch-Schieflage im Text verstellt",
-         lambda: {"js": basis["js"].replace("und +18,1 %", "und +25,4 %")}),
+        # Frueher wurde hier eine feste Spanne im Text verstellt. Die Zahl steht
+        # nicht mehr im Text -- also wird jetzt die DATEI verstellt, aus der die
+        # Seite sie rechnet.
+        # Ein Verzeichnis, das eine vorhandene Jahresdatei verschweigt -- genau
+        # das hat der taegliche Workflow am 06.09.2026 getan.
+        ("Jahr aus dem Redispatch-Verzeichnis entfernt",
+         lambda: {"rdv": _ohne_erstes_jahr(basis["rdv"])}),
+        ("schieflage_prozent im Redispatch-Verzeichnis verstellt",
+         lambda: {"rdv": _schieflage_verstellt(basis["rdv"])}),
         # Zwei gleichfarbige Windbaender -- genau die erste Fassung der
         # Vorschau. Im Quelltext sah sie richtig aus, im Bild war die
         # Aufteilung unsichtbar und die Legende irrefuehrend.
