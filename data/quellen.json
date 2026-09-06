@@ -93,8 +93,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3127652,
-   "zeitraum": "2015-01-01 bis 2026-09-04",
+   "bytes": 3127924,
+   "zeitraum": "2015-01-01 bis 2026-09-05",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/tage"
@@ -117,8 +117,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 141,
-   "bytes": 14052654,
-   "zeitraum": "2015-01-01 bis 2026-09-05",
+   "bytes": 14054984,
+   "zeitraum": "2015-01-01 bis 2026-09-06",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
@@ -201,8 +201,8 @@
    "quelle": "netztransparenz",
    "beleg": "docs/beleg-redispatch.md",
    "dateien": 6,
-   "bytes": 3661653,
-   "zeitraum": "2021-01-01 bis 2026-09-03",
+   "bytes": 3667669,
+   "zeitraum": "2021-01-01 bis 2026-09-06",
    "muster": "data/redispatch/*.json",
    "abzug": "data/redispatch-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
@@ -237,8 +237,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-vorschau.md",
    "dateien": 1,
-   "bytes": 14213,
-   "zeitraum": "2026-09-05 bis 2026-09-06",
+   "bytes": 7862,
+   "zeitraum": "2026-09-06 bis 2026-09-06",
    "muster": "data/vorschau.json",
    "abzug": "data/vorschau.json",
    "alle": null
@@ -249,7 +249,7 @@
    "quelle": "entsoe",
    "beleg": "docs/beleg-lastprognose.md",
    "dateien": 1,
-   "bytes": 796,
+   "bytes": 208,
    "zeitraum": null,
    "muster": "data/lastprognose-verzeichnis.json",
    "abzug": "data/lastprognose-verzeichnis.json",
@@ -297,7 +297,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-tagesreihen.md",
    "dateien": 1,
-   "bytes": 1790,
+   "bytes": 1215,
    "zeitraum": null,
    "muster": "data/luecken.json",
    "abzug": "data/luecken.json",
@@ -345,7 +345,7 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 14604,
+   "bytes": 14603,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
@@ -353,5 +353,5 @@
   }
  ],
  "dateien_gesamt": 195,
- "bytes_gesamt": 33121237
+ "bytes_gesamt": 33122340
 }
