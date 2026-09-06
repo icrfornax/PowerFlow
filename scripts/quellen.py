@@ -74,6 +74,20 @@ QUELLEN = {
         "erhebung": "nicht erhoben, sondern aus belegten Stützpunkten interpoliert; "
                     "die gemessene Trefferquote steht in der Datei und auf der Seite",
     },
+    "eurostat": {
+        "name": "Eurostat, Statistisches Amt der Europaeischen Union",
+        "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_bal_c/",
+        "lizenz": "CC BY 4.0 (Beschluss 2011/833/EU)",
+        "lizenz_url": "https://creativecommons.org/licenses/by/4.0/deed.de",
+        "namensnennung": ("Source: 10.2908/NRG_BAL_C und 10.2908/NRG_CB_E -- "
+                          "Jahressummen gebildet und dem SMARD-Wert "
+                          "gegenuebergestellt (veraendert)"),
+        # Das ist der Grund, warum diese Quelle ueberhaupt da ist: sie ist die
+        # EINZIGE hier, die nicht mittelbar von ENTSO-E kommt.
+        "erhebung": ("nationale Verwaltungen nach Verordnung (EG) Nr. 1099/2008 "
+                     "-- NICHT ueber ENTSO-E; die einzige unabhaengige Erhebung "
+                     "in diesem Projekt"),
+    },
     "netztransparenz": {
         "name": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
         "url": "https://www.netztransparenz.de/",
@@ -151,6 +165,10 @@ GRUPPEN = [
      "Viertelstunde und die Abweichung zur Messung. Beide Reihen aus derselben "
      "Quelle und Aufloesung.", "docs/beleg-lastprognose.md",
      "lastprognose-verzeichnis.json"),
+    ("gegenprobe.json", "eurostat", "Gegenprobe gegen eine andere Erhebung",
+     "SMARD-Jahressummen gegen die Erzeugungsstatistik von Eurostat, je Jahr "
+     "und je Energietraeger, in TWh. Die einzige Zahl auf dieser Seite, die "
+     "nicht mittelbar von ENTSO-E stammt.", "docs/beleg-gegenprobe.md", None),
     ("engpasskosten.json", "entsoe", "Kosten des Engpassmanagements",
      "Je MONAT und Regelzone, in Euro: Gesamtkosten sowie die Posten Redispatch "
      "und Countertrade. Eine feinere Aufloesung gibt es nicht -- Kosten je "

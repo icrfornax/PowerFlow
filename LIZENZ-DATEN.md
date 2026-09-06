@@ -14,6 +14,7 @@ verpflichtet zur Weitergabe unter denselben Bedingungen.
 | `data/netz-hoechstspannung.json`, `data/netz-hochspannung.json`, `data/netz-umspannwerke.json` | OpenStreetMap | **ODbL 1.0** | `© OpenStreetMap contributors` |
 | `data/redispatch/*.json` | netztransparenz.de (die vier ÜNB), auch über ENTSO-E | siehe unten — **teilweise ungeklärt** | `netztransparenz.de — 50Hertz, Amprion, TenneT, TransnetBW` |
 | `data/mastr-wind.json` | Marktstammdatenregister, Bundesnetzagentur | **dl-de/by-2-0** | `Marktstammdatenregister, Bundesnetzagentur` + Hinweis auf die Veränderung |
+| `data/gegenprobe.json` | Eurostat (Statistisches Amt der EU) | CC BY 4.0 (Beschluss 2011/833/EU) | `Source: 10.2908/NRG_BAL_C und 10.2908/NRG_CB_E, abgerufen am …` |
 | `data/regelzonen-flaeche.json` | **abgeleitet**, nicht erhoben — aus SMARD und OpenStreetMap | **ODbL 1.0** (die schärfere der beiden erbt) | `Bundesnetzagentur \| SMARD.de` und `© OpenStreetMap contributors` |
 
 ## SMARD — CC BY 4.0
@@ -148,3 +149,30 @@ Nicht jeder Datenpunkt der Plattform ist frei. Netzlast, Erzeugung und Preise
 stehen **nicht** auf der Liste — die holt dieses Projekt deshalb von SMARD, wo
 sie als eigene Veröffentlichung der Bundesnetzagentur unter CC BY 4.0 stehen.
 Die Übersicht dazu: `docs/beleg-entsoe-datenpunkte.md`.
+
+## Eurostat — CC BY 4.0, Beschluss 2011/833/EU
+
+**Seit 06.09.2026 die achte Lizenz und die einzige Quelle dieses Projekts, die
+nicht über ENTSO-E läuft.** `data/gegenprobe.json` stellt die SMARD-Jahressummen
+einer anders erhobenen Zahl gegenüber.
+
+- **Lizenz:** CC BY 4.0. Grundlage ist der Beschluss 2011/833/EU der
+  Europäischen Kommission vom 12.12.2011 über die Weiterverwendung von
+  Kommissionsdokumenten. Die **gewerbliche** Weiterverwendung ist für Daten der
+  EU-Mitgliedstaaten ausdrücklich erlaubt; ausgenommen sind Daten von
+  Drittstaaten und einzelne Handelsdaten — beides betrifft Deutschland nicht.
+- **Namensnennung wörtlich**, in der von Eurostat für Datensätze verlangten
+  Form: `Source: <DOI>, <Abrufdatum>`. Die DOI wird aus der Antwort **gelesen**,
+  nicht abgeschrieben, und steht mit dem Abrufdatum als `_namensnennung` in der
+  Datei.
+- **Verändert:** ja. Aus den Jahreswerten sind Summen in TWh gebildet und den
+  SMARD-Summen gegenübergestellt; der Abstand ist gerechnet. Der Hinweis steht
+  als `_veraendert` in der Datei — CC BY 4.0 verlangt ihn.
+- **Kein Share-alike.** Die Lizenz färbt nicht auf die anderen ab.
+
+**Warum diese Quelle und keine andere:** eine Gegenprobe braucht eine anders
+erhobene Zahl. Eurostat erhebt nach Verordnung (EG) Nr. 1099/2008 über die
+**nationalen Verwaltungen** — für Deutschland über das Statistische Bundesamt.
+Übertragungsnetzbetreiber und ENTSO-E werden in den Metadaten der Quelle an
+keiner Stelle als Herkunft genannt. Beleg mit Fundstelle:
+`docs/beleg-gegenprobe.md`.

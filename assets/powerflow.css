@@ -1260,3 +1260,55 @@ details.pf-mehr { margin: 0; padding: 0; border: 0; background: none; }
 .pf-karte[data-traeger-hervor] .pf-netz-hoechst,
 .pf-karte[data-traeger-hervor] .pf-netz-110,
 .pf-karte[data-traeger-hervor] .pf-netz-werk { opacity: 0.15; }
+
+/* --- Gegenprobe gegen eine andere Erhebung ------------------------------- */
+/* Eigene Klassen, obwohl es dem Kostenblock aehnelt. Gleiche Optik ist kein
+   Grund fuer gleiche Namen -- das hat hier schon zweimal Pruefungen anderer
+   Bloecke die falschen Marken zaehlen lassen. */
+.pf-gp-kopf { display: flex; flex-wrap: wrap; gap: 1.4rem 2.2rem;
+  margin: 0.9rem 0 0.4rem; }
+.pf-gp-zahl .pf-titel { display: block; font-size: 0.72rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--schrift-leise); }
+.pf-gp-zahl .pf-wert { margin: 0.15rem 0 0; font-family: var(--schrift-zahl);
+  font-size: 1.5rem; line-height: 1.1; }
+.pf-gp-zahl[data-akzent="violett"] .pf-wert { color: var(--violett); }
+.pf-gp-zahl[data-akzent="teal"] .pf-wert { color: var(--teal); }
+.pf-gp-zahl[data-akzent="orange"] .pf-wert { color: var(--orange); }
+
+.pf-gp-bild { margin: 1.4rem 0 0.6rem; }
+.pf-gp-bild h4 { margin: 0 0 0.2rem; font-size: 0.86rem; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--schrift-still); }
+/* Der Massstab steht UEBER den Balken. Wer die Balken schon gelesen hat,
+   liest ihn zu spaet. */
+.pf-gp-massstab { margin: 0 0 0.5rem; font-size: 0.76rem;
+  color: var(--schrift-leise); }
+.pf-gp-gitter { position: relative; display: flex; flex-direction: column;
+  gap: 0.28rem; }
+.pf-gp-zeile { display: grid; grid-template-columns: 8.5rem 1fr 4rem;
+  align-items: center; gap: 0.6rem; padding: 0.12rem 0.2rem; border-radius: 4px; }
+.pf-gp-zeile[data-aktiv] { background: var(--flaeche-hoch); }
+.pf-gp-name { font-size: 0.8rem; color: var(--schrift-still);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-gp-spur { display: flex; flex-direction: column; gap: 2px; }
+/* Gedaempfte Fuellung an der Flaeche, die Saettigung sitzt in der Oberkante
+   und in der Legende -- dieselbe Regel wie bei den Verlaufsbaendern. */
+.pf-gp-balken { height: 8px; border-radius: 0 3px 3px 0; min-width: 1px; }
+.pf-gp-balken[data-reihe="smard"] { background: color-mix(in srgb,
+  var(--teal) 42%, transparent); border-top: 1.5px solid var(--teal); }
+.pf-gp-balken[data-reihe="eurostat"] { background: color-mix(in srgb,
+  var(--violett) 42%, transparent); border-top: 1.5px solid var(--violett); }
+.pf-gp-abstand { font-family: var(--schrift-zahl); font-size: 0.8rem;
+  text-align: right; color: var(--orange); }
+.pf-gp-marke { display: inline-block; width: 0.7rem; height: 0.7rem;
+  border-radius: 2px; margin-right: 0.35rem; vertical-align: -1px; }
+.pf-gp-marke[data-reihe="smard"] { background: var(--teal); }
+.pf-gp-marke[data-reihe="eurostat"] { background: var(--violett); }
+.pf-gp-befund { margin-top: 1.2rem; padding: 0.7rem 0.9rem;
+  border-left: 3px solid var(--orange); background: var(--flaeche-hoch);
+  border-radius: 0 6px 6px 0; }
+.pf-gp-befund h4 { margin: 0 0 0.3rem; font-size: 0.92rem; color: var(--orange); }
+
+@media (max-width: 560px) {
+  .pf-gp-zeile { grid-template-columns: 6rem 1fr 3.2rem; gap: 0.4rem; }
+  .pf-gp-name { font-size: 0.72rem; }
+}

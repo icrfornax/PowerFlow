@@ -738,6 +738,23 @@ try {
     // Die Vorschau in BEIDEN Schemata ansehen. Ihr Bild ist neu und traegt
     // gedaempfte Flaechen -- die tragen im hellen Schema anders als im dunklen.
     await foto("vorschau-" + thema, ".pf-vorschau");
+    /* Die Gegenprobe hat gedaempfte Balken (color-mix mit transparent). Die
+       tragen im hellen Schema anders als im dunklen -- also in beiden ansehen. */
+    await js(`(function () {
+      const s = [...document.querySelectorAll("details.pf-klapp-details")].find(
+        (d) => /Gegenprobe/.test(d.querySelector("summary").textContent));
+      if (s) { s.open = true; }
+    })()`);
+    await schlafen(150);
+    await foto("gegenprobe-" + thema, ".pf-gp-bild");
+    // WIEDER ZUKLAPPEN. Der Zustand liegt in Z.klapp und ueberlebt -- ein
+    // offen gelassener Block hat prompt die Pruefung der Voreinstellung
+    // umgeworfen. Ein Test darf den Zustand nicht hinterlassen, den er misst.
+    await js(`(function () {
+      const s = [...document.querySelectorAll("details.pf-klapp-details")].find(
+        (d) => /Gegenprobe/.test(d.querySelector("summary").textContent));
+      if (s) { s.open = false; s.dispatchEvent(new Event("toggle")); }
+    })()`);
   }
   await js(`document.documentElement.setAttribute("data-thema", "dunkel")`);
 
@@ -1604,8 +1621,8 @@ try {
       grenzen: grenzen ? grenzen.textContent : ""
     };
   })()`);
-  pruefe(offen && offen.anzahl === 6,
-    `sechs offene Punkte (${offen && offen.anzahl})`);
+  pruefe(offen && offen.anzahl === 7,
+    `sieben offene Punkte (${offen && offen.anzahl})`);
   pruefe(offen && offen.hoch === 1,
     `einer davon ist als "Als Naechstes" markiert (${offen && offen.hoch})`);
   pruefe(offen && /Als N/.test(offen.erste),
@@ -1784,7 +1801,9 @@ try {
 
   // Acht seit dem 03.09.2026: die ENTSO-E Transparency Platform liefert die
   // Kosten des Engpassmanagements und ist damit eine eigene Quelle.
-  pruefe(qu.quellen.length === 8, `acht Quellen genannt: ${qu.quellen.join(" | ")}`);
+  // Neun seit dem 06.09.2026: Eurostat kommt als erste unabhaengige Erhebung
+  // dazu -- die einzige Quelle hier, die nicht mittelbar von ENTSO-E stammt.
+  pruefe(qu.quellen.length === 9, `neun Quellen genannt: ${qu.quellen.join(" | ")}`);
   // Die abgeleitete Flaeche muss im Verzeichnis als solche kenntlich sein und
   // darf nicht neben den Messungen stehen.
   pruefe(qu.quellen.some((x) => /KEINE Messung/.test(x)),
@@ -1793,6 +1812,69 @@ try {
   pruefe(qu.lizenzen.length >= 3, `${qu.lizenzen.length} verschiedene Lizenzen genannt`);
   pruefe(qu.abzuege >= 12, `${qu.abzuege} Abzugsknoepfe im Verzeichnis`);
   await foto("quellen", ".pf-abschnitt:last-of-type");
+
+  /* --- Gegenprobe --------------------------------------------------------
+     Der einzige Abschnitt mit einer ANDEREN Erhebung. Geprueft wird, dass er
+     da ist, dass beide Reihen EINEN Massstab teilen (getrennte Massstaebe
+     waeren hier besonders schaedlich -- es geht gerade um den Abstand), und
+     dass die Ablesung aufgeht statt in einem title-Attribut zu stehen. */
+  const gegen = await js(`(async function () {
+    const s = [...document.querySelectorAll("details.pf-klapp-details")].find(
+      (d) => /Gegenprobe/.test(d.querySelector("summary").textContent));
+    if (!s) { return { da: 0 }; }
+    s.open = true;
+    await new Promise((r) => setTimeout(r, 120));
+    const bilder = [...s.querySelectorAll(".pf-gp-bild")];
+    const titel = bilder.map((x) => x.querySelector("h4").textContent);
+    const massstaebe = bilder.map((x) => x.querySelector(".pf-gp-massstab").textContent);
+    const zeilen = s.querySelectorAll(".pf-gp-zeile");
+    const titles = s.querySelectorAll("[title]").length;
+    let text = "";
+    let zeiger = 0;
+    if (zeilen.length) {
+      zeilen[1].dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 60));
+      const k = s.querySelector(".pf-rd-info");
+      if (k && !k.hidden) { text = k.textContent; zeiger = 1; }
+      zeilen[1].parentNode.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    }
+    return { da: 1, bilder: bilder.length, titel, massstaebe,
+             zeilen: zeilen.length, titles, text, zeiger,
+             kennzahlen: s.querySelectorAll(".pf-gp-zahl").length,
+             befund: s.querySelectorAll(".pf-gp-befund").length,
+             ganzer: s.textContent };
+  })()`);
+  pruefe(gegen.da === 1, "der Abschnitt Gegenprobe ist da");
+  pruefe(gegen.bilder === 2, `zwei Grafiken darin (${gegen.bilder})`);
+  // Zwei Grafiken mit verschiedenen Bezuegen muessen ihren Bezug NENNEN.
+  // Sonst liest man die zweite als Fortsetzung der ersten.
+  pruefe(/je Jahr/i.test(gegen.titel[0] || "")
+    && /je Energieträger/i.test(gegen.titel[1] || ""),
+    "jede Grafik nennt ihren Bezug in der Ueberschrift",
+    (gegen.titel || []).join(" / "));
+  pruefe((gegen.massstaebe || []).every((m) => /teilen diesen Maßstab/.test(m)),
+    "beide Reihen teilen einen Massstab, und es steht da",
+    (gegen.massstaebe || []).join(" / "));
+  pruefe(gegen.kennzahlen === 3, `drei Kennzahlen (${gegen.kennzahlen})`);
+  pruefe(gegen.zeilen >= 16, `${gegen.zeilen} Balkenpaare`);
+  pruefe(gegen.befund === 1, "der Erfassungsbruch steht als eigener Befund da");
+  pruefe(gegen.titles === 0,
+    "keine Auskunft steckt im title-Attribut", `${gegen.titles} gefunden`);
+  pruefe(gegen.zeiger === 1 && /% Abstand/.test(gegen.text),
+    "beim Ueberfahren oeffnet sich eine echte Ablesung",
+    (gegen.text || "").slice(0, 80));
+  pruefe(/SMARD/.test(gegen.text) && /Eurostat/.test(gegen.text),
+    "und sie nennt beide Reihen mit ihrer Bedeutung");
+  pruefe(/1099\/2008/.test(gegen.ganzer),
+    "die Rechtsgrundlage der anderen Erhebung steht auf der Seite");
+  pruefe(/keine Fehlerquote|KEINE Fehlerquote/.test(gegen.ganzer),
+    "und der Abstand wird ausdruecklich nicht als Fehlerquote ausgegeben");
+  await foto("gegenprobe", "details.pf-klapp-details[open]");
+  // Kopf und Befund liegen ausserhalb des ersten Ausschnitts. Beide werden
+  // ANGESEHEN, nicht nur gezaehlt -- die drei letzten echten Maengel dieses
+  // Projekts sind alle nur im Bildschirmfoto aufgefallen.
+  await foto("gegenprobe-kopf", ".pf-gp-kopf");
+  await foto("gegenprobe-befund", ".pf-gp-befund");
 
   // --- Konsole ---
   await schlafen(800);

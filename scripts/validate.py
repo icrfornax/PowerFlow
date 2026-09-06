@@ -651,6 +651,50 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              "font-family verwendet nur Schrift-Tokens, keine Farb-Tokens"
              + (f" -- {sorted(set(falsche_schrift))}" if falsche_schrift else ""))
 
+    # JEDES benutzte Token muss auch definiert sein. Die Regel darueber prueft
+    # nur font-family; ein Tippfehler in irgendeiner anderen Eigenschaft faellt
+    # genauso still aus -- der Browser laesst die Deklaration weg und nichts
+    # meldet sich. Gefunden am 06.09.2026: --schrift-ziffern gab es nie, der
+    # richtige Name ist --schrift-zahl. Das ist dieselbe Fehlerklasse wie die
+    # Farbe als Schriftfamilie, nur allgemeiner -- also wird sie allgemeiner
+    # geprueft.
+    # Ein var() MIT Ersatzwert ist in Ordnung -- das ist die Form, in der die
+    # Karte ihre Zoomstufe aus dem JS bekommt (setProperty). Geprueft wird
+    # deshalb nur, was ohne Ersatzwert benutzt wird.
+    ohne_ersatz = set(re.findall(r"var\((--[a-z0-9-]+)\s*\)", css_ohne))
+    erklaert = set(re.findall(r"^\s*(--[a-z0-9-]+)\s*:", css_ohne, flags=re.M))
+    erklaert |= set(re.findall(r'setProperty\(\s*"(--[a-z0-9-]+)"', js))
+    unbekannt = sorted(ohne_ersatz - erklaert)
+    b.pruefe(not unbekannt,
+             f"alle {len(ohne_ersatz)} ohne Ersatzwert benutzten CSS-Tokens "
+             "sind auch definiert"
+             + (f" -- fehlen: {unbekannt}" if unbekannt else ""))
+
+    # Und dasselbe fuer KLASSEN: eine im JS vergebene Klasse, zu der es im CSS
+    # keine Regel gibt, faellt genauso still aus. Gefunden am 06.09.2026:
+    # "pf-warnung" fuer den Hinweis auf einen alten Vorschau-Abruf -- die
+    # vorhandene Klasse heisst "pf-karte-warnung", und der Hinweis waere ohne
+    # Rand und ohne Farbe erschienen. Ausgenommen sind Klassen, die
+    # ausdruecklich nur ein GRIFF sind und ihre Gestaltung als Attribut
+    # tragen; jede steht mit Grund in der Liste.
+    NUR_GRIFF = {
+        "pf-flaechen", "pf-kanten", "pf-vorschau-flaechen", "pf-zonen-huelle",
+        "pf-deckung",            # SVG-Gruppen, nur zum Einhaengen
+        "pf-einfuhrband", "pf-luecke-flaeche",  # tragen fill="url(#schraffur)"
+        "pf-pfeil",              # Farbe kommt vom Zustand der Kuppelstelle
+        "pf-rechnung-kosten",    # nur ein Zusatzgriff neben .pf-rechnung
+    }
+    js_ohne = re.sub(r"/\*.*?\*/", " ", js, flags=re.S)
+    vergeben = set()
+    for treffer in re.findall(r'"class"[,:]\s*"([^"]+)"', js_ohne):
+        vergeben.update(w for w in treffer.split() if w.startswith("pf-"))
+    im_css = set(re.findall(r"\.(pf-[a-z0-9-]+)", css_ohne))
+    ohne_regel = sorted(vergeben - im_css - NUR_GRIFF)
+    b.pruefe(not ohne_regel,
+             f"alle {len(vergeben)} im JS vergebenen Klassen haben eine "
+             "CSS-Regel oder stehen als Griff in der Ausnahmeliste"
+             + (f" -- ohne Regel: {ohne_regel}" if ohne_regel else ""))
+
     # --- Redispatch ---
     rdv = json.loads(lade("data/redispatch-verzeichnis.json"))
     b.pruefe(len(rdv["jahre"]) >= 5, f"Redispatch: {len(rdv['jahre'])} Jahresdateien")
@@ -867,6 +911,72 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # Datei. Sonst liest jemand eine Meldeluecke als stillstehendes Kraftwerk.
     b.pruefe("nicht gemeldet" in js and "gemeldeten Tage" in js,
              "die Seite unterscheidet gemeldete von nicht gemeldeten Tagen")
+
+    # --- Gegenprobe gegen eine andere Erhebung ---
+    # Die EINZIGE Zahl dieser Seite, die nicht mittelbar von ENTSO-E stammt.
+    # Genau das ist ihr Zweck, und genau das wird hier geprueft -- eine
+    # Gegenprobe gegen eine Quelle, die dieselben Meldungen weiterreicht, waere
+    # keine.
+    gp = json.loads(lade("data/gegenprobe.json"))
+    b.pruefe(gp["einheit"] == "TWh" and len(gp["jahre"]) >= 8,
+             f"Gegenprobe: {len(gp['jahre'])} volle Jahre in {gp['einheit']}")
+    b.pruefe("1099/2008" in gp["_quelle"] and "NICHT ueber ENTSO-E" in gp["_quelle"],
+             "Gegenprobe: die Datei nennt den anderen Erhebungsweg")
+    b.pruefe("CC BY 4.0" in gp["_lizenz"] and "2011/833" in gp["_lizenz"],
+             f"Gegenprobe: Lizenz {gp['_lizenz'][:40]}")
+    # CC BY 4.0 verlangt den Hinweis, DASS veraendert wurde.
+    b.pruefe(bool(gp.get("_veraendert")),
+             "Gegenprobe: der Hinweis auf die Veraenderung steht in der Datei")
+    # Die DOI gehoert in die Namensnennung -- Eurostat verlangt sie ausdruecklich.
+    b.pruefe("10.2908/NRG_BAL_C" in gp["_namensnennung"]
+             and "10.2908/NRG_CB_E" in gp["_namensnennung"],
+             "Gegenprobe: beide DOI stehen in der Namensnennung")
+    # Der Abstand ist GERECHNET und muss nachrechenbar sein.
+    schief = [g["jahr"] for g in gp["gesamt"]
+              if abs((g["smard_twh"] - g["eurostat_netto_twh"])
+                     / g["eurostat_netto_twh"] * 100
+                     - g["abstand_netto_prozent"]) > 0.06]
+    b.pruefe(not schief, f"Gegenprobe: jeder Abstand ist nachgerechnet ({schief})")
+    # Groessenordnung: die deutsche Jahreserzeugung liegt zwischen 300 und 800 TWh.
+    ausreisser = [g["jahr"] for g in gp["gesamt"]
+                  if not 300 <= g["eurostat_brutto_twh"] <= 800
+                  or not 300 <= g["smard_twh"] <= 800]
+    b.pruefe(not ausreisser,
+             f"Gegenprobe: alle Jahressummen in plausibler Groessenordnung ({ausreisser})")
+    # Brutto muss ueber netto liegen -- der Unterschied ist der
+    # Kraftwerkseigenverbrauch und kann nicht negativ sein.
+    verdreht = [g["jahr"] for g in gp["gesamt"]
+                if g["eurostat_brutto_twh"] < g["eurostat_netto_twh"]]
+    b.pruefe(not verdreht,
+             f"Gegenprobe: brutto liegt ueberall ueber netto ({verdreht})")
+    # Wind ist die Zeile, die zusammenfallen MUSS -- Windparks speisen
+    # praktisch vollstaendig ein. Weicht sie stark ab, stimmt etwas mit dem
+    # Abruf, der Einheit oder der Zeitzone dieser Seite nicht.
+    windzeile = [tr for tr in gp["traeger"] if tr["name"] == "Wind"]
+    b.pruefe(len(windzeile) == 1, "Gegenprobe: es gibt eine Windzeile")
+    windletzt = windzeile[0]["jahre"][-1] if windzeile else {}
+    b.pruefe(abs(windletzt.get("abstand_prozent") or 99) < 4,
+             f"Gegenprobe: Wind faellt zusammen "
+             f"({windletzt.get('abstand_prozent')} % in {windletzt.get('jahr')})")
+    # Der Bruch von 2018 ist der wichtigste Befund und muss auf der Seite stehen.
+    b.pruefe("Der Bruch von" in js and "geänderte Erfassung" in js,
+             "die Seite benennt den Erfassungsbruch, den die Gegenprobe zeigt")
+    # Und der Abstand darf NIRGENDS eine Fehlerquote heissen.
+    b.pruefe("KEINE Fehlerquote" in js or "keine Fehlerquote" in js.lower(),
+             "die Seite sagt ausdruecklich, dass der Abstand keine Fehlerquote ist")
+    # Die Ein-/Ausfuhr-Abweichung ist NICHT geklaert und wird nicht erklaert.
+    b.pruefe("NICHT geklärt" in js or "nicht geklärt" in js.lower(),
+             "die ungeklaerte Abweichung bei Ein- und Ausfuhr bleibt ungeklaert benannt")
+
+    # Die Quellenzeile hat bis zum 06.09.2026 eine Gegenprobe gegen DESTATIS
+    # angekuendigt, die es nie gab -- und stand noch da, als die Gegenprobe
+    # laengst gebaut war und gegen Eurostat lief. Eine Zusage in Prosa veraltet
+    # still; das ist in diesem Projekt schon zweimal passiert. Geprueft wird
+    # deshalb, dass die Fusszeile die Quelle nennt, die WIRKLICH verwendet wird.
+    b.pruefe("Gegenprobe gegen Destatis" not in js,
+             "die Fusszeile kuendigt keine Gegenprobe an, die es nicht gibt")
+    b.pruefe("Eurostat" in js and "1099/2008" in js,
+             "sie nennt die Quelle, gegen die tatsaechlich geprueft wird")
 
     # --- Vorschau auf morgen ---
     # Der einzige Abschnitt der Seite, der nicht von der Vergangenheit handelt.
@@ -1311,6 +1421,25 @@ def negativtests() -> int:
         ("nichtssagender Satz 'x von 96 Viertelstunden' zurueck im Text",
          lambda: {"js": basis["js"]
                   + chr(10) + '  // "96 von 96 Viertelstunden";' + chr(10)}),
+        # Ein Token, das es nirgends gibt -- der Browser laesst die
+        # Deklaration weg und meldet nichts. Genau so stand --schrift-ziffern
+        # im ersten Anlauf des Gegenprobe-Blocks.
+        ("CSS-Token benutzt, das nirgends definiert ist",
+         lambda: {"css": basis["css"]
+                  + chr(10) + ".pf-probe { color: var(--gibtesnicht); }" + chr(10)}),
+        # Eine Klasse ohne jede CSS-Regel. So waere der Hinweis auf einen alten
+        # Vorschau-Abruf ohne Rand und ohne Farbe erschienen.
+        ("Klasse im JS vergeben, die es im CSS nicht gibt",
+         lambda: {"js": basis["js"]
+                  + chr(10) + '  el("p", { "class": "pf-ohne-jede-regel" });' + chr(10)}),
+        # Die Gegenprobe darf nirgends als Fehlerquote ausgegeben werden --
+        # die beiden Reihen zaehlen Verschiedenes.
+        ("veraltete Zusage einer Destatis-Gegenprobe zurueck in der Fusszeile",
+         lambda: {"js": basis["js"]
+                  + chr(10) + '  // "Gegenprobe gegen Destatis auf der Jahressumme."'
+                  + chr(10)}),
+        ("Hinweis entfernt, dass der Abstand keine Fehlerquote ist",
+         lambda: {"js": basis["js"].replace("KEINE Fehlerquote", "die Fehlerquote")}),
         ("Farb-Token als Schriftfamilie eingesetzt",
          lambda: {"css": basis["css"]
                   + chr(10) + ".pf-probe { font-family: var(--schrift); }" + chr(10)}),

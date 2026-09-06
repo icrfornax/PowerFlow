@@ -285,6 +285,15 @@ def bauen(z: dict) -> pdf.Dokument:
          for d in z["datensaetze"]],
         [150, 128, 110, 95], rechts={3})
 
+    _gp = json.loads((WURZEL / "data" / "gegenprobe.json").read_text(encoding="utf-8"))
+    _letzt = _gp["gesamt"][-1]
+    letzt_jahr = _letzt["jahr"]
+    letzt_eu = _letzt["eurostat_netto_twh"]
+    letzt_smard = _letzt["smard_twh"]
+    letzt_ab = _letzt["abstand_netto_prozent"]
+    wind_ab = [x for x in _gp["traeger"] if x["name"] == "Wind"][0]["jahre"][-1][
+        "abstand_prozent"]
+
     s.zwischen("Was daran keine unabhängige Gegenprobe ist")
     s.absatz(
         "SMARD bezieht seine Daten von ENTSO-E. Ein Abgleich gegen Energy-Charts, das "
@@ -293,7 +302,18 @@ def bauen(z: dict) -> pdf.Dokument:
         "nicht dass die Messung stimmt. Eine echte Gegenprobe braucht eine anders "
         "erhobene Zahl.")
     s.absatz(
-        f"Eine solche gibt es an einer Stelle: die installierte Windleistung aus dem "
+        f"Seit dem 06.09.2026 gibt es eine: Eurostat erhebt nach Verordnung (EG) Nr. "
+        f"1099/2008 über die nationalen Verwaltungen und nicht über ENTSO-E. Für "
+        f"{letzt_jahr} nennt Eurostat {de(letzt_eu, 1)} TWh Nettoerzeugung in "
+        f"Deutschland, SMARD {de(letzt_smard, 1)} TWh — {de(letzt_ab, 1)} %. Das ist "
+        f"KEINE Fehlerquote: SMARD zählt die Einspeisung ins öffentliche Netz, "
+        f"Eurostat die gesamte Erzeugung einschließlich der Eigenerzeugung von "
+        f"Industrie und Kleinanlagen. Der Beleg dafür, dass Abruf, Einheit und "
+        f"Zeitzone dieser Seite stimmen, ist die Windzeile: dort fallen die beiden "
+        f"Erhebungen auf {de(abs(wind_ab), 1)} % zusammen, weil Windparks praktisch "
+        f"vollständig ins Netz einspeisen.")
+    s.absatz(
+        f"Eine zweite gibt es an dieser Stelle: die installierte Windleistung aus dem "
         f"Marktstammdatenregister — {de(z['wind_installiert'], 2)} GW in Betrieb — "
         f"gegen die in den SMARD-Stundenreihen gemessene Spitze von 53,23 GW "
         f"zeitgleich. Das sind 65 %, ein für Wind plausibler Wert. Ein Faktor 1000 in "

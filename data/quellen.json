@@ -49,6 +49,14 @@
    "namensnennung": "Bundesnetzagentur | SMARD.de; © OpenStreetMap contributors",
    "erhebung": "nicht erhoben, sondern aus belegten Stützpunkten interpoliert; die gemessene Trefferquote steht in der Datei und auf der Seite"
   },
+  "eurostat": {
+   "name": "Eurostat, Statistisches Amt der Europaeischen Union",
+   "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_bal_c/",
+   "lizenz": "CC BY 4.0 (Beschluss 2011/833/EU)",
+   "lizenz_url": "https://creativecommons.org/licenses/by/4.0/deed.de",
+   "namensnennung": "Source: 10.2908/NRG_BAL_C und 10.2908/NRG_CB_E -- Jahressummen gebildet und dem SMARD-Wert gegenuebergestellt (veraendert)",
+   "erhebung": "nationale Verwaltungen nach Verordnung (EG) Nr. 1099/2008 -- NICHT ueber ENTSO-E; die einzige unabhaengige Erhebung in diesem Projekt"
+  },
   "netztransparenz": {
    "name": "netztransparenz.de -- 50Hertz, Amprion, TenneT, TransnetBW",
    "url": "https://www.netztransparenz.de/",
@@ -260,6 +268,18 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/lastprognose"
   },
   {
+   "titel": "Gegenprobe gegen eine andere Erhebung",
+   "inhalt": "SMARD-Jahressummen gegen die Erzeugungsstatistik von Eurostat, je Jahr und je Energietraeger, in TWh. Die einzige Zahl auf dieser Seite, die nicht mittelbar von ENTSO-E stammt.",
+   "quelle": "eurostat",
+   "beleg": "docs/beleg-gegenprobe.md",
+   "dateien": 1,
+   "bytes": 12428,
+   "zeitraum": null,
+   "muster": "data/gegenprobe.json",
+   "abzug": "data/gegenprobe.json",
+   "alle": null
+  },
+  {
    "titel": "Kosten des Engpassmanagements",
    "inhalt": "Je MONAT und Regelzone, in Euro: Gesamtkosten sowie die Posten Redispatch und Countertrade. Eine feinere Aufloesung gibt es nicht -- Kosten je Massnahme veroeffentlicht die Quelle nicht.",
    "quelle": "entsoe",
@@ -325,13 +345,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 13561,
+   "bytes": 14604,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 194,
- "bytes_gesamt": 33107355
+ "dateien_gesamt": 195,
+ "bytes_gesamt": 33120826
 }

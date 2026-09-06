@@ -728,6 +728,279 @@
      Der Zustand haelt bis zum Neuladen. Er liegt in Z, nicht im localStorage
      (den es auf dieser Seite nicht gibt) -- genau wie der Kartenausschnitt und
      die Traegerauswahl, die einen Zeitraumwechsel ebenfalls ueberleben. */
+  /* Ein Balkenpaar je Zeile: SMARD und Eurostat auf EINEM Massstab. Getrennte
+     Massstaebe waeren hier besonders schaedlich -- der ganze Abschnitt handelt
+     davon, wie weit zwei Zahlen auseinanderliegen. Der Massstab steht deshalb
+     UEBER den Balken, nicht darunter: wer die Balken schon gelesen hat, liest
+     ihn zu spaet.
+
+     EIGENE KLASSENNAMEN (pf-gp-*), obwohl es wie der Kostenblock aussieht.
+     Dieselbe Optik ist kein Grund fuer dieselben Namen -- das hat hier schon
+     zweimal Pruefungen anderer Bloecke mitzaehlen lassen. */
+  function gpBalken(ueberschrift, bezug, zeilen, einheit) {
+    var kasten = el("div", { "class": "pf-gp-bild" });
+    kasten.appendChild(el("h4", { text: ueberschrift }));
+    var hoechst = 0;
+    zeilen.forEach(function (z) {
+      hoechst = Math.max(hoechst, z.a, z.b);
+    });
+    hoechst = hoechst || 1;
+    kasten.appendChild(el("p", { "class": "pf-gp-massstab",
+      text: "Balken bis " + nf0.format(hoechst) + " " + einheit
+        + " — beide Reihen teilen diesen Maßstab · " + bezug }));
+
+    var gitter = el("div", { "class": "pf-gp-gitter" });
+    var reihen = [], aktiv = -1;
+    zeilen.forEach(function (z, k) {
+      var r = el("div", { "class": "pf-gp-zeile" });
+      r.appendChild(el("span", { "class": "pf-gp-name", text: z.name }));
+      var spur = el("div", { "class": "pf-gp-spur" });
+      var ba = el("div", { "class": "pf-gp-balken", "data-reihe": "smard",
+        style: "width:" + (z.a / hoechst * 100).toFixed(1) + "%;" });
+      var bb = el("div", { "class": "pf-gp-balken", "data-reihe": "eurostat",
+        style: "width:" + (z.b / hoechst * 100).toFixed(1) + "%;" });
+      spur.appendChild(ba);
+      spur.appendChild(bb);
+      r.appendChild(spur);
+      r.appendChild(el("span", { "class": "pf-gp-abstand",
+        text: z.abstand === null ? "—" : nf1.format(z.abstand) + " %" }));
+      gitter.appendChild(r);
+      reihen.push(r);
+    });
+    var ablese = ablesungAn(gitter);
+    reihen.forEach(function (r, k) {
+      r.addEventListener("mouseenter", function () {
+        if (aktiv >= 0) { reihen[aktiv].removeAttribute("data-aktiv"); }
+        aktiv = k;
+        r.setAttribute("data-aktiv", "ja");
+        var z = zeilen[k];
+        ablese.zeige({
+          kopf: z.kopf || z.name,
+          wert: z.abstand === null ? "—" : nf1.format(z.abstand),
+          einheit: "% Abstand",
+          bezug: z.bezug,
+          abschnitte: [{ titel: "Gemessen", zeilen: [
+            { name: "SMARD — Einspeisung ins öffentliche Netz",
+              wert: nf1.format(z.a) + " " + einheit, token: "--teal" },
+            { name: "Eurostat — gesamte Erzeugung",
+              wert: nf1.format(z.b) + " " + einheit, token: "--violett" },
+            { name: "Unterschied",
+              wert: nf1.format(z.b - z.a) + " " + einheit, token: "--orange" }
+          ] }]
+        }, (k + 0.5) / zeilen.length);
+      });
+    });
+    gitter.addEventListener("mouseleave", function () {
+      if (aktiv >= 0) { reihen[aktiv].removeAttribute("data-aktiv"); }
+      aktiv = -1; ablese.verbirg();
+    });
+    kasten.appendChild(gitter);
+    return kasten;
+  }
+
+  /* EINE Legende fuer beide Grafiken. Die erste Fassung haengte sie an jede --
+     dadurch stand sie zwischen den beiden Bildern und liess sich beiden
+     zuordnen. Beide benutzen dieselben zwei Farben; einmal genannt reicht. */
+  function gpLegende() {
+    var legende = el("div", { "class": "pf-legende" });
+    [["smard", "SMARD — Einspeisung ins öffentliche Netz"],
+     ["eurostat", "Eurostat — gesamte Erzeugung in Deutschland"]]
+      .forEach(function (L) {
+        var sp = el("span");
+        sp.appendChild(el("i", { "class": "pf-gp-marke", "data-reihe": L[0] }));
+        sp.appendChild(document.createTextNode(L[1]));
+        legende.appendChild(sp);
+      });
+    return legende;
+  }
+
+  function gegenprobeBild(G) {
+    var huelle = el("div");
+    huelle.appendChild(gpLegende());
+    /* Zwei Grafiken, zwei verschiedene Achsen -- deshalb nennt jede
+       Ueberschrift ihren Bezug ausdruecklich. Ohne das liest man die zweite
+       als Fortsetzung der ersten; genau dieser Fehler ist beim Kostenblock
+       schon einmal passiert. */
+    huelle.appendChild(gpBalken(
+      "Gesamte Erzeugung · ein Balkenpaar je Jahr",
+      "je Kalenderjahr, " + G.jahre[0] + " bis " + G.jahre[G.jahre.length - 1],
+      G.gesamt.map(function (g) {
+        return { name: String(g.jahr), a: g.smard_twh, b: g.eurostat_netto_twh,
+                 abstand: g.abstand_netto_prozent,
+                 kopf: "Kalenderjahr " + g.jahr,
+                 bezug: "Eurostat netto; brutto einschließlich "
+                   + "Kraftwerkseigenverbrauch wären es "
+                   + nf1.format(g.eurostat_brutto_twh) + " TWh" };
+      }), "TWh"));
+
+    var letztesJahr = G.jahre[G.jahre.length - 1];
+    var zeilen = [];
+    G.traeger.forEach(function (tr) {
+      var j = null;
+      tr.jahre.forEach(function (x) { if (x.jahr === letztesJahr) { j = x; } });
+      if (!j || (j.smard_twh === 0 && j.eurostat_brutto_twh === 0)) { return; }
+      zeilen.push({ name: tr.name, a: j.smard_twh, b: j.eurostat_brutto_twh,
+                    abstand: j.abstand_prozent,
+                    kopf: tr.name + " " + letztesJahr,
+                    bezug: "SMARD-Reihen: " + tr.smard_reihen.join(", ")
+                      + " · Eurostat-Codes: " + tr.eurostat_codes.join(", ")
+                      + " (brutto)" });
+    });
+    zeilen.sort(function (a, b) { return b.b - a.b; });
+    huelle.appendChild(gpBalken(
+      "Je Energieträger · ein Balkenpaar je Träger, nur " + letztesJahr,
+      "keine Zeitachse — jede Zeile ist ein Energieträger im Jahr " + letztesJahr,
+      zeilen, "TWh"));
+
+    huelle.appendChild(langtext(
+      "Das Muster ist genau das, was zwei so abgegrenzte Reihen zeigen müssen. "
+      + "Wind fällt zusammen, weil Windparks praktisch vollständig ins Netz "
+      + "einspeisen. Erdgas hat den größten Abstand, weil industrielle "
+      + "Kraft-Wärme-Kopplung Strom für den eigenen Betrieb erzeugt, der das "
+      + "öffentliche Netz nie erreicht. Photovoltaik fehlt der "
+      + "eigenverbrauchte Dachanlagenstrom, Biomasse und Wasserkraft die "
+      + "vielen kleinen Anlagen unterhalb der Meldegrenze. Bei Kohle und "
+      + "Kernenergie bleiben rund acht bis zehn Prozent — das ist der "
+      + "Eigenverbrauch der Kraftwerke selbst, der Unterschied zwischen brutto "
+      + "und netto. Eurostat weist ihn nur in der Summe getrennt aus, nicht je "
+      + "Träger; deshalb steht je Träger die Bruttozahl, und der Abstand ist "
+      + "entsprechend um diesen Anteil größer."));
+
+    if (G.aussenhandel && G.aussenhandel.length) {
+      var h = G.aussenhandel[G.aussenhandel.length - 1];
+      huelle.appendChild(langtext(
+        "Auch Ein- und Ausfuhr liegen auseinander: " + h.jahr + " meldet SMARD "
+        + nf1.format(h.smard_einfuhr_twh) + " TWh Einfuhr gegen "
+        + nf1.format(h.eurostat_einfuhr_twh) + " TWh bei Eurostat ("
+        + nf1.format(h.abstand_einfuhr_prozent) + " %) und "
+        + nf1.format(h.smard_ausfuhr_twh) + " gegen "
+        + nf1.format(h.eurostat_ausfuhr_twh) + " TWh Ausfuhr ("
+        + nf1.format(h.abstand_ausfuhr_prozent) + " %). Der Abstand schrumpft "
+        + "über die Jahre von rund 23 auf 8 Prozent. Woran das liegt, ist "
+        + "NICHT geklärt — denkbar sind unterschiedliche Abgrenzungen von "
+        + "physikalischem Fluss und kommerziellem Außenhandel sowie die "
+        + "Behandlung von Durchleitungen. Der Punkt steht als offener Punkt "
+        + "auf dieser Seite; eine Vermutung wird hier nicht als Erklärung "
+        + "ausgegeben."));
+    }
+    return huelle;
+  }
+
+  /* GEGENPROBE. Der einzige Abschnitt dieser Seite, der eine ANDERE Erhebung
+     zeigt. Alles Uebrige hier kommt mittelbar von ENTSO-E: SMARD bekommt seine
+     Zahlen von dort, netztransparenz.de sind die vier Betreiber selbst, die
+     Transparency Platform ist die Sammelstelle derselben Meldungen. Ein
+     Abgleich unter ihnen prueft Abruf, Einheit und Zeitzone -- nicht die
+     Messung. Eurostat erhebt ueber die nationalen Verwaltungen nach Verordnung
+     1099/2008 und ist damit unabhaengig. Beleg: docs/beleg-gegenprobe.md.
+
+     WICHTIG FUER DIE DARSTELLUNG: die beiden messen NICHT DASSELBE. SMARD
+     zaehlt die Einspeisung ins oeffentliche Netz, Eurostat die gesamte
+     Erzeugung einschliesslich Eigenverbrauch der Industrie. Der Abstand ist
+     deshalb keine Fehlerquote, und er wird nirgends so genannt. */
+  function gegenprobeBauen() {
+    var G = Z.gegenprobe;
+    if (!G || !G.gesamt || !G.gesamt.length) { return null; }
+    var huelle = el("div", { "class": "pf-kasten", "data-art": "gegenprobe" });
+    var letzt = G.gesamt[G.gesamt.length - 1];
+
+    huelle.appendChild(el("h3", { text: "Was eine andere Erhebung sagt" }));
+    huelle.appendChild(langtext(
+      "Alle übrigen Zahlen dieser Seite stammen mittelbar von ENTSO-E — SMARD "
+      + "bekommt sie von dort, netztransparenz.de sind die vier Netzbetreiber "
+      + "selbst. Ein Abgleich unter ihnen belegt, dass Abruf, Einheit und "
+      + "Zeitzone stimmen, aber nicht, dass die Messung stimmt. Eurostat "
+      + "erhebt über die nationalen Verwaltungen nach Verordnung (EG) "
+      + "1099/2008, für Deutschland über das Statistische Bundesamt. Das ist "
+      + "ein anderer Meldeweg und damit die erste echte Gegenprobe dieses "
+      + "Projekts."));
+
+    var kopf = el("div", { "class": "pf-gp-kopf" });
+    var wind = null;
+    G.traeger.forEach(function (tr) {
+      if (tr.name === "Wind") { wind = tr.jahre[tr.jahre.length - 1]; }
+    });
+    var bruch = null;
+    for (var i = 1; i < G.gesamt.length; i++) {
+      var d = G.gesamt[i].abstand_netto_prozent
+        - G.gesamt[i - 1].abstand_netto_prozent;
+      if (bruch === null || d > bruch.d) { bruch = { d: d, jahr: G.gesamt[i].jahr }; }
+    }
+    [["Letztes volles Jahr", String(letzt.jahr), "violett"],
+     ["SMARD gegen Eurostat", nf1.format(letzt.abstand_netto_prozent) + " %", "orange"],
+     ["Wind, derselbe Zeitraum",
+      wind && wind.abstand_prozent !== null
+        ? nf1.format(wind.abstand_prozent) + " %" : "—", "teal"]]
+      .forEach(function (k) {
+        var b = el("div", { "class": "pf-gp-zahl", "data-akzent": k[2] });
+        b.appendChild(el("span", { "class": "pf-titel", text: k[0] }));
+        b.appendChild(el("p", { "class": "pf-wert", text: k[1] }));
+        kopf.appendChild(b);
+      });
+    huelle.appendChild(kopf);
+    huelle.appendChild(langtext(
+      "Der Abstand ist KEINE Fehlerquote. Die beiden zählen Verschiedenes: "
+      + "SMARD die Einspeisung ins öffentliche Netz, Eurostat die gesamte "
+      + "Erzeugung in Deutschland einschließlich dessen, was Industrie und "
+      + "Kleinanlagen selbst erzeugen und selbst verbrauchen. Der Abstand ist "
+      + "die Größe dieses Unterschieds. Dass Wind auf " + nf1.format(
+        Math.abs(wind && wind.abstand_prozent !== null ? wind.abstand_prozent : 0))
+      + " % zusammenfällt, ist der eigentliche Beleg: Windparks speisen "
+      + "praktisch vollständig ins Netz ein, und eine Zahl aus einem anderen "
+      + "Meldeweg trifft dieselbe Größe."));
+
+    huelle.appendChild(gegenprobeBild(G));
+
+    // --- Der Bruch von 2018 ---
+    if (bruch && bruch.d > 3) {
+      var vor = null, nach = null;
+      G.gesamt.forEach(function (g) {
+        if (g.jahr === bruch.jahr - 1) { vor = g; }
+        if (g.jahr === bruch.jahr) { nach = g; }
+      });
+      var k = el("div", { "class": "pf-gp-befund" });
+      k.appendChild(el("h4", { text: "Der Bruch von " + bruch.jahr }));
+      k.appendChild(langtext(
+        "Zwischen " + (bruch.jahr - 1) + " und " + bruch.jahr + " springt der "
+        + "Abstand von " + nf1.format(vor.abstand_netto_prozent) + " auf "
+        + nf1.format(nach.abstand_netto_prozent) + " Prozent — "
+        + nf1.format(bruch.d) + " Prozentpunkte an einer Jahresgrenze. Nach "
+        + "Eurostat ist die deutsche Erzeugung in diesem Jahr GESUNKEN, von "
+        + nf1.format(vor.eurostat_netto_twh) + " auf "
+        + nf1.format(nach.eurostat_netto_twh) + " TWh; bei SMARD steigt sie "
+        + "gleichzeitig von " + nf1.format(vor.smard_twh) + " auf "
+        + nf1.format(nach.smard_twh) + " TWh. Eine Erzeugung, die real fällt "
+        + "und in der Veröffentlichung steigt, ist eine geänderte Erfassung "
+        + "und kein Zubau. Das bestätigt unabhängig, was der Bilanzrest schon "
+        + "nahegelegt hatte — dort war es die Erdgasreihe, die von 25,6 auf "
+        + "42,9 TWh sprang. Jahressummen von vor " + bruch.jahr + " sind mit "
+        + "denen danach deshalb nicht zu vergleichen."));
+      huelle.appendChild(k);
+    }
+
+    infoKnopf(huelle, {
+      wert: "SMARD-Jahressummen gegen die Erzeugungsstatistik von Eurostat "
+        + "(nrg_bal_c und nrg_cb_e), " + G.jahre[0] + " bis "
+        + G.jahre[G.jahre.length - 1] + ", in TWh.",
+      grenzenTitel: "Was der Abstand nicht ist",
+      grenzen: "Er ist keine Fehlerquote. SMARD zählt die Einspeisung ins "
+        + "öffentliche Netz, Eurostat die gesamte Erzeugung — die Differenz "
+        + "ist im Wesentlichen Eigenerzeugung der Industrie, eigenverbrauchter "
+        + "Solarstrom und Kraftwerkseigenverbrauch. Verglichen werden "
+        + "JAHRESSUMMEN; über die Richtigkeit einzelner Stunden sagt das "
+        + "nichts. Die Regelzonen kennt Eurostat nicht.",
+      quellen: [{ text: "Eurostat — nrg_bal_c (10.2908/NRG_BAL_C)",
+                  url: "https://ec.europa.eu/eurostat/databrowser/view/nrg_bal_c/" },
+                { text: "Eurostat — nrg_cb_e (10.2908/NRG_CB_E)",
+                  url: "https://ec.europa.eu/eurostat/databrowser/view/nrg_cb_e/" }],
+      messung: "Beide Seiten sind gemessen beziehungsweise amtlich erhoben. Der "
+        + "Abstand in Prozent ist GERECHNET: (SMARD − Eurostat) ÷ Eurostat."
+    }, "Gegenprobe");
+
+    return { inhalt: huelle,
+             zaehler: G.jahre.length + " Jahre verglichen" };
+  }
+
   function klappabschnitt(id, titel, inhalt, zaehler, offenVoreingestellt) {
     if (!Object.prototype.hasOwnProperty.call(Z.klapp, id)) {
       Z.klapp[id] = !!offenVoreingestellt;
@@ -2617,7 +2890,13 @@
      zwei Tagen in CLAUDE.md, und ich habe sie sofort wieder gebrochen. */
   function vorschauBild(V) {
     var kasten = el("div", { "class": "pf-vorschau" });
-    var heute = nachIso(new Date());
+    /* Geteilt wird an dem Tag, den die DATEI ihren "heute" nennt -- nicht am
+       Datum des Browsers. Beim ersten Anlauf stand hier new Date(): sobald der
+       Abruf einen Tag alt war, verschwand die Markierung fuer morgen
+       stillschweigend, und niemand haette es gemerkt. Ein Stand von gestern ist
+       kein Grund, die Aufteilung wegzulassen -- er ist ein Grund, ihn
+       HINZUSCHREIBEN. Das passiert weiter unten. */
+    var heute = V.erzeugt_am || nachIso(new Date());
     var n = V.stunden.length;
     var abMorgen = -1;
     V.stunden.forEach(function (m, i) {
@@ -2857,6 +3136,13 @@
     legende.appendChild(spm);
     kasten.appendChild(legende);
 
+    if (V.erzeugt_am && V.erzeugt_am < nachIso(new Date())) {
+      kasten.appendChild(el("p", { "class": "pf-karte-warnung",
+        text: "Dieser Abruf stammt vom " + datumKurz(V.erzeugt_am)
+          + ". „Morgen“ heißt hier deshalb der "
+          + datumKurz(verschoben(V.erzeugt_am, 1))
+          + " — nicht der morgige Tag. Ein neuerer Stand liegt noch nicht vor." }));
+    }
     kasten.appendChild(langtext(
       "Weiter als bis morgen 23:45 Uhr reicht diese Vorschau nicht, und das "
       + "liegt nicht an dieser Seite: der Day-ahead-Markt wird mittags für den "
@@ -5101,6 +5387,13 @@
     neu.appendChild(klappabschnitt("qualitaet", "Datenqualität", maengel,
       ul3.querySelectorAll("li").length + " Mängel", false));
 
+    // --- Gegenprobe gegen eine andere Erhebung ---
+    var gp = gegenprobeBauen();
+    if (gp) {
+      neu.appendChild(klappabschnitt("gegenprobe",
+        "Gegenprobe gegen eine andere Erhebung", gp.inhalt, gp.zaehler, false));
+    }
+
     // --- Was noch fehlt ---
     var offen = el("div", { "class": "pf-kasten", "data-art": "offen" });
     offen.appendChild(el("h3", { text: "Was noch fehlt" }));
@@ -5122,7 +5415,24 @@
       /* Am 03.09.2026 geprueft und VERWORFEN -- mit Zahlen, nicht mit Gefuehl.
          Der Punkt bleibt in der Liste, aber als offene FRAGE, nicht als
          Aufgabe: die Umstellung waere ein Rueckschritt. */
+      /* Neu am 06.09.2026, aus der Gegenprobe. Er steht OBEN, weil er eine
+         gemessene Abweichung ohne Erklaerung ist -- und weil ich dafuer
+         ausdruecklich keine Vermutung als Erklaerung hinschreibe. */
       { hoch: true,
+        text: "Warum SMARD und Eurostat bei Ein- und Ausfuhr auseinanderliegen. "
+          + "2015 meldet SMARD 22,8 % weniger Einfuhr als Eurostat, 2024 noch "
+          + "7,7 %; bei der Ausfuhr geht es von 13,4 auf 9,3 % zurück. Der "
+          + "Abstand schrumpft also, und das ist selbst erklärungsbedürftig. "
+          + "Denkbar sind eine andere Abgrenzung von physikalischem Fluss und "
+          + "kommerziellem Außenhandel sowie die Behandlung von Durchleitungen "
+          + "— beides ist NICHT geprüft. Bis dahin steht hier die Abweichung "
+          + "und keine Erklärung." },
+      /* NICHT mehr "Als Naechstes". Der Punkt ist am 03.09.2026 geprueft und
+         die Umstellung verworfen -- er wird also gerade nicht angefasst. Die
+         Markierung heisst "wird als Naechstes angefasst"; sie an etwas zu
+         haengen, das bewusst liegen bleibt, macht sie wertlos. Genau EIN
+         Eintrag darf sie tragen, und browsertest.mjs prueft das. */
+      { hoch: false,
         text: "Warum die ENTSO-E-Reihe für Redispatch kürzer ist als die von "
           + "netztransparenz.de. Über acht Tage im August 2026 gemessen führt "
           + "die Transparency Platform nur 24 bis 63 % der Arbeit und etwa die "
@@ -5256,7 +5566,12 @@
         + '© OpenStreetMap contributors</a>, Lizenz ODbL 1.0. '
         + 'Gegengeprüft gegen Energy-Charts (Fraunhofer ISE) '
         + '— das ist eine Konsistenzprüfung, keine unabhängige Gegenprobe: beide Quellen gehen '
-        + 'auf dieselbe ENTSO-E-Erhebung zurück. Gegenprobe gegen Destatis auf der Jahressumme.'
+        + 'auf dieselbe ENTSO-E-Erhebung zurück. Die Gegenprobe steht im Abschnitt '
+        + '„Gegenprobe gegen eine andere Erhebung“ und läuft gegen Eurostat, das nach '
+        + 'Verordnung (EG) 1099/2008 über die nationalen Verwaltungen erhebt: '
+        + '<a href="https://ec.europa.eu/eurostat/databrowser/view/nrg_bal_c/" '
+        + 'target="_blank" rel="noopener">Source: 10.2908/NRG_BAL_C</a>, '
+        + 'Lizenz CC BY 4.0.'
     }));
     fuss.appendChild(el("p", {
       text: "Daten abgerufen am "
@@ -5339,7 +5654,11 @@
       /* Die Vorschau auf morgen. Wenige Kilobyte, und sie steht ganz oben im
          neuen Abschnitt -- also gleich mitladen. */
       hole("data/vorschau.json").catch(function () { return null; }),
-      hole("data/lastprognose-verzeichnis.json").catch(function () { return null; })
+      hole("data/lastprognose-verzeichnis.json").catch(function () { return null; }),
+      /* Die Gegenprobe gegen Eurostat. Zwoelf Kilobyte, aendert sich wenige
+         Male im Jahr -- und sie ist die einzige Zahl hier, die nicht
+         mittelbar von ENTSO-E stammt. */
+      hole("data/gegenprobe.json").catch(function () { return null; })
     ]).then(function (teile) {
       Z.verzeichnis = teile[0];
       Z.grundkarte = teile[1];
@@ -5351,6 +5670,7 @@
       Z.blockVerzeichnis = teile[10] || null;
       Z.vorschau = teile[11] || null;
       Z.prognoseVerzeichnis = teile[12] || null;
+      Z.gegenprobe = teile[13] || null;
       var jahre = Z.verzeichnis.jahre;
       Z.minTag = jahre[0].erster_tag;
       var letzte = jahre[jahre.length - 1];

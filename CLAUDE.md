@@ -102,6 +102,12 @@ die Regelzonenbilanz.
 
 ## Datendisziplin
 
+- **Die Gegenprobe steht.** Seit dem 06.09.2026 gibt es EINE Quelle in diesem
+  Projekt, die nicht mittelbar von ENTSO-E kommt: Eurostat, erhoben nach
+  Verordnung (EG) Nr. 1099/2008 ueber die nationalen Verwaltungen. Alles
+  Uebrige -- SMARD, netztransparenz.de, die Transparency Platform -- haengt an
+  einem einzigen Meldeweg; ein Abgleich unter ihnen ist eine
+  Konsistenzpruefung. Siehe den eigenen Abschnitt unten.
 - **Messen statt modellieren.** Tagesgenaue Messreihen aus Primaerquellen. Wo
   eine Vergangenheit fortgeschrieben wird, der reale Wert desselben Kalendertags
   aus dem gewaehlten Referenzjahr — kein Monatsmittel, keine geglaettete Kurve.
@@ -720,6 +726,67 @@ Browserpruefungen hat sie gemeldet: die Achse stand auf 0/17,5/35/52,5/70 GW
 Datumszeile (sie haengen jetzt an der Marke selbst); und die Unterlegung fuer
 "morgen" toente die halbdurchsichtigen Traegerbaender, sodass dieselbe Farbe
 links und rechts verschieden aussah (sie sitzt jetzt im Rand ueber dem Bild).
+
+## Gegenprobe gegen eine andere Erhebung
+
+Erledigt am 06.09.2026. Beleg: `docs/beleg-gegenprobe.md`, Abruf durch
+`scripts/fetch-gegenprobe.py` ueber `scripts/eurostat.py`. Monatlich im
+Stammdaten-Workflow.
+
+**Bis dahin hatte dieses Projekt keine einzige echte Gegenprobe.** Der Grund
+stand seit dem ersten Tag im Skill `datenquellen-strom` und war nie umgesetzt:
+SMARD bekommt seine Zahlen von ENTSO-E, Energy-Charts veroeffentlicht SMARD
+weiter, netztransparenz.de sind die vier Betreiber selbst. Ein Abgleich unter
+ihnen belegt Abruf, Einheit und Zeitzone -- nicht die Messung.
+
+- **Eurostat und nicht Destatis oder AGEB.** Destatis GENESIS braucht ein
+  zweites Geheimnis im Workflow; AGEB nennt keine Lizenz. Eurostat ist offen,
+  CC BY 4.0 (Beschluss 2011/833/EU), und die Erhebung laeuft ueber die
+  nationalen Verwaltungen -- fuer Deutschland ueber das Statistische Bundesamt.
+  Die Metadaten der Quelle nennen ENTSO-E an **keiner** Stelle. Achte Lizenz im
+  Projekt; die Namensnennung verlangt **DOI und Abrufdatum**, beides steht in
+  der Datei und wird aus der Antwort GELESEN.
+- **DER MONATSDATENSATZ IST UNBRAUCHBAR.** `nrg_cb_pem` nennt fuer 2023
+  456,0 TWh, der Jahresdatensatz derselben Quelle 498,7 TWh -- 42,7 TWh
+  Widerspruch innerhalb von Eurostat. Verwendet werden `nrg_bal_c` (brutto je
+  Traeger) und `nrg_cb_e` (Bilanz). Zwei Fallen im Monatsdatensatz, falls ihn
+  doch jemand anfasst: `CF_R` steckt in `CF` UND in `RA000`, `RA130` steckt in
+  `RA100` aber NICHT in `RA000`.
+- **Der Abstand ist KEINE Fehlerquote**, und die Seite sagt das ausdruecklich.
+  SMARD zaehlt die Einspeisung ins oeffentliche Netz, Eurostat die gesamte
+  Erzeugung einschliesslich Eigenerzeugung der Industrie. `validate.py` prueft,
+  dass der Satz stehen bleibt.
+- **Wind ist der eigentliche Beleg: −0,5 % im Jahr 2024.** Windparks speisen
+  praktisch vollstaendig ein, also muss eine Zahl aus einem anderen Meldeweg
+  dieselbe Groesse treffen. Sie tut es. `validate.py` bricht ab, wenn die
+  Windzeile um mehr als 4 % auseinanderlaeuft -- dann stimmt etwas mit Abruf,
+  Einheit oder Zeitzone dieser Seite nicht.
+- **DER BEFUND: der Bruch von 2018 ist unabhaengig bestaetigt.** Der Abstand
+  springt zwischen 2017 und 2018 von 16,9 auf 10,0 % und bleibt danach stabil.
+  Nach Eurostat ist die deutsche Erzeugung in diesem Jahr GESUNKEN (619,1 auf
+  605,7 TWh), bei SMARD steigt sie gleichzeitig um 30,7 TWh. Eine Erzeugung,
+  die real faellt und in der Veroeffentlichung steigt, ist eine geaenderte
+  Erfassung. Das war in `docs/beleg-bilanzrest.md` bisher eine Vermutung aus
+  dem Verhalten der SMARD-Reihe selbst. **Jahressummen vor 2018 sind mit denen
+  danach nicht vergleichbar.**
+- **Ein- und Ausfuhr weichen um 8 bis 23 % ab, und das ist NICHT geklaert.**
+  Der Abstand schrumpft ueber die Jahre. Er steht als offener Punkt auf der
+  Seite; eine Vermutung wird nicht als Erklaerung ausgegeben. `validate.py`
+  prueft, dass er ungeklaert benannt bleibt.
+
+**Zwei Pruefungen, die aus dieser Arbeit entstanden sind** und nichts mit
+Eurostat zu tun haben -- beide fangen einen STILLEN Ausfall, den der Browser
+nicht meldet:
+- Jedes ohne Ersatzwert benutzte CSS-Token muss auch definiert sein.
+  `--schrift-ziffern` gab es nie; der richtige Name ist `--schrift-zahl`.
+- Jede im JS vergebene `pf-`-Klasse braucht eine CSS-Regel oder steht mit Grund
+  in der Ausnahmeliste `NUR_GRIFF`. `pf-warnung` gab es nie; der Hinweis waere
+  ohne Rand und ohne Farbe erschienen.
+
+**Und eine dritte:** die Fusszeile hat monatelang eine "Gegenprobe gegen
+Destatis auf der Jahressumme" angekuendigt, die es nie gab -- und stand noch
+da, als die Gegenprobe laengst gebaut war und gegen Eurostat lief. Eine Zusage
+in Prosa veraltet still, genau wie eine Zahl.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
