@@ -3227,7 +3227,7 @@
   function prognosegueteZeigen(ziel, von, bis) {
     ziel.textContent = "";
     ziel.appendChild(el("h4",
-      { text: "Wie gut die Ankündigung war · ein Balken je Tag des Zeitraums" }));
+      { text: "Wie gut die Ankündigung war" }));
     var tage = [], fehler = [], abw = [];
     tageImZeitraum(von, bis).forEach(function (tag) {
       var d = Z.prognoseJahre[Number(tag.slice(0, 4))];
@@ -3271,46 +3271,29 @@
       + "weil sich zu hohe und zu niedrige Viertelstunden darin aufheben. "
       + "Deshalb steht der absolute Fehler oben und die Summe nur hier."));
 
-    // Ein Balken je Tag. Farbe ist nicht noetig -- es gibt nur eine Groesse.
-    var maxF = Math.max.apply(null, fehler);
-    ziel.appendChild(el("p", { "class": "pf-guete-massstab",
-      text: "Balken bis " + nf1.format(maxF) + " % — je Balken EIN TAG. Der "
-        + "Wert ist der mittlere Fehler der 96 Viertelstunden dieses Tages" }));
-    var gitter = el("div", { "class": "pf-guete-gitter" });
-    var spalten = [], aktivF = -1;
-    var ablese = null;
-    tage.forEach(function (tag, k) {
-      var sp = el("div", { "class": "pf-guete-tag" });
-      sp.appendChild(el("div", { "class": "pf-guete-balken",
-        style: "height:" + (fehler[k] / maxF * 100).toFixed(1)
-          + "%;background:var(--violett);" }));
-      gitter.appendChild(sp);
-      spalten.push(sp);
-    });
-    ablese = ablesungAn(gitter);
-    spalten.forEach(function (sp, k) {
-      sp.addEventListener("mouseenter", function () {
-        if (aktivF >= 0) { spalten[aktivF].removeAttribute("data-aktiv"); }
-        aktivF = k;
-        sp.setAttribute("data-aktiv", "ja");
-        ablese.zeige({
-          kopf: datumLang(tage[k]),
-          wert: nf2.format(fehler[k]), einheit: "% mittlerer Fehler",
-          bezug: "je Viertelstunde, in Prozent der gemessenen Last",
-          abschnitte: [{ titel: "Über den Tag", zeilen: [
-            { name: abw[k] >= 0 ? "zu hoch angekündigt" : "zu niedrig angekündigt",
-              wert: gwh(Math.abs(abw[k] || 0), 1) + " GWh",
-              token: abw[k] >= 0 ? "--orange" : "--teal" }
-          ] }]
-        }, (k + 0.5) / tage.length);
-      });
-    });
-    gitter.addEventListener("mouseleave", function () {
-      if (aktivF >= 0) { spalten[aktivF].removeAttribute("data-aktiv"); }
-      aktivF = -1; ablese.verbirg();
-    });
-    ziel.appendChild(gitter);
-    ziel.appendChild(el("p", { "class": "pf-achsenfuss", text: "Tag" }));
+    /* HIER STAND EIN BALKENDIAGRAMM -- ein Balken je Tag des Zeitraums. Es ist
+       am 07.09.2026 entfernt worden, und zwar nach Ansehen des Bildes:
+
+       Der Fehler bewegt sich in einem schmalen Band -- ueber die letzten sieben
+       Tage zwischen 1,84 und 3,39 %. Auf einer Achse ab null hiess das, dass
+       jeder Balken zwischen 54 und 100 % der Hoehe stand. Sieben breite Bloecke
+       fast gleicher Hoehe nebeneinander lesen sich als EIN durchgehender
+       Balken; die Unterschiede, um die es geht, waren nicht zu sehen.
+
+       Eine Achse ab dem kleinsten Wert haette es lesbar gemacht und zugleich
+       falsch: ein Balken, der nicht bei null beginnt, uebertreibt jeden
+       Unterschied. Die Wahl lag also zwischen unlesbar und irrefuehrend.
+
+       Und es gab nichts zu retten: die drei Zahlen darueber -- mittlerer,
+       bester und schlechtester Tag -- sagen dasselbe genauer. Das Diagramm
+       zeigte dasselbe noch einmal, nur groeber. Dieselbe Begruendung wie bei
+       der entfernten Jahressummen-Grafik der Engpasskosten.
+
+       Was BLIEBE, waere ein langer Zeitraum: 365 duenne Balken haetten eine
+       Struktur, die drei Zahlen nicht zeigen. Dafuer muesste die Grafik aber
+       ab einer Mindestlaenge erscheinen und darunter verschwinden -- eine
+       Grafik, die je nach Reglerstellung da ist oder nicht, erklaert sich
+       schlecht. Wenn sie wiederkommt, dann so und mit einer Achse. */
 
     infoKnopf(ziel, {
       wert: "Day-ahead-Prognose (ENTSO-E 6.1.B) gegen die gemessene Last "
@@ -5477,24 +5460,23 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
-      /* Jetzt der oberste Punkt. Von den offenen Fragen ist es die einzige,
-         die eine Zahl betrifft, die diese Seite selbst veroeffentlicht -- und
-         die mit dem vorhandenen Zugang messbar ist. Die uebrigen brauchen
-         fremde Erhebungen (Destatis, industrielle Kraftwerke) oder sind
-         Ausbau. */
+      /* ZURUECKGENOMMEN am 07.09.2026. Hier stand, die ENTSO-E-Reihe fuehre
+         nur 24 bis 63 % der Redispatch-Arbeit. Das war falsch -- meine
+         Abfrage hatte den groessten Teil ausgelassen: Redispatch ZWISCHEN
+         zwei deutschen Regelzonen steht dort unter businessType A46 mit zwei
+         deutschen Domaenen, und genau die Kombination hatte ich nie
+         abgefragt. Am 28.08.2026 sind das 106.873 von 150.628 MWh, also 71 %
+         der ENTSO-E-Summe. */
       { hoch: true,
-        text: "Warum die ENTSO-E-Reihe für Redispatch kürzer ist als die von "
-          + "netztransparenz.de. Über acht Tage im August 2026 gemessen führt "
-          + "die Transparency Platform nur 24 bis 63 % der Arbeit und etwa die "
-          + "Hälfte der Vorgänge (51 Zeitreihen gegen 108 Maßnahmen am 28.08.). "
-          + "Eine Umstellung auf die ETP wäre deshalb ein Rückschritt und "
-          + "unterbleibt; woran der Unterschied liegt — Schwelle, Abgrenzung "
-          + "oder Meldeverzug — ist nicht geklärt." },
-      /* Jetzt der oberste Punkt. Er folgt direkt aus der Untersuchung des
-         Bilanzrests vom 03.09.2026: DASS Erzeugung fehlt, ist gemessen --
-         welche, ist offen. Das ist die einzige verbleibende Frage, die die
-         Zahlen DIESER Seite betrifft; alles andere in der Liste betrifft
-         fremde Statistiken oder ist Ausbau. */
+        text: "Wie weit ENTSO-E und netztransparenz beim Redispatch wirklich "
+          + "auseinanderliegen. Eine frühere Angabe auf dieser Seite — die "
+          + "Plattform führe nur 24 bis 63 % der Arbeit — ist am 07.09.2026 "
+          + "ZURÜCKGENOMMEN: die Abfrage war unvollständig, es fehlte der "
+          + "Redispatch zwischen zwei deutschen Regelzonen, und der ist der "
+          + "größte Teil. Vollständig gemessen ergeben zwei Tage 84,6 und "
+          + "105,2 % statt 24 bis 63 %. Woher diese Streuung kommt, ist "
+          + "offen; die Messung über mehr Tage steht aus, weil die Plattform "
+          + "seit dem Nachmittag des 07.09. mit HTTP 503 antwortet." },
       { hoch: false,
         text: "Wie groß der Anteil der industriellen Eigenerzeugung an der "
           + "Erzeugungslücke ist. Am 07.09.2026 ist die Lücke aufgeteilt: die "

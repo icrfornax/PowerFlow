@@ -302,7 +302,7 @@ try {
      wie eine Messung aussehen. */
   const vorschau = await js(`(async function () {
     for (let i = 0; i < 50; i++) {
-      if (document.querySelector(".pf-prognoseguete .pf-guete-gitter")) { break; }
+      if (document.querySelector(".pf-prognoseguete .pf-guete-zahl")) { break; }
       await new Promise((r) => setTimeout(r, 100));
     }
     const v = document.querySelector(".pf-vorschau");
@@ -400,20 +400,24 @@ try {
     "es steht da, warum es nicht weiter reicht");
   pruefe(vorschau.gzahlen === 3,
     `drei Kennzahlen zur Prognosegüte (${vorschau.gzahlen})`);
-  pruefe(vorschau.balken >= 5,
-    `ein Balken je Tag (${vorschau.balken})`);
-  pruefe(/Balken bis/.test(vorschau.massstab),
-    "der Massstab ist genannt", vorschau.massstab.slice(0, 70));
+  /* DAS BALKENDIAGRAMM IST WEG, am 07.09.2026 entfernt. Der Fehler bewegt sich
+     in einem so schmalen Band, dass sieben Balken auf einer Achse ab null wie
+     EIN durchgehender Block aussahen -- und die drei Zahlen darueber sagen
+     dasselbe genauer. Geprueft wird, dass es nicht unbemerkt zurueckkommt:
+     wer es wieder einbaut, braucht eine Achse und eine Mindestlaenge. */
+  pruefe(vorschau.balken === 0,
+    `kein Balkendiagramm mehr in der Prognosegüte (${vorschau.balken})`);
+  pruefe(!/je Balken EIN TAG/.test(vorschau.gtext),
+    "und keine Massstabszeile, die Balken verspricht");
   pruefe(/absolute[rn]? Fehler/.test(vorschau.gtext),
     "es steht da, dass der Fehler ABSOLUT gerechnet ist");
-  pruefe(/je Balken EIN TAG/.test(vorschau.gtext),
-    "und dass ein Balken ein Tag ist, nicht eine Viertelstunde");
   pruefe(/aufheben/.test(vorschau.gtext),
     "und warum die Tagessumme kleiner ist als der Fehler je Viertelstunde");
   pruefe(vorschau.info === 1, "mit Info-Knopf");
   await foto("vorschau", ".pf-vorschau");
   await foto("prognoseguete", ".pf-prognoseguete");
 
+  await foto("prognoseguete", ".pf-prognoseguete");
   await foto("verlauf-woche", ".pf-verlauf");
 
   /* Zufluss/Abfluss und die Regelzonen. Nachgerechnet wird die Bilanz aus den

@@ -340,15 +340,35 @@ Zoom eine Haeufung ueberhaupt aufloest.
 Mit Immo Punkt fuer Punkt sortiert. Die Liste auf der Seite hat seither eine
 Reihenfolge; was oben steht, traegt die Markierung "Als Naechstes".
 
-**Hoch:** Warum die ENTSO-E-Reihe fuer Redispatch kuerzer ist als die von
-netztransparenz.de -- gemessen 24 bis 63 % der Arbeit und rund die Haelfte der
-Vorgaenge. Die am 03.09.2026 erwogene Umstellung auf die ETP ist damit vom Tisch;
-sie waere ein Rueckschritt. Beleg: `docs/beleg-redispatch.md`.
+**ZURUECKGENOMMEN am 07.09.2026: die ENTSO-E-Reihe ist NICHT kuerzer.** Hier
+stand, die Plattform fuehre nur 24 bis 63 % der Redispatch-Arbeit. Das war
+falsch -- **meine Abfrage war unvollstaendig.** Redispatch ZWISCHEN zwei
+deutschen Regelzonen steht bei ENTSO-E unter `businessType=A46` mit ZWEI
+DEUTSCHEN Domaenen; genau diese Kombination hatte ich nie abgefragt. Am
+28.08.2026 sind das 106.873 von 150.628 MWh -- 71 % der ENTSO-E-Summe.
+Vollstaendig gemessen: 105,2 % (28.08.) und 84,6 % (21.08.) der
+netztransparenz-Arbeit. Beleg: `docs/beleg-redispatch.md`.
 
-**REDISPATCH BLEIBT BEI netztransparenz.de.** Der ENTSO-E-Zugang wird gebraucht,
-um die Lizenzkette zu belegen -- nicht als Datenquelle. Wer das aendern will,
-misst vorher nach: `documentType=A63&businessType=A85` mit den vier CTA-Codes,
-`curveType` A03 (ein Wert gilt bis zum naechsten Punkt), Einheit MWH je MTU.
+**Das richtige Abfragerezept:**
+
+    documentType=A63
+      businessType=A85   in_Domain = out_Domain = CTA        (intern)
+      businessType=A46   in_Domain, out_Domain = zwei CTAs   (auch zwei
+                                                              DEUTSCHE!)
+
+CTA-Codes: 50Hertz `10YDE-VE-------2`, Amprion `10YDE-RWENET---I`, TenneT
+`10YDE-EON------1`, TransnetBW `10YDE-ENBW-----N`. Einheit MWh je MTU,
+`curveType` A03 -- ein Wert gilt bis zum naechsten genannten Punkt.
+
+**REDISPATCH BLEIBT TROTZDEM BEI netztransparenz.de**, aber aus einem anderen
+Grund als bisher angegeben: die Quelle liefert je Massnahme Grund, Richtung,
+Dauer, anweisenden und anfordernden Betreiber und die betroffene Anlage. Das
+braucht die Seite; die aggregierten Zeitreihen der Plattform geben es nicht her.
+
+**Hoch:** wie weit die beiden Reihen wirklich auseinanderliegen. Zwei Tage mit
+84,6 und 105,2 % sind eine grobe Deckung, keine Uebereinstimmung. Die Messung
+ueber mehr Tage steht aus -- die Plattform antwortet seit dem Nachmittag des
+07.09.2026 mit HTTP 503.
 
 **Erledigt am 03.09.2026:** die Lizenzfrage (Punkt 1, siehe oben), der
 ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF

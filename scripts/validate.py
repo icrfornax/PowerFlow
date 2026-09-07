@@ -834,6 +834,21 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("Woran das liegt, ist NICHT" not in js,
              "die zurueckgenommene Formulierung zur Aussenhandelsdifferenz ist weg")
 
+    # --- Die zurueckgenommene Redispatch-Behauptung ---
+    # Am 03.09.2026 stand auf der Seite, die ENTSO-E-Reihe fuehre nur 24 bis
+    # 63 % der Redispatch-Arbeit. Das war falsch: die Abfrage hatte den
+    # Redispatch ZWISCHEN zwei deutschen Regelzonen ausgelassen, und der ist
+    # der groesste Teil. Die Ruecknahme muss stehen bleiben -- und der Beleg
+    # muss das richtige Abfragerezept nennen, sonst wird derselbe Fehler
+    # wiederholt.
+    rdb = lade("docs/beleg-redispatch.md")
+    for satz in ("businessType=A46", "zwischen zwei deutschen",
+                 "106.873", "ZURÜCKGENOMMEN am 07.09.2026"):
+        b.pruefe(satz in rdb, f"beleg-redispatch.md nennt: {satz!r}")
+    b.pruefe("24 bis 63 %" not in js or "ZURÜCKGENOMMEN" in js
+             or "zurückgenommen" in js.lower(),
+             "die widerlegte Angabe steht nur noch als Ruecknahme auf der Seite")
+
     # --- Die Erzeugungsluecke, aufgeteilt am 07.09.2026 ---
     # Zwei Ursachen, und die zweite ist der Grund fuer die Pruefung: die
     # Schwelle von 10 MW erklaert Biomasse, Wasser und einen Teil des Erdgases,

@@ -663,3 +663,83 @@ Freigabe, sie muss nicht die Datenquelle sein.
 Offen bleibt, WARUM die ETP-Reihe kürzer ist. Denkbar wäre eine Schwelle, eine
 andere Abgrenzung des Begriffs oder ein Meldeverzug. Das ist nicht geprüft und
 wird nicht behauptet.
+
+---
+
+## ZURÜCKGENOMMEN am 07.09.2026: die ENTSO-E-Reihe ist NICHT kürzer
+
+Am 03.09.2026 stand hier, die Transparency Platform führe nur 24 bis 63 % der
+Redispatch-Arbeit von netztransparenz.de. **Das war falsch, und der Fehler war
+meiner: die Abfrage war unvollständig.**
+
+### Was gefehlt hat
+
+Abgefragt wurden damals zwei Dinge:
+
+- `businessType=A85` (internes Redispatch) mit `in_Domain = out_Domain` = je
+  eine deutsche Regelzone, und
+- `businessType=A46` (grenzüberschreitend) nur gegen **ausländische** Zonen.
+
+Nicht abgefragt wurde der größte Teil: **Redispatch zwischen zwei deutschen
+Regelzonen.** Für ENTSO-E sind die Regelzonen die Domänen. Eine Maßnahme, bei
+der Amprion herunter- und 50Hertz hochfährt, ist dort ein Austausch zwischen
+zwei Regelzonen — also `A46` mit zwei deutschen Domänen, nicht `A85`. Genau
+diese Kombination hatte ich nie abgefragt.
+
+### Was dabei herauskommt
+
+Am **28.08.2026**, vollständig gemessen:
+
+| Teil | MWh |
+|---|---|
+| intern (A85, vier Regelzonen) | 43.755 |
+| **zwischen den deutschen Regelzonen (A46)** | **106.873** |
+| gegen das Ausland (A46, 88 Kombinationen) | 0 |
+| **ENTSO-E zusammen** | **150.628** |
+| netztransparenz.de | 143.220 |
+| | **105,2 %** |
+
+Der zuvor übersehene Teil ist **71 % der ENTSO-E-Summe**. Die größten
+Einzelposten: 50Hertz ← Amprion 56.086 MWh, TenneT ← Amprion 25.136,
+50Hertz ← TenneT 17.349.
+
+Am **21.08.2026**: intern 9.312 + zwischen den Zonen 612 + Ausland 3.300 =
+13.224 MWh gegen 15.629 MWh, also **84,6 %**.
+
+Zwei vollständig gemessene Tage ergeben also 84,6 und 105,2 % statt der
+behaupteten 24 bis 63 %.
+
+### Was daraus folgt
+
+- Die Behauptung „die ETP-Reihe ist deutlich unvollständiger" ist
+  **zurückgenommen**. Sie stand seit dem 03.09.2026 auf der Seite und in
+  CLAUDE.md.
+- Die Begründung, deshalb NICHT auf ENTSO-E umzustellen, trägt nicht mehr.
+  netztransparenz.de bleibt trotzdem die Quelle, aber aus einem anderen Grund:
+  sie liefert je Maßnahme Grund, Richtung, Dauer, anweisenden und anfordernden
+  Betreiber und die betroffene Anlage. Das braucht die Seite, und die
+  aggregierten Zeitreihen der Plattform geben es so nicht her.
+- **Der Rest der Abweichung ist nicht geklärt.** Zwei Tage mit 84,6 und
+  105,2 % sind keine Übereinstimmung, sondern eine grobe Deckung. Woher die
+  Streuung kommt — Zuordnung zum Kalendertag, Doppelzählung beider Legs einer
+  Maßnahme, `curveType` A03 — ist offen.
+
+### Warum es nicht weiter gemessen wurde
+
+Die Plattform beantwortet seit dem Nachmittag des 07.09.2026 jede Anfrage mit
+HTTP 503; ein Lauf über acht Tage kam in viereinhalb Stunden über einen
+einzigen Tag nicht hinaus. Die Messung über mehr Tage steht deshalb aus.
+
+**Das Rezept für die Wiederholung**, damit niemand denselben Fehler noch
+einmal macht:
+
+```
+documentType=A63
+  businessType=A85   in_Domain = out_Domain = CTA        (intern)
+  businessType=A46   in_Domain, out_Domain = zwei CTAs   (zwischen Zonen —
+                                                          AUCH zwei deutsche!)
+```
+
+CTA-Codes: 50Hertz `10YDE-VE-------2`, Amprion `10YDE-RWENET---I`,
+TenneT `10YDE-EON------1`, TransnetBW `10YDE-ENBW-----N`. Einheit MWh je MTU,
+`curveType` A03 — ein Wert gilt bis zum nächsten genannten Punkt.
