@@ -834,6 +834,27 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("Woran das liegt, ist NICHT" not in js,
              "die zurueckgenommene Formulierung zur Aussenhandelsdifferenz ist weg")
 
+    # --- Die Erzeugungsluecke, aufgeteilt am 07.09.2026 ---
+    # Zwei Ursachen, und die zweite ist der Grund fuer die Pruefung: die
+    # Schwelle von 10 MW erklaert Biomasse, Wasser und einen Teil des Erdgases,
+    # aber NICHT die Steinkohle -- dort liegt nichts unter der Schwelle. Wer
+    # den Befund spaeter auf "kleine Anlagen" verkuerzt, verliert die Haelfte.
+    el_beleg = lade("docs/beleg-erzeugungsluecke.md")
+    for satz in ("10,0 MW", "Braunkohle ist der Kontrollfall",
+                 "Eigenerzeugung der Industrie", "Einspeisungsart",
+                 "24,2 MB"):
+        b.pruefe(satz in el_beleg, f"beleg-erzeugungsluecke.md nennt: {satz!r}")
+    b.pruefe("beleg-erzeugungsluecke.md" in js,
+             "die Seite verweist auf die Aufteilung der Erzeugungsluecke")
+    b.pruefe("Kontrollfall" in js,
+             "und nennt den Kontrollfall, an dem die Aufteilung haengt")
+    # Die Schwelle steht als ZAHL auf der Seite. Sie kommt aus data/kraftwerke.json
+    # und wuerde still veralten, wenn die Quelle sie aendert -- also nachrechnen.
+    kw = json.loads(lade("data/kraftwerke.json"))
+    kleinste = min(a["leistung_mw"] for a in kw["anlagen"] if a.get("leistung_mw"))
+    b.pruefe(f"{kleinste:.1f}".replace(".", ",") + " MW" in js,
+             f"die genannte Schwelle ist die gemessene ({kleinste:.1f} MW)")
+
     # --- Der Bilanzrest, untersucht am 03.09.2026 ---
     # Die Seite nennt jetzt Zahlen aus dieser Untersuchung. Sie stehen in Prosa
     # und veralten still -- wie schon zweimal die Redispatch-Schieflage.
@@ -1485,6 +1506,10 @@ def negativtests() -> int:
         # Der Schritt, dessen Ergebnis niemand mitnimmt: das PDF wird neu
         # gerechnet, aber nicht committet. Genau so lag drei Tage lang ein
         # veraltetes PDF auf der Seite, waehrend jeder Lauf gruen war.
+        # Die Schwelle steht als Zahl im Seitentext. Aendert die Quelle ihre
+        # kleinste gefuehrte Anlage, muss der Text mitgehen.
+        ("Schwelle der Kraftwerksliste im Text verstellt",
+         lambda: {"js": basis["js"].replace("10,0 MW", "12,0 MW")}),
         ("methodik.pdf aus dem Commit eines Datenworkflows entfernt",
          lambda: {"workflows": _wf_mit(basis["workflows"], "daten-smard.yml",
                                        "git add data/ methodik.pdf", "git add data/")}),

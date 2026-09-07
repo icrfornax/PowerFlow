@@ -865,6 +865,27 @@ stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
      verschwunden bleibt.
    - Eine fruehere Angabe von 0,5 % war auf einen einzelnen Tag geeicht und ist
      ebenfalls zurueckgenommen.
+   - **WAS FEHLT, ist seit dem 07.09.2026 aufgeteilt.** Beleg:
+     `docs/beleg-erzeugungsluecke.md`. Zwei Ursachen, nicht eine:
+     1. **Die Kraftwerksliste endet hart bei 10,0 MW** -- die kleinste gefuehrte
+        Anlage hat genau diesen Wert, darunter steht nichts. Oberhalb ist die
+        Liste gegen das Marktstammdatenregister vollstaendig (Steinkohle 15,19
+        gegen 15,00 GW, Braunkohle 15,30 gegen 14,70). Unter der Schwelle liegen
+        89 % der Biomasse-, 62 % der Oel- und 54 % der Wasserkraftleistung,
+        aber 0 % bei Stein- und Braunkohle -- gemessen aus 24,2 MB von 3,18 GB
+        des Gesamtdatenexports.
+     2. **Eigenerzeugung der Industrie.** Steinkohle bricht das Groessenmuster:
+        nichts unter der Schwelle und trotzdem 24,8 % Luecke. Rund 15
+        Prozentpunkte ueber dem Eigenverbrauch bleiben als Erzeugung, die das
+        oeffentliche Netz nicht erreicht.
+   - **BRAUNKOHLE IST DER KONTROLLFALL** und traegt die ganze Aufteilung: keine
+     Anlage unter der Schwelle, Liste vollstaendig, Luecke genau 10,0 % -- das
+     ist der Eigenverbrauch der Kraftwerke (brutto gegen netto). Wind bestaetigt
+     es mit -0,5 %. Wer die Aufteilung aendert, prueft sie an diesen beiden.
+   - **`Einspeisungsart` aus dem Register taugt NICHT zur Abgrenzung.**
+     Braunkohle steht dort zu 83 % auf "Teileinspeisung" und wird trotzdem
+     vollstaendig erfasst. Der Irrweg ist im Beleg festgehalten, damit ihn
+     niemand ein zweites Mal geht.
 2. **Vor 2019 ist die Regelzonenaufteilung unvollstaendig** - 2015 fehlen bis zu
    3,4 % der Last je Tag. Ursache nicht geklaert. Die Seite warnt sichtbar.
    Bei der **Erzeugung** ist der Riss groesser als bei der Last: die Zonensumme

@@ -5400,6 +5400,25 @@
         + "ihn ein zweites Mal ab, wird der Rest von −1,29 auf −3,81 % "
         + "schlechter. Beides stand bis zum 03.09.2026 als Ursache auf dieser "
         + "Seite.",
+      "Was in den Erzeugungsreihen fehlt, ist am 07.09.2026 aufgeteilt "
+        + "worden. Die Kraftwerksliste endet hart bei 10,0 MW — die kleinste "
+        + "geführte Anlage hat genau diesen Wert, darunter steht nichts. "
+        + "Unter dieser Schwelle liegen laut Marktstammdatenregister 89 % der "
+        + "Biomasse-, 62 % der Öl- und 54 % der Wasserkraftleistung, aber "
+        + "0 % bei Stein- und Braunkohle. Genau dort ist auch die Lücke "
+        + "gegenüber Eurostat am größten: Biomasse −31 %, Wasserkraft −26 %, "
+        + "Erdgas −37 %. Braunkohle ist der Kontrollfall — keine Anlage unter "
+        + "der Schwelle, Lücke 10,0 %, und das ist genau der Eigenverbrauch "
+        + "der Kraftwerke (brutto gegen netto). Wind bestätigt es mit −0,5 %.",
+      "Steinkohle bricht das Größenmuster und zeigt die zweite Ursache: keine "
+        + "Anlage unter 10 MW, die Liste gegen das Register vollständig — und "
+        + "trotzdem 24,8 % Lücke, rund 15 Punkte über dem Eigenverbrauch. Das "
+        + "ist Erzeugung aus Kraftwerken der Industrie, die das Netz der "
+        + "allgemeinen Versorgung nicht erreicht. Ihre Leistung steht in der "
+        + "Liste, ihre Erzeugung nicht in der Einspeisereihe. Wie groß dieser "
+        + "Teil ist, lässt sich hier nicht beziffern — er ergibt sich als "
+        + "Rest, und ein Rest ist keine Messung. Beleg: "
+        + "docs/beleg-erzeugungsluecke.md.",
       "Was der Rest stattdessen ist: er folgt der Residuallast — dem Teil der "
         + "Last, den Wind und Photovoltaik nicht decken (Korrelation −0,67; zur "
         + "Netzlast nur −0,36). Mittags ist er positiv (+3,1 % um 14 Uhr), "
@@ -5458,27 +5477,34 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
+      /* Jetzt der oberste Punkt. Von den offenen Fragen ist es die einzige,
+         die eine Zahl betrifft, die diese Seite selbst veroeffentlicht -- und
+         die mit dem vorhandenen Zugang messbar ist. Die uebrigen brauchen
+         fremde Erhebungen (Destatis, industrielle Kraftwerke) oder sind
+         Ausbau. */
+      { hoch: true,
+        text: "Warum die ENTSO-E-Reihe für Redispatch kürzer ist als die von "
+          + "netztransparenz.de. Über acht Tage im August 2026 gemessen führt "
+          + "die Transparency Platform nur 24 bis 63 % der Arbeit und etwa die "
+          + "Hälfte der Vorgänge (51 Zeitreihen gegen 108 Maßnahmen am 28.08.). "
+          + "Eine Umstellung auf die ETP wäre deshalb ein Rückschritt und "
+          + "unterbleibt; woran der Unterschied liegt — Schwelle, Abgrenzung "
+          + "oder Meldeverzug — ist nicht geklärt." },
       /* Jetzt der oberste Punkt. Er folgt direkt aus der Untersuchung des
          Bilanzrests vom 03.09.2026: DASS Erzeugung fehlt, ist gemessen --
          welche, ist offen. Das ist die einzige verbleibende Frage, die die
          Zahlen DIESER Seite betrifft; alles andere in der Liste betrifft
          fremde Statistiken oder ist Ausbau. */
-      { hoch: true,
-        text: "Welche Anlagenarten in den Erzeugungsreihen fehlen und ab welcher "
-          + "Größe. Dass etwas fehlt, ist am 03.09.2026 gemessen worden — der "
-          + "Bilanzrest folgt der Residuallast, und der Sprung von 2018 sitzt "
-          + "bei Erdgas. Womit genau, sagt die Quelle nicht." },
-      /* Am 03.09.2026 abgeraeumt: die Lizenzfrage ist beantwortet, der
-         ENTSO-E-Zugang steht, das Methodik-PDF liegt, und Import/Export im
-         Verlauf sind seit dem 31.08. drin. Vier Punkte weg, einer neu. Was
-         erledigt ist, gehoert nicht in eine Liste offener Punkte -- sonst
-         glaubt sie irgendwann niemand mehr. */
-      /* Am 03.09.2026 geprueft und VERWORFEN -- mit Zahlen, nicht mit Gefuehl.
-         Der Punkt bleibt in der Liste, aber als offene FRAGE, nicht als
-         Aufgabe: die Umstellung waere ein Rueckschritt. */
-      /* Neu am 06.09.2026, aus der Gegenprobe. Er steht OBEN, weil er eine
-         gemessene Abweichung ohne Erklaerung ist -- und weil ich dafuer
-         ausdruecklich keine Vermutung als Erklaerung hinschreibe. */
+      { hoch: false,
+        text: "Wie groß der Anteil der industriellen Eigenerzeugung an der "
+          + "Erzeugungslücke ist. Am 07.09.2026 ist die Lücke aufgeteilt: die "
+          + "Kraftwerksliste von SMARD endet hart bei 10,0 MW, und darunter "
+          + "liegen 89 % der Biomasse-, 62 % der Öl- und 54 % der "
+          + "Wasserkraftleistung. Steinkohle hat dort NICHTS und trotzdem "
+          + "24,8 % Lücke — das ist Erzeugung, die das öffentliche Netz nicht "
+          + "erreicht. Beziffern lässt sich dieser Teil mit den hier "
+          + "verfügbaren Quellen nicht; er ergibt sich als Rest, und ein Rest "
+          + "ist keine Messung." },
       { hoch: false,
         text: "Woraus die Differenz zwischen SMARD und Eurostat beim "
           + "Außenhandel bei Eurostat entsteht. Am 07.09.2026 ist geklärt, wo "
@@ -5495,14 +5521,6 @@
          Markierung heisst "wird als Naechstes angefasst"; sie an etwas zu
          haengen, das bewusst liegen bleibt, macht sie wertlos. Genau EIN
          Eintrag darf sie tragen, und browsertest.mjs prueft das. */
-      { hoch: false,
-        text: "Warum die ENTSO-E-Reihe für Redispatch kürzer ist als die von "
-          + "netztransparenz.de. Über acht Tage im August 2026 gemessen führt "
-          + "die Transparency Platform nur 24 bis 63 % der Arbeit und etwa die "
-          + "Hälfte der Vorgänge (51 Zeitreihen gegen 108 Maßnahmen am 28.08.). "
-          + "Eine Umstellung auf die ETP wäre deshalb ein Rückschritt und "
-          + "unterbleibt; woran der Unterschied liegt — Schwelle, Abgrenzung "
-          + "oder Meldeverzug — ist nicht geklärt." },
       { hoch: false,
         text: "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar "
           + "wird, wie stark das Ergebnis am gewählten Zeitraum hängt." },
