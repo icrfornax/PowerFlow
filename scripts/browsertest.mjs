@@ -364,19 +364,38 @@ try {
   pruefe(/€/.test(vhover.text), "und dem Boersenpreis dieser Viertelstunde");
   pruefe(vhover.zeiger === 1, "ein Zeiger markiert die Stelle");
   pruefe(vhover.danach === 0, "die Ablesung schliesst wieder");
-  pruefe(vorschau.morgen === 1, "der morgige Tag ist im Bild abgesetzt");
+  /* OB ES MORGEN SCHON GIBT, entscheidet die QUELLE, nicht diese Pruefung.
+     Der Day-ahead-Markt wird erst mittags fuer den Folgetag geraeumt; laeuft
+     der Test davor, endet die Reihe bei heute 23:45. Am 07.09.2026 um 14 Uhr
+     genau so gemessen -- und die drei Pruefungen zu "morgen" schlugen fehl,
+     ohne dass etwas kaputt war. Eine Pruefung, die je nach Tageszeit rot wird,
+     erzieht dazu, sie zu uebergehen (siehe CLAUDE.md). Also wird die BEDINGUNG
+     geprueft: gibt es morgen, muss es abgesetzt und beziffert sein; gibt es
+     morgen nicht, muss die Seite genau das sagen. */
+  const hatMorgen = vorschau.morgen === 1;
+  if (hatMorgen) {
+    pruefe(true, "der morgige Tag ist im Bild abgesetzt");
+    pruefe(vorschau.kennzahlen === 4,
+      `vier Kennzahlen fuer morgen (${vorschau.kennzahlen})`);
+    pruefe(vorschau.morgenhoehe > 0 && vorschau.morgenhoehe < 40,
+      "die Morgen-Markierung liegt im Rand und toent keine Traegerflaeche",
+      `Hoehe ${vorschau.morgenhoehe}`);
+  } else {
+    pruefe(/Für morgen liegt noch nichts vor/.test(vorschau.vtext),
+      "ohne Day-ahead sagt die Seite, dass fuer morgen noch nichts vorliegt",
+      vorschau.vtext.slice(0, 120));
+    pruefe(/mittags/.test(vorschau.vtext),
+      "und nennt den Grund -- der Markt wird erst mittags geraeumt");
+    pruefe(vorschau.kennzahlen === 0,
+      `keine Kennzahlen fuer einen Tag ohne Daten (${vorschau.kennzahlen})`);
+  }
   pruefe(vorschau.achse >= 4,
     `die Erzeugungsachse ist beschriftet (${vorschau.achse} Marken)`);
   pruefe(/GW/.test(vorschau.achsentitel) && /€\/MWh/.test(vorschau.achsentitel),
     "beide Achsen nennen ihre Einheit", vorschau.achsentitel);
   pruefe(vorschau.preislinie === 1, "der Boersenpreis wird gezeichnet");
-  pruefe(vorschau.kennzahlen === 4,
-    `vier Kennzahlen fuer morgen (${vorschau.kennzahlen})`);
   pruefe(/Ankündigung/.test(vorschau.vtext),
     "und ausdruecklich als Ankuendigung benannt, nicht als Messung");
-  pruefe(vorschau.morgenhoehe > 0 && vorschau.morgenhoehe < 40,
-    "die Morgen-Markierung liegt im Rand und toent keine Traegerflaeche",
-    `Hoehe ${vorschau.morgenhoehe}`);
   pruefe(/übermorgen/.test(vorschau.vtext),
     "es steht da, warum es nicht weiter reicht");
   pruefe(vorschau.gzahlen === 3,

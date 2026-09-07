@@ -55,6 +55,13 @@ jobs:
         # unter data/ ohne Quellenzuordnung auftaucht.
         run: python scripts/quellen.py
 
+      - name: Methodik-PDF neu rechnen
+        # Es traegt die Zahl der Dateien und ihre Gesamtgroesse aus
+        # data/quellen.json. Aendert sich irgendetwas unter data/, aendert sich
+        # also auch das PDF -- auch in diesem Workflow, der methodik.py bis zum
+        # 07.09.2026 gar nicht aufrief.
+        run: python scripts/methodik.py
+
       - name: Tuersteher
         run: |
           python scripts/validate.py
@@ -63,12 +70,12 @@ jobs:
       - name: Aenderungen feststellen
         id: diff
         run: |
-          if git diff --quiet -- data/; then
+          if git diff --quiet -- data/ methodik.pdf; then
             echo "geaendert=nein" >> "$GITHUB_OUTPUT"
             echo "Keine Aenderung an data/ -- nichts zu tun."
           else
             echo "geaendert=ja" >> "$GITHUB_OUTPUT"
-            git diff --stat -- data/
+            git diff --stat -- data/ methodik.pdf
           fi
 
       - name: Committen und pushen
@@ -76,7 +83,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/
+          git add data/ methodik.pdf
           git commit -m "Daten: Engpasskosten $(date -u +%Y-%m-%d)"
           for versuch in 1 2 3; do
             if git push; then

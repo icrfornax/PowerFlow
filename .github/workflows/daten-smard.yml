@@ -123,12 +123,12 @@ jobs:
       - name: Aenderungen feststellen
         id: diff
         run: |
-          if git diff --quiet -- data/; then
+          if git diff --quiet -- data/ methodik.pdf; then
             echo "geaendert=nein" >> "$GITHUB_OUTPUT"
             echo "Keine Aenderung an data/ -- nichts zu tun."
           else
             echo "geaendert=ja" >> "$GITHUB_OUTPUT"
-            git diff --stat -- data/
+            git diff --stat -- data/ methodik.pdf
           fi
 
       - name: Committen und pushen
@@ -136,7 +136,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/
+          git add data/ methodik.pdf
           git commit -m "Daten: SMARD-Abruf $(date -u +%Y-%m-%d)"
           # Push-Wiederholung: bei "fetch first" den Branch nachholen, rebasen,
           # erneut versuchen. Bis zu dreimal. NIEMALS --force -- bei einem

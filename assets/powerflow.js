@@ -2958,6 +2958,25 @@
         kopf.appendChild(b);
       });
       kasten.appendChild(kopf);
+    } else {
+      /* KEIN MORGEN IN DER DATEI -- und das muss dastehen.
+
+         Bis zum 07.09.2026 fiel der Kennzahlenblock in diesem Fall
+         stillschweigend weg: der Abschnitt hiess weiter "Vorschau auf morgen"
+         und zeigte nur den heutigen Tag. Wer um 14 Uhr draufsah, hielt das fuer
+         die Vorschau. Es ist aber der Zustand der QUELLE: der Day-ahead-Markt
+         wird erst mittags fuer den Folgetag geraeumt, und SMARD stellt die
+         Reihe danach ein. Gemessen am 07.09.2026 um 14:02 Ortszeit endete die
+         SMARD-Reihe selbst bei heute 23:45.
+
+         Ein fehlender Morgen ist also kein Mangel dieser Seite -- aber ihn
+         nicht zu benennen waere einer. */
+      kasten.appendChild(el("p", { "class": "pf-karte-warnung",
+        text: "Für morgen liegt noch nichts vor. Der Day-ahead-Markt wird erst "
+          + "mittags für den Folgetag geräumt; bis dahin führt die Quelle nur "
+          + "den heutigen Tag, und genau der ist hier zu sehen. Die "
+          + "Ankündigung wächst im Lauf des Tages — Stand dieser Datei: "
+          + datumLang(V.erzeugt_am) + "." }));
     }
 
     // ---- Das Bild --------------------------------------------------------

@@ -885,6 +885,24 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              "in jedem Workflow laeuft quellen.py VOR methodik.py"
              + (f" -- verkehrt in {reihenfolge}" if reihenfolge else ""))
 
+    # UND DAS PDF MUSS AUCH COMMITTET WERDEN. Am 07.09.2026 gefunden: alle drei
+    # Datenworkflows rechneten es neu, committeten aber nur data/. Der Lauf
+    # blieb gruen -- er prueft ja das frisch gerechnete PDF im
+    # Arbeitsverzeichnis -- waehrend im Repository und auf der ausgelieferten
+    # Seite ein drei Tage altes lag ("Datenstand 2026-09-04" bei Daten bis zum
+    # 06.09.). Ein Schritt, dessen Ergebnis niemand mitnimmt, ist kein Schritt.
+    ohne_pdf = []
+    for name, wf in workflows.items():
+        if "git commit" not in wf:
+            continue
+        # Wer Daten committet, muss das PDF neu rechnen und mitcommitten: es
+        # traegt die Zahl der Dateien und ihre Gesamtgroesse aus quellen.json.
+        if "scripts/methodik.py" not in wf or "git add data/ methodik.pdf" not in wf:
+            ohne_pdf.append(name)
+    b.pruefe(not ohne_pdf,
+             "jeder Datenworkflow rechnet das Methodik-PDF neu UND committet es"
+             + (f" -- fehlt in {ohne_pdf}" if ohne_pdf else ""))
+
     # --- Erzeugung je Kraftwerksblock ---
     bv = json.loads(lade("data/blockerzeugung-verzeichnis.json"))
     b.pruefe(len(bv["jahre"]) >= 8,
@@ -1445,6 +1463,12 @@ def negativtests() -> int:
         ("force-Push in einen Datenworkflow geschmuggelt",
          lambda: {"workflows": _wf_mit(basis["workflows"], "daten-smard.yml",
                                        "git push", "git push --force")}),
+        # Der Schritt, dessen Ergebnis niemand mitnimmt: das PDF wird neu
+        # gerechnet, aber nicht committet. Genau so lag drei Tage lang ein
+        # veraltetes PDF auf der Seite, waehrend jeder Lauf gruen war.
+        ("methodik.pdf aus dem Commit eines Datenworkflows entfernt",
+         lambda: {"workflows": _wf_mit(basis["workflows"], "daten-smard.yml",
+                                       "git add data/ methodik.pdf", "git add data/")}),
         ("Pages-Anstoss aus einem Datenworkflow entfernt",
          lambda: {"workflows": _wf_ohne(basis["workflows"], "daten-smard.yml",
                                         "pages/builds")}),
