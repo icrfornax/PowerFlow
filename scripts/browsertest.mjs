@@ -1740,6 +1740,31 @@ try {
   await js(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))`);
   await schlafen(200);
 
+  /* Die Aussenhandelsdifferenz ist am 07.09.2026 nachgemessen worden. Auf der
+     Seite muss stehen, WAS gemessen wurde -- und der Punkt darf nicht mehr als
+     "Als Naechstes" gefuehrt werden, denn er betrifft die Erklaerung einer
+     fremden Statistik, nicht die Richtigkeit dieser Seite. */
+  const ah = await js(`(function () {
+    const gp = [...document.querySelectorAll(".pf-abschnitt")]
+      .find((x) => /Gegenprobe gegen eine andere Erhebung/.test(
+        (x.querySelector("h2") || {}).textContent || ""));
+    const txt = gp ? gp.textContent : "";
+    return {
+      da: !!gp,
+      bestaetigt: /12\.1\.G/.test(txt),
+      kommerziell: /12\.1\.F/.test(txt),
+      nichtAngegeben: /nicht angegeben/.test(txt),
+      alteFormel: /Woran das liegt, ist NICHT/.test(txt)
+    };
+  })()`);
+  pruefe(ah.da, "der Gegenprobe-Abschnitt ist da");
+  pruefe(ah.bestaetigt && ah.kommerziell,
+    "er nennt beide ENTSO-E-Reihen, die physikalische und die kommerzielle");
+  pruefe(ah.nichtAngegeben,
+    "und dass fast die Haelfte der Eurostat-Einfuhr unter 'nicht angegeben' laeuft");
+  pruefe(!ah.alteFormel,
+    "die zurueckgenommene Formulierung steht nicht mehr da");
+
   pruefe(offen && !/HTTP 403/.test(offen.texte),
     "die beantwortete Lizenzfrage steht nicht mehr als offener Punkt");
   pruefe(offen && !/Methodik-PDF, das sich beim Bau/.test(offen.texte),

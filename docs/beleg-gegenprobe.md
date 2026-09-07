@@ -230,3 +230,112 @@ Eurostat aktualisiert die Jahresdaten wenige Male im Jahr (Stand beim Abruf:
 deshalb **monatlich** im Workflow `daten-stammdaten.yml` und nicht taeglich.
 Das letzte vergleichbare Jahr ist 2024; ein angefangenes Jahr wird
 uebersprungen, weil ein Vergleich von zwoelf gegen acht Monate nichts sagt.
+
+---
+
+## 07.09.2026: Die Ein-/Ausfuhr-Differenz — nachgemessen mit einer dritten Reihe
+
+Der Abstand zwischen SMARD und Eurostat beim Außenhandel (8 bis 23 %) stand
+seit dem 06.09.2026 als offener Punkt mit dem ausdrücklichen Vermerk, dass
+keine Vermutung als Erklärung ausgegeben wird. Jetzt ist gemessen worden.
+
+### Der Aufbau: vier Zahlen für dieselbe Größe
+
+Die ENTSO-E Transparency Platform veröffentlicht **zwei getrennte Reihen**, und
+ihre Definitionen stehen in der Dokumentation der Plattform:
+
+- **12.1.G Physical Flows** — „Physical flow is defined as the measured power
+  between neighbouring bidding zones", Mittelwerte je Marktzeiteinheit in MW.
+- **12.1.F Scheduled Commercial Exchanges** — „aggregated schedules […] for all
+  previous time horizons […] corresponding to explicit allocations after each
+  nomination process, implicit and continuous allocations".
+
+Abgerufen wurde monatsweise (das Jahr überschreitet die Abfragegrenze der API)
+für DE-LU gegen zehn Nachbar-Gebotszonen, beide Richtungen, beide Datenpunkte —
+528 Abrufe je Jahr. Einheit: die Werte sind LEISTUNGEN in MW; Energie ist
+Leistung mal Dauer der Marktzeiteinheit, und die Dauer steht als `resolution`
+in der Antwort.
+
+### Das Ergebnis, zwei Jahre (TWh)
+
+| | 2023 Ein | 2023 Aus | 2024 Ein | 2024 Aus |
+|---|---|---|---|---|
+| SMARD (diese Seite) | 64,08 | 55,20 | 75,38 | 50,24 |
+| **ENTSO-E 12.1.G physikalisch** | **63,69** | **52,66** | **74,65** | **47,44** |
+| ENTSO-E 12.1.F kommerziell | 96,96 | 79,33 | 105,85 | 68,34 |
+| Eurostat | 69,30 | 60,10 | 81,70 | 55,40 |
+
+**SMARD ist bestätigt.** Nach Abzug von Luxemburg — 2,55 bzw. 2,82 TWh Ausfuhr,
+die ENTSO-E gar nicht ausweisen KANN, weil Luxemburg seit Oktober 2018 in der
+Gebotszone DE-LU liegt und damit keine Grenze zu ihr hat — bleibt:
+
+| Jahr | Einfuhr | Ausfuhr |
+|---|---|---|
+| 2023 | +0,63 % | **−0,00 %** |
+| 2024 | +0,98 % | **−0,04 %** |
+
+Grenze für Grenze stimmen neun von elf Nachbarn auf zwei Nachkommastellen
+überein. Die gesamte Restabweichung sitzt in Belgien (SMARD 4,39 gegen 5,27
+TWh) und Norwegen (7,00 gegen 5,51) und hebt sich teilweise auf.
+
+**Das ist eine Konsistenzprüfung, keine Gegenprobe.** SMARD bezieht seine Zahlen
+von ENTSO-E; die Übereinstimmung belegt Abruf, Einheit, Zeitzone und
+Länderzuordnung dieser Seite — nicht die Messung selbst. Genau dafür ist sie
+gemacht.
+
+### Eurostat ist weder das eine noch das andere
+
+Die naheliegende Vermutung war: SMARD misst physikalisch, Eurostat zählt
+Handel. **Sie trägt nicht.** Der kommerzielle Handel liegt 2024 bei 105,85 TWh
+Einfuhr — 24 TWh ÜBER Eurostat. Eurostat liegt zwischen beiden Reihen, näher
+am physikalischen Fluss.
+
+### Wo die Differenz stattdessen sitzt
+
+Eurostat führt den Außenhandel auch nach Partnerland (`nrg_ti_eh`,
+`nrg_te_eh`). Für Deutschland 2024, Einfuhr in TWh:
+
+| Partner | Eurostat | SMARD | Differenz |
+|---|---|---|---|
+| Frankreich | 20,49 | 20,36 | +0,13 |
+| Österreich | 9,38 | 7,21 | +2,17 |
+| Niederlande | 8,79 | 7,60 | +1,19 |
+| Tschechien | 4,36 | 4,35 | +0,00 |
+| Polen | 0,71 | 0,71 | +0,00 |
+| Belgien, Dänemark, Norwegen, Schweden, Schweiz, Luxemburg | **je 0,00** | 35,15 | −35,15 |
+| **nicht angegeben (NSP)** | **37,93** | — | |
+| Summe | 81,66 | 75,38 | +6,28 |
+
+**Sechs der elf Nachbarn stehen bei Eurostat auf null**, und ein Betrag in der
+Größe ihrer Summe steht unter „nicht angegeben". Das ist kein Ausreißer eines
+Jahres:
+
+| Jahr | Einfuhr gesamt | davon „nicht angegeben" |
+|---|---|---|
+| 2019 | 40,1 | 11,2 (28 %) |
+| 2020 | 47,9 | 16,9 (35 %) |
+| 2021 | 51,7 | 21,4 (41 %) |
+| 2022 | 49,3 | 23,6 (48 %) |
+| 2023 | 69,3 | 28,7 (41 %) |
+| 2024 | 81,7 | 37,9 (46 %) |
+
+Immer dieselben sechs Länder auf null: Belgien, Dänemark, Luxemburg, Schweden,
+Schweiz, Norwegen.
+
+Die verbleibende Differenz von +6,28 TWh zerfällt in +3,49 TWh bei den
+Partnern, die Eurostat einzeln ausweist (davon Österreich +2,17 und die
+Niederlande +1,19), und +2,78 TWh in der Gruppe „nicht angegeben".
+
+### Was daraus folgt
+
+**Gemessen:** Die Zahlen dieser Seite sind durch eine zweite Reihe derselben
+Größe Grenze für Grenze bestätigt. Die Differenz zu Eurostat entsteht auf der
+Seite von Eurostat.
+
+**Nicht geklärt und weiterhin offen:** woraus sie dort entsteht. Die
+Partnerzerlegung von Eurostat reicht dafür nicht — mit 46 % unter „nicht
+angegeben" lässt sich der Rest nicht mehr zuordnen. Das bräuchte die Methodik
+der deutschen Meldung an Eurostat, also die des Statistischen Bundesamts.
+
+Der offene Punkt bleibt deshalb stehen, aber er ist nicht mehr hoch: er betrifft
+die Erklärung einer fremden Statistik, nicht die Richtigkeit dieser Seite.

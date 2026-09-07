@@ -815,6 +815,25 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("zwischen −3,2 und +18,1" not in js,
              "keine fest eingetragene Schieflage-Spanne mehr im Seitentext")
 
+    # --- Die Ein-/Ausfuhr-Differenz, untersucht am 07.09.2026 ---
+    # Der Abstand zwischen SMARD und Eurostat stand als offener Punkt MIT dem
+    # ausdruecklichen Vermerk, dass keine Vermutung als Erklaerung dasteht.
+    # Jetzt ist gemessen: ENTSO-E 12.1.G bestaetigt die physikalischen Fluesse
+    # dieser Seite, 12.1.F (kommerziell) liegt weit darueber, und Eurostats
+    # eigene Partneraufteilung fuehrt 46 % unter "nicht angegeben". Damit die
+    # naheliegende, aber WIDERLEGTE Erklaerung nicht zurueckkehrt, wird sie
+    # geprueft.
+    ahb = lade("docs/beleg-gegenprobe.md")
+    for satz in ("12.1.G", "12.1.F", "nicht angegeben", "Luxemburg",
+                 "Sie traegt nicht.".replace("ae", "ä"), "0,04"):
+        b.pruefe(satz in ahb, f"beleg-gegenprobe.md nennt: {satz!r}")
+    b.pruefe("12.1.G" in js,
+             "die Seite nennt die Reihe, die den Aussenhandel bestaetigt")
+    # Die alte Formulierung darf nicht stehen bleiben: sie sagte, es sei NICHT
+    # geklaert, wo die Differenz herkommt. Wo sie NICHT herkommt, ist geklaert.
+    b.pruefe("Woran das liegt, ist NICHT" not in js,
+             "die zurueckgenommene Formulierung zur Aussenhandelsdifferenz ist weg")
+
     # --- Der Bilanzrest, untersucht am 03.09.2026 ---
     # Die Seite nennt jetzt Zahlen aus dieser Untersuchung. Sie stehen in Prosa
     # und veralten still -- wie schon zweimal die Redispatch-Schieflage.

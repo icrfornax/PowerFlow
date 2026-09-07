@@ -875,13 +875,20 @@
         + nf1.format(h.abstand_einfuhr_prozent) + " %) und "
         + nf1.format(h.smard_ausfuhr_twh) + " gegen "
         + nf1.format(h.eurostat_ausfuhr_twh) + " TWh Ausfuhr ("
-        + nf1.format(h.abstand_ausfuhr_prozent) + " %). Der Abstand schrumpft "
-        + "über die Jahre von rund 23 auf 8 Prozent. Woran das liegt, ist "
-        + "NICHT geklärt — denkbar sind unterschiedliche Abgrenzungen von "
-        + "physikalischem Fluss und kommerziellem Außenhandel sowie die "
-        + "Behandlung von Durchleitungen. Der Punkt steht als offener Punkt "
-        + "auf dieser Seite; eine Vermutung wird hier nicht als Erklärung "
-        + "ausgegeben."));
+        + nf1.format(h.abstand_ausfuhr_prozent) + " %). Am 07.09.2026 "
+        + "nachgemessen — und die Abweichung liegt NICHT an den Zahlen dieser "
+        + "Seite. Die ENTSO-E-Reihe der physikalischen Flüsse (Datenpunkt "
+        + "12.1.G) bestätigt SMARD Grenze für Grenze: 2024 auf 0,04 % bei der "
+        + "Ausfuhr und 1,0 % bei der Einfuhr, 2023 auf 0,00 und 0,6 %. Der "
+        + "kommerzielle Handel derselben Plattform (12.1.F) liegt mit 105,9 "
+        + "gegen 74,6 TWh Einfuhr weit darüber — Eurostat ist also weder das "
+        + "eine noch das andere, sondern liegt dazwischen. Und Eurostats "
+        + "eigene Aufteilung nach Partnerland geht nicht auf: sechs der elf "
+        + "Nachbarn stehen dort auf null, und 46 % der deutschen Einfuhr von "
+        + "2024 laufen unter „nicht angegeben“. Die Differenz ist damit auf "
+        + "die Seite von Eurostat verschoben; woraus sie dort genau entsteht, "
+        + "lässt sich mit dieser Aufteilung nicht mehr klären. Beleg: "
+        + "docs/beleg-gegenprobe.md."));
     }
     return huelle;
   }
@@ -5451,6 +5458,16 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
+      /* Jetzt der oberste Punkt. Er folgt direkt aus der Untersuchung des
+         Bilanzrests vom 03.09.2026: DASS Erzeugung fehlt, ist gemessen --
+         welche, ist offen. Das ist die einzige verbleibende Frage, die die
+         Zahlen DIESER Seite betrifft; alles andere in der Liste betrifft
+         fremde Statistiken oder ist Ausbau. */
+      { hoch: true,
+        text: "Welche Anlagenarten in den Erzeugungsreihen fehlen und ab welcher "
+          + "Größe. Dass etwas fehlt, ist am 03.09.2026 gemessen worden — der "
+          + "Bilanzrest folgt der Residuallast, und der Sprung von 2018 sitzt "
+          + "bei Erdgas. Womit genau, sagt die Quelle nicht." },
       /* Am 03.09.2026 abgeraeumt: die Lizenzfrage ist beantwortet, der
          ENTSO-E-Zugang steht, das Methodik-PDF liegt, und Import/Export im
          Verlauf sind seit dem 31.08. drin. Vier Punkte weg, einer neu. Was
@@ -5462,15 +5479,17 @@
       /* Neu am 06.09.2026, aus der Gegenprobe. Er steht OBEN, weil er eine
          gemessene Abweichung ohne Erklaerung ist -- und weil ich dafuer
          ausdruecklich keine Vermutung als Erklaerung hinschreibe. */
-      { hoch: true,
-        text: "Warum SMARD und Eurostat bei Ein- und Ausfuhr auseinanderliegen. "
-          + "2015 meldet SMARD 22,8 % weniger Einfuhr als Eurostat, 2024 noch "
-          + "7,7 %; bei der Ausfuhr geht es von 13,4 auf 9,3 % zurück. Der "
-          + "Abstand schrumpft also, und das ist selbst erklärungsbedürftig. "
-          + "Denkbar sind eine andere Abgrenzung von physikalischem Fluss und "
-          + "kommerziellem Außenhandel sowie die Behandlung von Durchleitungen "
-          + "— beides ist NICHT geprüft. Bis dahin steht hier die Abweichung "
-          + "und keine Erklärung." },
+      { hoch: false,
+        text: "Woraus die Differenz zwischen SMARD und Eurostat beim "
+          + "Außenhandel bei Eurostat entsteht. Am 07.09.2026 ist geklärt, wo "
+          + "sie NICHT herkommt: die physikalischen Flüsse dieser Seite sind "
+          + "durch ENTSO-E 12.1.G Grenze für Grenze bestätigt (0,0 bis 1,0 %), "
+          + "und der kommerzielle Handel liegt weit über beiden Zahlen. Bei "
+          + "Eurostat selbst stehen sechs der elf Nachbarn auf null und 46 % "
+          + "der Einfuhr unter „nicht angegeben“ — mit dieser "
+          + "Aufteilung ist "
+          + "die Frage nicht weiter aufzulösen. Sie bräuchte die Methodik des "
+          + "Statistischen Bundesamts." },
       /* NICHT mehr "Als Naechstes". Der Punkt ist am 03.09.2026 geprueft und
          die Umstellung verworfen -- er wird also gerade nicht angefasst. Die
          Markierung heisst "wird als Naechstes angefasst"; sie an etwas zu
@@ -5497,11 +5516,6 @@
       { hoch: false,
         text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
           + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
-      { hoch: false,
-        text: "Welche Anlagenarten in den Erzeugungsreihen fehlen und ab welcher "
-          + "Größe. Dass etwas fehlt, ist am 03.09.2026 gemessen worden — der "
-          + "Bilanzrest folgt der Residuallast, und der Sprung von 2018 sitzt "
-          + "bei Erdgas. Womit genau, sagt die Quelle nicht." },
       { hoch: false,
         text: "1.030 Windenergieanlagen in Betrieb haben im Register keine "
           + "Koordinate und fehlen auf der Karte. Das ist eine Lücke der "

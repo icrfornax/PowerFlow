@@ -769,10 +769,24 @@ ihnen belegt Abruf, Einheit und Zeitzone -- nicht die Messung.
   Erfassung. Das war in `docs/beleg-bilanzrest.md` bisher eine Vermutung aus
   dem Verhalten der SMARD-Reihe selbst. **Jahressummen vor 2018 sind mit denen
   danach nicht vergleichbar.**
-- **Ein- und Ausfuhr weichen um 8 bis 23 % ab, und das ist NICHT geklaert.**
-  Der Abstand schrumpft ueber die Jahre. Er steht als offener Punkt auf der
-  Seite; eine Vermutung wird nicht als Erklaerung ausgegeben. `validate.py`
-  prueft, dass er ungeklaert benannt bleibt.
+- **Ein- und Ausfuhr weichen um 8 bis 23 % ab -- am 07.09.2026 nachgemessen.**
+  Die Zahlen DIESER Seite sind bestaetigt: die ENTSO-E-Reihe der physikalischen
+  Fluesse (12.1.G) stimmt Grenze fuer Grenze mit SMARD ueberein, bei der
+  Ausfuhr auf -0,00 % (2023) und -0,04 % (2024), bei der Einfuhr auf 0,6 bzw.
+  1,0 %. Luxemburg muss dabei herausgerechnet werden: es liegt seit 10/2018 in
+  der Gebotszone DE-LU und hat deshalb bei ENTSO-E keine Grenze zu ihr, waehrend
+  SMARD 2,8 TWh Ausfuhr dorthin fuehrt.
+  **Die naheliegende Erklaerung traegt nicht:** der kommerzielle Handel
+  derselben Plattform (12.1.F) liegt mit 105,9 gegen 74,6 TWh Einfuhr weit
+  UEBER Eurostat. Eurostat ist weder das eine noch das andere.
+  **Die Differenz sitzt bei Eurostat:** dessen eigene Aufteilung nach
+  Partnerland fuehrt sechs der elf Nachbarn mit NULL und 28 bis 48 % der
+  Einfuhr unter "nicht angegeben". Weiter aufloesen laesst sie sich damit
+  nicht; das braeuchte die Methodik des Statistischen Bundesamts. Beleg:
+  `docs/beleg-gegenprobe.md`.
+  **Wichtig fuer die Einordnung:** SMARD gegen ENTSO-E ist eine
+  KONSISTENZPRUEFUNG, keine Gegenprobe -- SMARD bezieht seine Zahlen von dort.
+  Sie belegt Abruf, Einheit, Zeitzone und Laenderzuordnung, nicht die Messung.
 
 **Zwei Pruefungen, die aus dieser Arbeit entstanden sind** und nichts mit
 Eurostat zu tun haben -- beide fangen einen STILLEN Ausfall, den der Browser
