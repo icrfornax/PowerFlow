@@ -93,8 +93,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3127924,
-   "zeitraum": "2015-01-01 bis 2026-09-05",
+   "bytes": 3128206,
+   "zeitraum": "2015-01-01 bis 2026-09-06",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/tage"
@@ -117,8 +117,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 141,
-   "bytes": 14054984,
-   "zeitraum": "2015-01-01 bis 2026-09-06",
+   "bytes": 14057991,
+   "zeitraum": "2015-01-01 bis 2026-09-07",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
@@ -201,8 +201,8 @@
    "quelle": "netztransparenz",
    "beleg": "docs/beleg-redispatch.md",
    "dateien": 6,
-   "bytes": 3667669,
-   "zeitraum": "2021-01-01 bis 2026-09-06",
+   "bytes": 3669817,
+   "zeitraum": "2021-01-01 bis 2026-09-07",
    "muster": "data/redispatch/*.json",
    "abzug": "data/redispatch-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
@@ -225,7 +225,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-kraftwerksdaten.md",
    "dateien": 10,
-   "bytes": 2794404,
+   "bytes": 2794485,
    "zeitraum": null,
    "muster": "data/blockerzeugung/*.json",
    "abzug": "data/blockerzeugung-verzeichnis.json",
@@ -237,8 +237,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-vorschau.md",
    "dateien": 1,
-   "bytes": 7862,
-   "zeitraum": "2026-09-06 bis 2026-09-06",
+   "bytes": 7930,
+   "zeitraum": "2026-09-07 bis 2026-09-07",
    "muster": "data/vorschau.json",
    "abzug": "data/vorschau.json",
    "alle": null
@@ -261,7 +261,7 @@
    "quelle": "entsoe",
    "beleg": "docs/beleg-lastprognose.md",
    "dateien": 8,
-   "bytes": 119540,
+   "bytes": 119578,
    "zeitraum": null,
    "muster": "data/lastprognose/*.json",
    "abzug": "data/lastprognose-verzeichnis.json",
@@ -353,5 +353,5 @@
   }
  ],
  "dateien_gesamt": 195,
- "bytes_gesamt": 33122340
+ "bytes_gesamt": 33127964
 }
