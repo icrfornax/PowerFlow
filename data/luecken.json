@@ -5,10 +5,12 @@
  "_hinweis": "SELBST ERHOBEN aus den eigenen Dateien unter data/tage/ und data/verlauf/: welche Kalendertage und Stunden die Quelle bis heute nicht geliefert hat. Der laufende Tag und der Vortag bleiben aussen vor (2 Tage Karenz) -- dass sie noch nicht vollstaendig sind, ist der normale Meldeverzug und kein Mangel. 'seit' ist der Tag, an dem die Luecke zuerst aufgefallen ist, nicht der Tag der Luecke selbst. 'zuletzt_geschlossen' zaehlt NUR, was dieser Lauf selbst geschlossen hat -- der taegliche Abruf laeuft vorher und fuellt das laufende Jahr ohnehin neu; was er schon gefuellt hat, sieht dieses Skript gar nicht mehr als Luecke. Eine leere Liste heisst also nicht, dass nichts nachkommt. Ein Zeitstempel des letzten Laufs steht bewusst NICHT hier: er wuerde die Datei jeden Tag aendern, auch wenn sich nichts getan hat. scripts/validate.py prueft diese Liste bei jedem Lauf gegen die Dateien nach.",
  "erzeugt_von": "scripts/nachholen.py",
  "karenz_tage": 2,
+ "veraltete_stundenreihen": [],
  "offene_tage": [],
  "offene_stunden": [],
  "zuletzt_geschlossen": {
   "tage": [],
-  "stunden": []
+  "stunden": [],
+  "veraltet": []
  }
 }

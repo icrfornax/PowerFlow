@@ -129,6 +129,51 @@ def stundenluecken() -> list[str]:
     return sorted(raus)
 
 
+def veraltete_tage() -> list[str]:
+    """Tage, deren Stundensumme nicht mehr zum Tageswert passt.
+
+    EINE LUECKE IST NICHT DER EINZIGE MANGEL. SMARD meldet nicht nur nach, es
+    KORRIGIERT auch rueckwirkend -- und weiter zurueck, als der taegliche Lauf
+    die Stundenwerte anfasst. Am 11.09.2026 gefunden: 31 Tage zwischen dem
+    01.06. und dem 06.09. waren nachtraeglich geaendert, bis zu 4,15 %, in
+    Summe -0,58 TWh. Der taegliche Lauf holt die TAGESWERTE fuer zwei volle
+    Jahre neu, die STUNDENWERTE aber nur fuer vier Wochen. Genau diese
+    Asymmetrie laesst die beiden Reihen auseinanderlaufen.
+
+    Der Tuersteher hat es gefangen und den Lauf vier Tage lang rot gemacht --
+    richtig, aber er kann es nicht beheben. Was der Tuersteher PRUEFT, muss der
+    Nachtrag HERSTELLEN koennen; sonst hebt irgendwann jemand die Toleranz an.
+
+    Geprueft wird dieselbe Bedingung wie in validate.py: Summe der Stunden
+    gleich Tageswert. Nur VOLLSTAENDIGE Tage werden verglichen -- ein Tag mit
+    20 von 24 Stunden ist eine Luecke und steht oben schon.
+    """
+    tage: dict[str, float] = {}
+    for pfad in sorted(TAGE.glob("*.json")):
+        d = json.loads(pfad.read_text(encoding="utf-8"))
+        for tag, wert in zip(d["tage"], d["netzlast"]):
+            if wert is not None:
+                tage[tag] = wert
+    summen: dict[str, list] = {}
+    for pfad in sorted(VERLAUF.glob("*.json")):
+        d = json.loads(pfad.read_text(encoding="utf-8"))
+        for marke, wert in zip(d["stunden"], d["netzlast"]):
+            if wert is None:
+                continue
+            e = summen.setdefault(marke[:10], [0.0, 0])
+            e[0] += wert
+            e[1] += 1
+    raus = []
+    for tag, wert in tage.items():
+        s = summen.get(tag)
+        if not s or s[1] < 24:
+            continue
+        # Dieselbe Toleranz wie im Tuersteher: 0,1 % oder 1 MWh.
+        if abs(s[0] - wert) > max(1.0, abs(wert) * 0.001):
+            raus.append(tag)
+    return sorted(raus)
+
+
 def wochenbloecke_fuer(marken: list[str]) -> list[int]:
     """Die SMARD-Wochenbloecke, die diese Stunden enthalten.
 
@@ -149,7 +194,8 @@ def wochenbloecke_fuer(marken: list[str]) -> list[int]:
     return sorted(gebraucht)
 
 
-def bericht_schreiben(tage: list[str], stunden: list[str], geschlossen: dict) -> None:
+def bericht_schreiben(tage: list[str], stunden: list[str], geschlossen: dict,
+                      veraltet: list[str] | None = None) -> None:
     alt = {}
     if BERICHT.is_file():
         vorher = json.loads(BERICHT.read_text(encoding="utf-8"))
@@ -185,6 +231,9 @@ def bericht_schreiben(tage: list[str], stunden: list[str], geschlossen: dict) ->
         ),
         "erzeugt_von": "scripts/nachholen.py",
         "karenz_tage": KARENZ_TAGE,
+        # Tage, deren Stundenreihe nicht mehr zum Tageswert passt und die
+        # der Nachtrag NICHT erneuern konnte. Normalerweise leer.
+        "veraltete_stundenreihen": sorted(veraltet or []),
         "offene_tage": [{"tag": t, "seit": seit(t)} for t in tage],
         "offene_stunden": [{"stunde": s, "seit": seit(s)} for s in stunden],
         "zuletzt_geschlossen": geschlossen,
@@ -207,14 +256,18 @@ def main(argv: list[str]) -> int:
     nur_lesen = "--pruefen" in argv
     print("Luecken suchen ...")
     tage_vorher, stunden_vorher = tagesluecken(), stundenluecken()
+    veraltet = veraltete_tage()
     zeigen(tage_vorher, stunden_vorher)
+    print(f"  veraltete Stundenreihen: {len(veraltet)}"
+          + (f" -- {chr(44).join(veraltet[:6])}"
+             + (" ..." if len(veraltet) > 6 else "") if veraltet else ""))
 
     if nur_lesen:
         print("\nNur gelesen. Es wurde nichts geholt und nichts geschrieben.")
         return 0
 
-    geschlossen = {"tage": [], "stunden": []}
-    if tage_vorher or stunden_vorher:
+    geschlossen = {"tage": [], "stunden": [], "veraltet": []}
+    if tage_vorher or stunden_vorher or veraltet:
         import subprocess
 
         jahre = sorted({t[:4] for t in tage_vorher})
@@ -225,7 +278,10 @@ def main(argv: list[str]) -> int:
             if r.returncode:
                 raise SystemExit(f"ABBRUCH: fetch-tagesreihen.py endete mit {r.returncode}")
 
-        bloecke = wochenbloecke_fuer(stunden_vorher)
+        # Fuer einen veralteten Tag reicht EINE Stunde, um seinen
+        # Wochenblock zu bestimmen -- geholt wird ohnehin der ganze Block.
+        bloecke = wochenbloecke_fuer(
+            stunden_vorher + [f"{t}T12" for t in veraltet])
         if bloecke:
             print(f"\nStundenreihen neu holen: {len(bloecke)} Wochenbloecke")
             # Der Nachtrag arbeitet ueber eine ausdrueckliche Blockliste. Die
@@ -239,15 +295,21 @@ def main(argv: list[str]) -> int:
             fv.nachtragen(bloecke=bloecke)
 
     tage_nachher, stunden_nachher = tagesluecken(), stundenluecken()
+    veraltet_nachher = veraltete_tage()
+    geschlossen["veraltet"] = [t for t in veraltet
+                               if t not in set(veraltet_nachher)]
     geschlossen["tage"] = [t for t in tage_vorher if t not in set(tage_nachher)]
     geschlossen["stunden"] = [s for s in stunden_vorher if s not in set(stunden_nachher)]
 
     print("\nNach dem Nachtrag:")
     zeigen(tage_nachher, stunden_nachher)
+    print(f"  veraltete Stundenreihen: {len(veraltet_nachher)}")
     print(f"  geschlossen in diesem Lauf: {len(geschlossen['tage'])} Tage, "
-          f"{len(geschlossen['stunden'])} Stunden")
+          f"{len(geschlossen['stunden'])} Stunden, "
+          f"{len(geschlossen['veraltet'])} veraltete Reihen erneuert")
 
-    bericht_schreiben(tage_nachher, stunden_nachher, geschlossen)
+    bericht_schreiben(tage_nachher, stunden_nachher, geschlossen,
+                      veraltet_nachher)
     print(f"  geschrieben: data/luecken.json ({BERICHT.stat().st_size:,} Bytes)")
     return 0
 

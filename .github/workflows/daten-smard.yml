@@ -82,6 +82,13 @@ jobs:
         # den Bericht danach gegen die Dateien nach.
         run: python scripts/nachholen.py
 
+      - name: Mengengewichteten Aussenhandelspreis neu rechnen
+        # Reine Rechnung aus data/verlauf/, kein Netzzugriff. Muss NACH dem
+        # Stundenabruf und nach dem Nachtrag laufen: sie liest genau die
+        # Dateien, die beide gerade geaendert haben. Stand bis zum 11.09.2026
+        # in keinem Workflow -- die Preise auf der Seite waren elf Tage alt.
+        run: python scripts/fetch-verlauf.py --preisgewicht
+
       - name: Redispatch nachtragen
         # Eigener Schritt, eigene Quelle. Faellt netztransparenz aus, sollen die
         # SMARD-Daten trotzdem committet werden -- deshalb continue-on-error.

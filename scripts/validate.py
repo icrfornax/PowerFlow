@@ -1175,6 +1175,46 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              or "Preis je Maßnahme" in js,
              "und sagt, dass es keine Kosten je Massnahme gibt")
 
+    # --- Der Aussenhandelspreis haelt Schritt ---
+    # Er wird aus data/verlauf/ gerechnet und lief bis zum 11.09.2026 in keinem
+    # Workflow mit: die Datei endete am 31.08., die Stundenwerte reichten bis
+    # zum 11.09. Auf der Seite fehlte die Preiszeile fuer den voreingestellten
+    # Zeitraum komplett. Eine abgeleitete Datei, die niemand neu rechnet,
+    # veraltet still -- wie eine Zahl in Prosa.
+    ahp = json.loads(lade("data/aussenhandel-preis.json"))
+    letzte_stunde = max(m["stunden"][-1] for m in verlauf.values() if m["stunden"])
+    b.pruefe(ahp["tage"][-1] >= letzte_stunde[:10],
+             f"der Aussenhandelspreis reicht bis zum letzten Stundenwert "
+             f"({ahp['tage'][-1]} gegen {letzte_stunde[:10]})")
+
+    # --- Vollstaendigkeit der Monatsdateien ---
+    # EIN MONAT, DER VORBEI IST, HAT ALLE SEINE STUNDEN. Am 11.09.2026 hat der
+    # Nachtrag den Juli 2026 von 744 auf 120 Stunden gekuerzt: er holte gezielt
+    # einen Wochenblock vom 01. bis 05. Juli und warf alles danach weg. Der
+    # Tuersteher haette das NIE gemerkt -- er prueft, ob die vorhandenen
+    # Stunden zum Tageswert passen, und 120 richtige Stunden passen zu fuenf
+    # richtigen Tagen. Eine Pruefung auf Richtigkeit ersetzt keine auf
+    # Vollstaendigkeit.
+    heute_d = dt.date.today()
+    zu_kurz = []
+    for m in verlauf.values():
+        monat = m["monat"]
+        jahr, mon = int(monat[:4]), int(monat[5:7])
+        letzter = (dt.date(jahr + (mon == 12), mon % 12 + 1, 1)
+                   - dt.timedelta(days=1))
+        if letzter >= heute_d - dt.timedelta(days=2):
+            continue                      # laufender Monat: waechst noch
+        tage_im_monat = letzter.day
+        # 23 bis 25 Stunden am Tag der Zeitumstellung -- deshalb eine Spanne
+        # statt einer festen Zahl.
+        soll = tage_im_monat * 24
+        ist = len(m["stunden"])
+        if not (soll - 1 <= ist <= soll + 1):
+            zu_kurz.append(f"{monat}: {ist} statt {soll}")
+    b.pruefe(not zu_kurz,
+             "jeder abgeschlossene Monat hat seine vollen Stunden"
+             + (f" -- {zu_kurz[:4]}" if zu_kurz else ""))
+
     # --- Luecken der Quelle ---
     # Der Bericht aus scripts/nachholen.py wird gegen die Dateien nachgerechnet.
     # Ein Bericht, den niemand prueft, ist kein Bericht -- dieselbe Regel wie
@@ -1196,6 +1236,12 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                 if gemeldet != tatsaechlich else ""))
     b.pruefe(all(e["seit"] >= e["tag"] for e in lk["offene_tage"]),
              "keine Luecke ist frueher aufgefallen als der Tag, an dem sie klafft")
+    b.pruefe("veraltete_stundenreihen" in lk,
+             "luecken.json fuehrt die veralteten Stundenreihen")
+    b.pruefe(not lk.get("veraltete_stundenreihen"),
+             "keine Stundenreihe ist gegenueber ihrem Tageswert veraltet"
+             + (f" -- {lk['veraltete_stundenreihen'][:4]}"
+                if lk.get("veraltete_stundenreihen") else ""))
     b.pruefe("Zeitstempel" in (lk.get("_hinweis") or ""),
              "luecken.json sagt selbst, warum kein Zeitstempel darin steht")
     # Ohne Zeitstempel bleibt die Datei stabil, solange sich nichts aendert --
@@ -1523,6 +1569,11 @@ def negativtests() -> int:
         # veraltetes PDF auf der Seite, waehrend jeder Lauf gruen war.
         # Die Schwelle steht als Zahl im Seitentext. Aendert die Quelle ihre
         # kleinste gefuehrte Anlage, muss der Text mitgehen.
+        # Der Datenverlust vom 11.09.2026: der Nachtrag kuerzte den Juli von
+        # 744 auf 120 Stunden. Keine der damaligen Pruefungen haette das
+        # gemeldet -- 120 richtige Stunden passen zu fuenf richtigen Tagen.
+        ("Einem abgeschlossenen Monat fehlen Stunden",
+         lambda: {"verlauf": _monat_gekuerzt(basis["verlauf"])}),
         ("Schwelle der Kraftwerksliste im Text verstellt",
          lambda: {"js": basis["js"].replace("10,0 MW", "12,0 MW")}),
         ("methodik.pdf aus dem Commit eines Datenworkflows entfernt",
@@ -1625,6 +1676,32 @@ def _aendere(doc: dict, aenderung) -> dict:
     import copy
     k = copy.deepcopy(doc)
     aenderung(k)
+    return k
+
+
+def _monat_gekuerzt(verlauf: dict) -> dict:
+    """Kuerzt den letzten ABGESCHLOSSENEN Monat auf ein Fuenftel.
+
+    Genau der Schaden vom 11.09.2026, nachgestellt: der Nachtrag holte einen
+    Wochenblock mitten im Monat und warf alles danach weg.
+    """
+    import copy
+    import datetime as _dt
+    k = copy.deepcopy(verlauf)
+    grenze = (_dt.date.today().replace(day=1) - _dt.timedelta(days=1)).isoformat()[:7]
+    for monat in sorted(k, reverse=True):
+        if monat >= grenze:
+            continue
+        d = k[monat]
+        n = max(1, len(d["stunden"]) // 5)
+        d["stunden"] = d["stunden"][:n]
+        d["netzlast"] = d["netzlast"][:n]
+        for feld in ("preis_eur_mwh", "import_mwh", "export_mwh"):
+            if feld in d:
+                d[feld] = d[feld][:n]
+        for name in d.get("erzeugung", {}):
+            d["erzeugung"][name] = d["erzeugung"][name][:n]
+        return k
     return k
 
 

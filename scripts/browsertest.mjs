@@ -1016,9 +1016,17 @@ try {
     // Das groesste Kraftwerk zuerst: es hat am ehesten eine Reihe.
     punkte.sort((a, b) => parseFloat(b.getAttribute("r") || 0)
                         - parseFloat(a.getAttribute("r") || 0));
+    // Das GESAMTE Budget dieser Schleife muss unter dem Zeitlimit des
+    // Protokollaufrufs bleiben (30 s). Vorher waren es zwoelf Kraftwerke mal
+    // vier Sekunden = 48 s, und der Test brach ab, sobald keines eine Reihe
+    // hatte -- ohne dass an der Seite etwas kaputt war. Jetzt: einmal lange
+    // warten, dabei wird die Blockdatei geladen, danach kurz.
+    let ersterVersuch = true;
     for (const p of punkte.slice(0, 12)) {
       p.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      for (let i = 0; i < 40; i++) {
+      const runden = ersterVersuch ? 40 : 4;
+      ersterVersuch = false;
+      for (let i = 0; i < runden; i++) {
         await new Promise((r) => setTimeout(r, 100));
         if (document.querySelector(".pf-auswahl-wert")) { break; }
       }

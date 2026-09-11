@@ -207,34 +207,59 @@ def nachtragen(wochen: int | None = None, bloecke: list[int] | None = None) -> i
         # und damit sortierbar; die doppelte Stunde der Rueckstellung faellt
         # dabei auf die richtige Seite, weil beide Vorkommen dieselbe Marke
         # tragen und der Vergleich echt kleiner ist.
-        schnitt = len(doc["stunden"])
+        # UND DER SCHWANZ MUSS BLEIBEN. Am 11.09.2026 hat dieselbe Stelle ein
+        # zweites Mal Schaden angerichtet: sie warf ALLES nach dem Schnitt weg
+        # und haengte die geholten Marken an. Fuer "die letzten N Wochen" geht
+        # das gut -- die reichen immer bis ans Ende. Fuer einen GEZIELT
+        # geholten Block mitten im Monat nicht: scripts/nachholen.py holte
+        # einen Wochenblock vom 01. bis 05. Juli, und der Juli hatte danach
+        # 120 statt 744 Stunden. 624 Stunden weg, in einem Skript, dessen
+        # eigener Docstring sagt: "ein Nachtrag darf keine Geschichte
+        # loeschen".
+        #
+        # Richtig ist eine BEREICHSERSETZUNG: was vor der ersten geholten Marke
+        # liegt, bleibt; was dazwischen liegt, wird ersetzt; was danach kommt,
+        # bleibt ebenfalls. Die Marken sind ISO-Text und damit sortierbar.
+        kopf = len(doc["stunden"])
+        schwanz = len(doc["stunden"])
         if neue_marken:
-            schnitt = 0
+            kopf = 0
             for m in doc["stunden"]:
                 if m >= neue_marken[0]:
                     break
-                schnitt += 1
-        doc["stunden"] = doc["stunden"][:schnitt] + neue_marken
-        doc["netzlast"] = doc["netzlast"][:schnitt] + [daten["netzlast"].get(ts) for ts in neue]
+                kopf += 1
+            schwanz = kopf
+            for m in doc["stunden"][kopf:]:
+                if m > neue_marken[-1]:
+                    break
+                schwanz += 1
+
+        def einsetzen(alt_spalte, neue_spalte):
+            """Kopf behalten, Mitte ersetzen, Schwanz behalten.
+
+            Eine frueher kuerzere Spalte wird bis zum Kopf aufgefuellt, sonst
+            rutscht alles um die Differenz.
+            """
+            a = list(alt_spalte)
+            a = a + [None] * max(0, schwanz - len(a))
+            return a[:kopf] + list(neue_spalte) + a[schwanz:]
+
+        doc["stunden"] = einsetzen(doc["stunden"], neue_marken)
+        doc["netzlast"] = einsetzen(
+            doc["netzlast"], [daten["netzlast"].get(ts) for ts in neue])
         preis_neu = [daten["preis_eur_mwh"].get(ts) for ts in neue]
         if any(v is not None for v in preis_neu) or "preis_eur_mwh" in doc:
-            alt_p = doc.get("preis_eur_mwh", [])
-            # Falls die Reihe frueher kuerzer war, erst bis zur Schnittstelle
-            # auffuellen -- sonst rutscht alles um die Differenz.
-            alt_p = alt_p + [None] * max(0, schnitt - len(alt_p))
-            doc["preis_eur_mwh"] = alt_p[:schnitt] + preis_neu
+            doc["preis_eur_mwh"] = einsetzen(doc.get("preis_eur_mwh", []), preis_neu)
         for feld in ("import_mwh", "export_mwh"):
             neu_sp = [daten[feld].get(ts) for ts in neue]
             if any(v is not None for v in neu_sp) or feld in doc:
-                alt_sp = doc.get(feld, [])
-                alt_sp = alt_sp + [None] * max(0, schnitt - len(alt_sp))
-                doc[feld] = alt_sp[:schnitt] + neu_sp
+                doc[feld] = einsetzen(doc.get(feld, []), neu_sp)
         for _, name in sorted(smard.ERZEUGUNG.items()):
             spalte_neu = [daten[name].get(ts) for ts in neue]
             if not any(v is not None for v in spalte_neu) and name not in doc["erzeugung"]:
                 continue
-            alt = doc["erzeugung"].get(name, [])
-            doc["erzeugung"][name] = alt[:schnitt] + spalte_neu
+            doc["erzeugung"][name] = einsetzen(
+                doc["erzeugung"].get(name, []), spalte_neu)
         doc.setdefault("_quelle", "SMARD, Bundesnetzagentur -- https://www.smard.de/")
         doc.setdefault("_lizenz", "CC BY 4.0")
         doc.setdefault("_namensnennung", "Bundesnetzagentur | SMARD.de")
@@ -244,7 +269,8 @@ def nachtragen(wochen: int | None = None, bloecke: list[int] | None = None) -> i
         pruefe_laengen(monat, doc)
         pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
                         encoding="utf-8", newline="\n")
-        print(f"  {monat}: {len(neue)} Stunden nachgetragen ab Stelle {schnitt}, "
+        print(f"  {monat}: {len(neue)} Stunden nachgetragen an Stelle "
+              f"{kopf} bis {schwanz}, "
               f"jetzt {len(doc['stunden'])} Stunden, "
               f"{sum(1 for v in doc.get('preis_eur_mwh') or [] if v is not None)} Preise")
 
