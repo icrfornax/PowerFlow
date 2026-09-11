@@ -385,9 +385,24 @@ in allen sechs Jahren null; `validate.py` prueft das je Jahresdatei. Er bleibt
 als Waechter stehen: steht dort je etwas anderes, hat die Quelle ihr Verhalten
 geaendert.
 
-Offen bleiben zwei ungeprüfte Kandidaten: die Doppelzaehlung der Gegenrichtung
-bei ENTSO-E und die Behandlung grenzueberschreitender Massnahmen, von denen
-netztransparenz nur den deutschen Teil veroeffentlicht.
+**Die Doppelzaehlung ist ebenfalls AUSGESCHLOSSEN** (11.09.2026), in drei
+Varianten geprueft an zwei Tagen:
+- **Gegenrichtung:** kein Zonenpaar ist in beiden Richtungen besetzt (0 von 5
+  an beiden Tagen). Die `mRID` taugt uebrigens nicht als Kennung -- sie ist
+  eine laufende Nummer je Dokument und taucht in jeder Abfrage wieder auf.
+- **Ueberschneidung A85/A46:** von 119 bzw. 60 Werteverlaeufen taucht einer in
+  beiden Geschaeftstypen auf (533 MWh, 0,35 %) -- Zufall, kein System.
+- **Beide Seiten der Massnahme:** ENTSO-E fuehrt A01 und A02, aber das tut
+  netztransparenz mit hoch+runter auch. Kein Fehler. **ABER die Richtungen
+  bedeuten nicht dasselbe:** A01/A02 ist die FLUSSRICHTUNG zwischen Zonen,
+  hoch/runter die Richtung der EINSPEISUNG einer Anlage. Am 28.08.2026 laufen
+  sie gegenlaeufig (89 % und 125 %), waehrend die Summen auf 5,2 %
+  uebereinstimmen. **Nur die Summe ist vergleichbar.**
+
+Offen bleibt ein ungeprüfter Kandidat: die Behandlung grenzueberschreitender
+Massnahmen, von denen netztransparenz nur den deutschen Teil veroeffentlicht.
+Dafuer spricht, dass genau die beiden Tage mit nennenswertem Auslandsanteil
+ueber 100 % liegen.
 
 **Erledigt am 03.09.2026:** die Lizenzfrage (Punkt 1, siehe oben), der
 ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF

@@ -860,3 +860,77 @@ geprüft**:
   eigener Angabe nur den deutschen Teil, ENTSO-E beide Seiten. Auffällig: die
   beiden Tage mit ENTSO-E über 100 % sind genau die mit nennenswertem
   Auslandsanteil.
+
+---
+
+## 11.09.2026: Auch die Doppelzählung ist ausgeschlossen
+
+Nach der Randzuordnung war die Doppelzählung der zweite Kandidat für die
+Tagesstreuung: ENTSO-E könnte für eine Maßnahme zwischen zwei Regelzonen zwei
+Zeitreihen führen, und wer beide summiert, zählte denselben Vorgang doppelt.
+
+Geprüft wurden **drei** Varianten, an zwei Tagen.
+
+### 1. Die Gegenrichtung — ausgeschlossen
+
+Für jedes der sechs Zonenpaare wurden **beide** Richtungen abgefragt.
+
+| 28.08.2026 | hin | zurück |
+|---|---|---|
+| 50Hertz ← Amprion | 56.086 MWh | **0** |
+| TenneT ← Amprion | 25.136 | **0** |
+| 50Hertz ← TenneT | 17.349 | **0** |
+| 50Hertz ← TransnetBW | 5.210 | **0** |
+| TenneT ← TransnetBW | 3.092 | **0** |
+
+**Kein einziges Paar ist in beiden Richtungen besetzt** — an beiden geprüften
+Tagen, 5 von 5 bzw. 5 von 5. Eine Doppelzählung über die Gegenrichtung kann es
+damit nicht geben.
+
+(Die `mRID` der Zeitreihen taugt nicht als Kennung: sie ist eine laufende
+Nummer je Dokument — 1, 2, 3 … — und taucht deshalb in jeder Abfrage wieder
+auf. Wer damit Vorgänge zusammenführt, bekommt Unsinn.)
+
+### 2. Überschneidung der Geschäftstypen — ausgeschlossen
+
+Taucht dieselbe Maßnahme sowohl unter `A85` (intern) als auch unter `A46`
+(zwischen Zonen) auf? Verglichen wurden die vollständigen Werteverläufe:
+
+| Tag | Verläufe | in beiden Typen |
+|---|---|---|
+| 28.08.2026 | 119 | **1** (533 MWh, 0,35 %) |
+| 22.08.2026 | 60 | **0** |
+
+Der eine Treffer ist ein zufällig gleicher Verlauf, keine systematische
+Doppelzählung. Innerhalb eines Geschäftstyps kommt **kein** Verlauf doppelt vor.
+
+### 3. Beide Seiten der Maßnahme — kein Fehler, aber ein Fallstrick
+
+ENTSO-E führt beide Flussrichtungen (`A01` hinein, `A02` hinaus). Das ist
+**keine** Doppelzählung: netztransparenz summiert ebenfalls beide Seiten zu
+`gesamt_mwh = hoch + runter`. Bei einer Redispatch-Maßnahme fährt eine Anlage
+hoch und eine andere herunter; beide Seiten gehören zur Menge.
+
+**Die Richtungen bedeuten aber nicht dasselbe**, und das ist wichtig für jeden,
+der sie einzeln vergleichen will:
+
+| 28.08.2026 | ENTSO-E | netztransparenz |
+|---|---|---|
+| A01 hinein / hoch | 70.972 MWh | 79.610 MWh |
+| A02 hinaus / runter | 79.657 | 63.610 |
+| Summe | 150.629 | 143.220 |
+
+Die Summen liegen 5,2 % auseinander, die Einzelrichtungen aber **gegenläufig**
+(89 % und 125 %). `A01`/`A02` ist bei ENTSO-E die **Flussrichtung zwischen
+Zonen**, bei netztransparenz die Richtung der **Einspeisung einer Anlage**.
+Zwei verschiedene Größen — nur die Summe ist vergleichbar.
+
+### Was bleibt
+
+Beide bisher genannten Kandidaten sind ausgeschlossen. Für die Tagesstreuung
+von 76,3 bis 148,4 % bleibt als benannter Kandidat die **Behandlung
+grenzüberschreitender Maßnahmen**: netztransparenz veröffentlicht davon nach
+eigener Angabe nur den deutschen Teil, ENTSO-E führt beide Seiten. Dafür
+spricht, dass die beiden Tage mit ENTSO-E über 100 % genau die mit
+nennenswertem Auslandsanteil sind (24.08. und 21.08.). **Geprüft ist das
+nicht.**
