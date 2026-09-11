@@ -201,8 +201,8 @@
    "quelle": "netztransparenz",
    "beleg": "docs/beleg-redispatch.md",
    "dateien": 6,
-   "bytes": 3669817,
-   "zeitraum": "2021-01-01 bis 2026-09-07",
+   "bytes": 3678504,
+   "zeitraum": "2021-01-01 bis 2026-09-11",
    "muster": "data/redispatch/*.json",
    "abzug": "data/redispatch-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
@@ -353,5 +353,5 @@
   }
  ],
  "dateien_gesamt": 195,
- "bytes_gesamt": 33143184
+ "bytes_gesamt": 33151871
 }

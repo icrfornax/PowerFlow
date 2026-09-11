@@ -214,12 +214,16 @@ def hole_spanne(von: str, bis: str) -> list[dict]:
 def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
     """Fasst die Massnahmen je LOKALEM Kalendertag zusammen.
 
-    Eine Massnahme wird dem Tag ihres BEGINNS zugeordnet -- das ist eine
-    Annahme und wird als solche ausgewiesen. Die Alternative waere, die Arbeit
-    ueber Mitternacht zu verteilen; das setzte gleichmaessige Leistung voraus,
-    und genau die ist bei einem Teil der Saetze nachweislich nicht gegeben.
-    Wie gross die Annahme ist, steht im Ergebnis unter
-    "arbeit_ueber_mitternacht_mwh".
+    Eine Massnahme wird dem Tag ihres BEGINNS zugeordnet. Das galt bis zum
+    11.09.2026 als Annahme -- ist aber keine: gemessen an den Rohdaten von
+    1.328 Saetzen aus zwei Jahreszeiten laeuft KEINE EINZIGE Massnahme in den
+    Folgetag hinein. Die Quelle schneidet selbst an der lokalen Tagesgrenze,
+    im Sommer bei 22:00 UTC und im Winter bei 23:00 -- beide Male Mitternacht
+    deutscher Zeit.
+
+    "arbeit_ueber_mitternacht_mwh" zaehlt deshalb nur noch, was ECHT darueber
+    hinausreicht, und sollte null sein. Steht dort etwas, hat die Quelle ihr
+    Verhalten geaendert, und die Zuordnung muss neu bedacht werden.
     """
     tage: dict[str, dict] = {}
     # Tag -> Stundenblock. Getrennt gefuehrt, weil eine Massnahme in Stunden
@@ -244,7 +248,20 @@ def auswerten(saetze: list[dict], von: str, bis: str) -> dict:
         # Die Bereichsabfrage liefert auch Ueberhaenge. Selbst nachfiltern.
         if tag < von or tag > bis:
             continue
-        if a.astimezone(TZ).date() != b.astimezone(TZ).date():
+        # ECHT ueber Mitternacht heisst: das Ende liegt NACH 00:00 des
+        # Folgetags. Bis zum 11.09.2026 stand hier ein Vergleich der
+        # Kalendertage -- der zaehlt auch eine Massnahme mit, die um PUNKT
+        # 00:00 endet, und das sind fast alle. Ergebnis: 40,2 % der
+        # Jahresarbeit standen als "ueber Mitternacht" in der Datei, und auf
+        # der Seite als Groesse einer Annahme. Gemessen an den Rohdaten laeuft
+        # aber KEINE EINZIGE Massnahme in den Folgetag hinein: die Quelle
+        # schneidet selbst an der lokalen Tagesgrenze -- im Sommer bei 22:00
+        # UTC, im Winter bei 23:00, also beide Male Mitternacht deutscher Zeit.
+        # Die Zuordnung zum Tag des Beginns ist damit gar keine Annahme.
+        a_lok, b_lok = a.astimezone(TZ), b.astimezone(TZ)
+        grenze = dt.datetime.combine(a_lok.date() + dt.timedelta(days=1),
+                                     dt.time(0, 0), tzinfo=TZ)
+        if b_lok > grenze:
             ueber_mitternacht += arbeit
         e = tage.setdefault(tag, {
             "erhoehen_mwh": 0.0, "reduzieren_mwh": 0.0, "massnahmen": 0,

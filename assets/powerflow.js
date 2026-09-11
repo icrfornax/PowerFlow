@@ -4348,11 +4348,16 @@
         + "die tatsächlich aktive Zeit, nicht über das genannte Fenster — die Quelle "
         + "dokumentiert das selbst. Wer Leistung mal Dauer rechnet, überschätzt "
         + "erheblich. Zweitens: eine Maßnahme zählt zum Tag ihres Beginns. Im August "
-        + "2026 lagen 22,2 % der Arbeit in Maßnahmen über Mitternacht. Die Quelle "
+        + "2026 war das noch als Annahme ausgewiesen; am 11.09.2026 ist "
+        + "nachgemessen, dass es keine ist: keine einzige Maßnahme läuft in "
+        + "den Folgetag hinein, die Quelle schneidet selbst an der lokalen "
+        + "Tagesgrenze. Die Quelle "
         + "liefert UTC; hier ist auf Ortszeit umgerechnet. Die Reihe beginnt 2021.",
       quellen: QUELLE_RD,
-      messung: "Messung. Die Zuordnung zum Kalendertag ist eine benannte Annahme, "
-        + "ihre Größe steht in data/redispatch/<jahr>.json."
+      messung: "Messung. Die Zuordnung zum Kalendertag galt bis zum 11.09.2026 "
+        + "als Annahme; nachgemessen ist sie keine — die Quelle schneidet ihre "
+        + "Maßnahmen selbst an der Tagesgrenze. Der Zähler dafür steht weiter "
+        + "in data/redispatch/<jahr>.json und muss null sein."
     }, "Redispatch");
     return huelle;
   }
@@ -5422,7 +5427,8 @@
          Verzeichnis. */
       schieflageSatz(),
       "Eine Redispatch-Maßnahme zählt zum Tag ihres Beginns. Im August 2026 lagen "
-        + "22,2 % der Arbeit in Maßnahmen über Mitternacht. Das ist eine Annahme, "
+        + "keine einzige Maßnahme, die in den Folgetag hineinläuft — die Quelle "
+        + "schneidet selbst an der Tagesgrenze. Das ist also keine Annahme, "
         + "keine Messung.",
       "Die Pfeile an den Kuppelstellen sitzen schematisch. Gemessen sind Richtung "
         + "und Menge, nicht der Ort des Übergangs.",
@@ -5472,10 +5478,14 @@
           + "TAG um bis zu einem Viertel auseinanderliegen. Über acht Tage "
           + "summiert stimmen sie: 607.218 gegen 637.755 MWh, also 95,2 %. Je "
           + "einzelnem Tag streut es aber von 76,3 bis 148,4 % — am stärksten "
-          + "an kleinen Tagen. Naheliegend ist die Zuordnung an den Rändern: "
-          + "netztransparenz zählt eine Maßnahme zum Tag ihres Beginns, "
-          + "ENTSO-E führt Zeitreihen je Marktzeiteinheit. Geprüft ist das "
-          + "NICHT. (Eine frühere Angabe — die Plattform führe nur 24 bis "
+          + "an kleinen Tagen. Die Zuordnung an den Rändern ist als Ursache "
+          + "am 11.09.2026 AUSGESCHLOSSEN: keine einzige Maßnahme läuft in den "
+          + "Folgetag hinein, die Quelle schneidet selbst an der Tagesgrenze "
+          + "(1.328 Sätze aus zwei Jahreszeiten geprüft). Offen bleiben zwei "
+          + "andere Kandidaten, beide ungeprüft — die Doppelzählung der "
+          + "Gegenrichtung bei ENTSO-E und die Behandlung grenzüberschreitender "
+          + "Maßnahmen, von denen netztransparenz nur den deutschen Teil "
+          + "veröffentlicht. (Eine frühere Angabe — die Plattform führe nur 24 bis "
           + "63 % — war falsch und ist am 07.09.2026 zurückgenommen: meine "
           + "Abfrage hatte den Redispatch zwischen zwei deutschen Regelzonen "
           + "ausgelassen, und der ist mit 62 % der größte Teil.)" },

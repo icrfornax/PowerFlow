@@ -369,8 +369,25 @@ braucht die Seite; die aggregierten Zeitreihen der Plattform geben es nicht her.
 beiden Quellen -- 607.218 gegen 637.755 MWh, also 95,2 %. Der Teil, der in der
 ersten Messung fehlte, ist mit 376.393 MWh (62 %) der groesste. **Hoch:** je
 einzelnem Tag streut es von 76,3 bis 148,4 %, am staerksten an kleinen Tagen.
-Naheliegend ist die Zuordnung an den Raendern -- netztransparenz zaehlt zum Tag
-des BEGINNS, ENTSO-E fuehrt Zeitreihen je Marktzeiteinheit. NICHT geprueft.
+
+**Die Randzuordnung ist als Ursache AUSGESCHLOSSEN** (11.09.2026): keine
+einzige Massnahme laeuft in den Folgetag hinein -- die Quelle schneidet selbst
+an der lokalen Tagesgrenze, im Sommer bei 22:00 UTC und im Winter bei 23:00.
+Geprueft an 1.328 Saetzen aus zwei Jahreszeiten; die anteilige Verteilung
+ergibt exakt dieselben Tageswerte wie die Zuordnung zum Beginn.
+
+**DABEI FIEL EINE FALSCHE KENNZAHL AUF.** `arbeit_ueber_mitternacht_mwh`
+verglich die KALENDERTAGE von Beginn und Ende -- eine Massnahme, die um Punkt
+00:00 endet, zaehlte mit. So standen 40,2 % der Jahresarbeit als "ueber
+Mitternacht" in der Datei und auf der Seite als "Groesse einer Annahme". Die
+Annahme gibt es nicht. Der Zaehler prueft jetzt auf ein Ende NACH 00:00 und ist
+in allen sechs Jahren null; `validate.py` prueft das je Jahresdatei. Er bleibt
+als Waechter stehen: steht dort je etwas anderes, hat die Quelle ihr Verhalten
+geaendert.
+
+Offen bleiben zwei ungeprüfte Kandidaten: die Doppelzaehlung der Gegenrichtung
+bei ENTSO-E und die Behandlung grenzueberschreitender Massnahmen, von denen
+netztransparenz nur den deutschen Teil veroeffentlicht.
 
 **Erledigt am 03.09.2026:** die Lizenzfrage (Punkt 1, siehe oben), der
 ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF

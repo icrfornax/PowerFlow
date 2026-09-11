@@ -708,7 +708,16 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         b.pruefe("ENTSO-E" in (d.get("_lizenz") or ""),
                  f"{eintrag['datei']}: Lizenzgrundlage genannt")
         b.pruefe("arbeit_ueber_mitternacht_mwh" in d,
-                 f"{eintrag['datei']}: Groesse der Mitternachtsannahme ausgewiesen")
+                 f"{eintrag['datei']}: Mitternachtszaehler ausgewiesen")
+        # ER MUSS NULL SEIN. Am 11.09.2026 an den Rohdaten gemessen: keine
+        # einzige Massnahme laeuft in den Folgetag hinein -- die Quelle
+        # schneidet selbst an der lokalen Tagesgrenze, im Sommer bei 22:00 UTC
+        # und im Winter bei 23:00. Die Zuordnung zum Tag des Beginns ist damit
+        # keine Annahme. Steht hier etwas anderes als null, hat die Quelle ihr
+        # Verhalten geaendert, und die Zuordnung muss neu bedacht werden.
+        b.pruefe(d["arbeit_ueber_mitternacht_mwh"] == 0,
+                 f"{eintrag['jahr']}: keine Massnahme laeuft in den Folgetag "
+                 f"({d['arbeit_ueber_mitternacht_mwh']:,.0f} MWh)")
         # Selbstkontrolle: Hoch- und Herunterfahren gleichen sich bei
         # Redispatch weitgehend aus -- aber NICHT vollstaendig, und das hat
         # einen belegten Grund: bei grenzueberschreitenden Massnahmen wird
@@ -833,6 +842,12 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # geklaert, wo die Differenz herkommt. Wo sie NICHT herkommt, ist geklaert.
     b.pruefe("Woran das liegt, ist NICHT" not in js,
              "die zurueckgenommene Formulierung zur Aussenhandelsdifferenz ist weg")
+
+    # Die widerlegte Mitternachtsannahme darf nicht zurueckkehren. Sie stand
+    # an drei Stellen auf der Seite -- als "22,2 % der Arbeit in Massnahmen
+    # ueber Mitternacht".
+    b.pruefe("22,2 % der Arbeit in Ma" not in js,
+             "die widerlegte Mitternachtsannahme steht nicht mehr auf der Seite")
 
     # --- Die zurueckgenommene Redispatch-Behauptung ---
     # Am 03.09.2026 stand auf der Seite, die ENTSO-E-Reihe fuehre nur 24 bis

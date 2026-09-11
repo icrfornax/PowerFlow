@@ -799,3 +799,64 @@ netztransparenz.de bleibt die Quelle — nicht mehr, weil die andere Reihe
 kürzer wäre, sondern weil sie je Maßnahme Grund, Richtung, Dauer, anweisenden
 und anfordernden Betreiber und die betroffene Anlage liefert. Die aggregierten
 Zeitreihen der Plattform geben das nicht her.
+
+---
+
+## 11.09.2026: Die Randzuordnung erklärt die Streuung NICHT
+
+Als offener Punkt stand auf der Seite, die Tagesstreuung zwischen ENTSO-E und
+netztransparenz (76,3 bis 148,4 %) könnte an der Zuordnung an den Rändern
+liegen: netztransparenz zählt eine Maßnahme zum Tag ihres **Beginns**, ENTSO-E
+führt Zeitreihen je Marktzeiteinheit. Eine Maßnahme von 22 bis 02 Uhr fiele bei
+der einen Quelle ganz auf den ersten Tag, bei der anderen anteilig auf beide.
+
+**Die Vermutung trägt nicht — es gibt diese Maßnahmen gar nicht.**
+
+### Die Messung
+
+An den Rohdaten von netztransparenz, zwei Zeiträume in zwei Jahreszeiten:
+
+| Zeitraum | Sätze | Ende genau 00:00 Ortszeit | Ende **nach** 00:00 |
+|---|---|---|---|
+| 20.–30.08.2026 (MESZ) | 690 | 139 | **0** |
+| 10.–20.01.2026 (MEZ) | 638 | 119 | **0** |
+
+Die häufigste Endzeit in der Quelle ist im August **22:00 UTC**, im Januar
+**23:00 UTC** — beide Male Mitternacht deutscher Zeit. Die Quelle schneidet
+ihre Maßnahmen also selbst an der lokalen Tagesgrenze.
+
+Der direkte Test bestätigt es: dieselben Rohdaten einmal zum Tag des Beginns
+zugeordnet und einmal anteilig über die Laufzeit verteilt ergeben **identische
+Tageswerte**. Der mittlere absolute Abstand zu ENTSO-E bleibt in beiden Fällen
+bei 17,2 %.
+
+### Der Nebenbefund: eine Kennzahl maß etwas anderes als ihr Name
+
+`arbeit_ueber_mitternacht_mwh` verglich bis dahin die **Kalendertage** von
+Beginn und Ende. Eine Maßnahme, die um Punkt 00:00 endet, hat ein Ende am
+Folgetag — und wurde mitgezählt. Ergebnis: **40,2 % der Jahresarbeit 2026**
+standen als „über Mitternacht" in der Datei, und auf der Seite als „Größe einer
+Annahme".
+
+Die Annahme gibt es nicht. Der Zähler prüft jetzt, ob das Ende **nach** 00:00
+des Folgetags liegt, und ist in allen sechs Jahren **null**. Er bleibt stehen
+als Wächter: steht dort je etwas anderes, hat die Quelle ihr Verhalten
+geändert. `validate.py` prüft es für jede Jahresdatei.
+
+Auf der Seite stand die Zahl an drei Stellen — im Popover, in der Mängelliste
+und im Messungshinweis. Alle drei sind berichtigt; eine Prüfung hält die alte
+Formulierung fern.
+
+### Was die Streuung dann verursacht — offen
+
+Ausgeschlossen ist die Randzuordnung. Zwei Kandidaten bleiben, beide **nicht
+geprüft**:
+
+- **Doppelzählung der Gegenrichtung.** Bei einer Maßnahme zwischen zwei
+  Regelzonen führt ENTSO-E zwei Zeitreihen (A→B und B→A). Werden beide
+  gezählt, obwohl sie denselben Vorgang beschreiben, fällt die ENTSO-E-Summe zu
+  hoch aus.
+- **Grenzüberschreitende Maßnahmen.** netztransparenz veröffentlicht davon nach
+  eigener Angabe nur den deutschen Teil, ENTSO-E beide Seiten. Auffällig: die
+  beiden Tage mit ENTSO-E über 100 % sind genau die mit nennenswertem
+  Auslandsanteil.
