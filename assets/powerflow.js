@@ -5468,15 +5468,17 @@
          abgefragt. Am 28.08.2026 sind das 106.873 von 150.628 MWh, also 71 %
          der ENTSO-E-Summe. */
       { hoch: true,
-        text: "Wie weit ENTSO-E und netztransparenz beim Redispatch wirklich "
-          + "auseinanderliegen. Eine frühere Angabe auf dieser Seite — die "
-          + "Plattform führe nur 24 bis 63 % der Arbeit — ist am 07.09.2026 "
-          + "ZURÜCKGENOMMEN: die Abfrage war unvollständig, es fehlte der "
-          + "Redispatch zwischen zwei deutschen Regelzonen, und der ist der "
-          + "größte Teil. Vollständig gemessen ergeben zwei Tage 84,6 und "
-          + "105,2 % statt 24 bis 63 %. Woher diese Streuung kommt, ist "
-          + "offen; die Messung über mehr Tage steht aus, weil die Plattform "
-          + "seit dem Nachmittag des 07.09. mit HTTP 503 antwortet." },
+        text: "Warum die Redispatch-Zahlen von ENTSO-E und netztransparenz je "
+          + "TAG um bis zu einem Viertel auseinanderliegen. Über acht Tage "
+          + "summiert stimmen sie: 607.218 gegen 637.755 MWh, also 95,2 %. Je "
+          + "einzelnem Tag streut es aber von 76,3 bis 148,4 % — am stärksten "
+          + "an kleinen Tagen. Naheliegend ist die Zuordnung an den Rändern: "
+          + "netztransparenz zählt eine Maßnahme zum Tag ihres Beginns, "
+          + "ENTSO-E führt Zeitreihen je Marktzeiteinheit. Geprüft ist das "
+          + "NICHT. (Eine frühere Angabe — die Plattform führe nur 24 bis "
+          + "63 % — war falsch und ist am 07.09.2026 zurückgenommen: meine "
+          + "Abfrage hatte den Redispatch zwischen zwei deutschen Regelzonen "
+          + "ausgelassen, und der ist mit 62 % der größte Teil.)" },
       { hoch: false,
         text: "Wie groß der Anteil der industriellen Eigenerzeugung an der "
           + "Erzeugungslücke ist. Am 07.09.2026 ist die Lücke aufgeteilt: die "

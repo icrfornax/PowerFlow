@@ -743,3 +743,59 @@ documentType=A63
 CTA-Codes: 50Hertz `10YDE-VE-------2`, Amprion `10YDE-RWENET---I`,
 TenneT `10YDE-EON------1`, TransnetBW `10YDE-ENBW-----N`. Einheit MWh je MTU,
 `curveType` A03 — ein Wert gilt bis zum nächsten genannten Punkt.
+
+---
+
+## Die vollständige Messung — 11.09.2026, acht Tage
+
+Die Transparency Platform war vier Tage lang nicht erreichbar (HTTP 503, dann
+ein nacktes „404 page not found" des Gateways). Am 11.09.2026 antwortete sie
+wieder, und die Messung ließ sich zu Ende führen.
+
+**Abgefragt wurden alle drei Teile**, für jeden Tag 104 Einzelabrufe:
+
+| Teil | Abfrage |
+|---|---|
+| intern | `A63` + `businessType=A85`, `in_Domain = out_Domain` = je eine deutsche Regelzone |
+| zwischen den Zonen | `A63` + `businessType=A46`, zwei **deutsche** Regelzonen |
+| gegen das Ausland | `A63` + `businessType=A46`, je eine deutsche Zone gegen elf Nachbarzonen |
+
+### Das Ergebnis (MWh)
+
+| Tag | intern | zw. Zonen | Ausland | ENTSO-E | netztransparenz | Anteil |
+|---|---|---|---|---|---|---|
+| 21.08. | 9.312 | 612 | 3.300 | 13.224 | 15.629 | 84,6 % |
+| 22.08. | 13.320 | 29.549 | 0 | 42.869 | 56.182 | 76,3 % |
+| 23.08. | 21.834 | 23.537 | 0 | 45.371 | 52.280 | 86,8 % |
+| 24.08. | 4.276 | 1.968 | 3.875 | 10.119 | 6.819 | **148,4 %** |
+| 25.08. | 24.280 | 28.251 | 720 | 53.251 | 60.567 | 87,9 % |
+| 26.08. | 21.606 | 21.101 | 0 | 42.707 | 52.874 | 80,8 % |
+| 27.08. | 77.912 | 164.502 | 6.635 | 249.049 | 250.184 | 99,5 % |
+| 28.08. | 43.755 | 106.873 | 0 | 150.628 | 143.220 | 105,2 % |
+| **Summe** | **216.295** | **376.393** | **14.530** | **607.218** | **637.755** | **95,2 %** |
+
+### Was das heißt
+
+**Die beiden Quellen messen dasselbe.** Über acht Tage summiert liegt ENTSO-E
+bei 95,2 % von netztransparenz — nicht bei den 24 bis 63 %, die bis zum
+07.09.2026 auf dieser Seite standen.
+
+**Der Teil, der in der ersten Messung fehlte, ist der größte:** 376.393 von
+607.218 MWh, also **62 %**, entfallen auf Redispatch zwischen zwei deutschen
+Regelzonen. Genau diese Abfrage hatte ich am 03.09.2026 nicht gestellt.
+
+**Die Streuung je Tag bleibt und ist nicht geklärt:** 76,3 bis 148,4 %, Median
+86,8 %. An kleinen Tagen schlägt sie am stärksten aus — der 24.08. ist mit
+6.819 MWh der kleinste des Zeitraums und zugleich der größte Ausreißer. Das
+passt zu einer Zuordnung an den Rändern: netztransparenz ordnet eine Maßnahme
+dem Tag ihres **Beginns** zu, ENTSO-E führt Zeitreihen je Marktzeiteinheit. Eine
+Maßnahme über Mitternacht zählt bei der einen Quelle ganz zum ersten Tag, bei
+der anderen anteilig zu beiden. **Geprüft ist das nicht**, und es wird hier
+nicht als Erklärung ausgegeben.
+
+### Was bleibt
+
+netztransparenz.de bleibt die Quelle — nicht mehr, weil die andere Reihe
+kürzer wäre, sondern weil sie je Maßnahme Grund, Richtung, Dauer, anweisenden
+und anfordernden Betreiber und die betroffene Anlage liefert. Die aggregierten
+Zeitreihen der Plattform geben das nicht her.

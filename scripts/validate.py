@@ -843,7 +843,8 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # wiederholt.
     rdb = lade("docs/beleg-redispatch.md")
     for satz in ("businessType=A46", "zwischen zwei deutschen",
-                 "106.873", "ZURÜCKGENOMMEN am 07.09.2026"):
+                 "106.873", "ZURÜCKGENOMMEN am 07.09.2026",
+                 "95,2 %", "376.393"):
         b.pruefe(satz in rdb, f"beleg-redispatch.md nennt: {satz!r}")
     b.pruefe("24 bis 63 %" not in js or "ZURÜCKGENOMMEN" in js
              or "zurückgenommen" in js.lower(),

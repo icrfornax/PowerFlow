@@ -365,10 +365,12 @@ Grund als bisher angegeben: die Quelle liefert je Massnahme Grund, Richtung,
 Dauer, anweisenden und anfordernden Betreiber und die betroffene Anlage. Das
 braucht die Seite; die aggregierten Zeitreihen der Plattform geben es nicht her.
 
-**Hoch:** wie weit die beiden Reihen wirklich auseinanderliegen. Zwei Tage mit
-84,6 und 105,2 % sind eine grobe Deckung, keine Uebereinstimmung. Die Messung
-ueber mehr Tage steht aus -- die Plattform antwortet seit dem Nachmittag des
-07.09.2026 mit HTTP 503.
+**Am 11.09.2026 vollstaendig gemessen, acht Tage:** ueber die Summe stimmen die
+beiden Quellen -- 607.218 gegen 637.755 MWh, also 95,2 %. Der Teil, der in der
+ersten Messung fehlte, ist mit 376.393 MWh (62 %) der groesste. **Hoch:** je
+einzelnem Tag streut es von 76,3 bis 148,4 %, am staerksten an kleinen Tagen.
+Naheliegend ist die Zuordnung an den Raendern -- netztransparenz zaehlt zum Tag
+des BEGINNS, ENTSO-E fuehrt Zeitreihen je Marktzeiteinheit. NICHT geprueft.
 
 **Erledigt am 03.09.2026:** die Lizenzfrage (Punkt 1, siehe oben), der
 ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF
