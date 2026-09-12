@@ -5466,6 +5466,17 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
+      /* Jetzt der oberste Punkt. Die Redispatch-Frage darueber ist am
+         12.09.2026 beantwortet; von den verbleibenden ist dies die einzige,
+         die eine Zahl betrifft, die diese Seite ZEIGT -- den Boersenpreis --
+         und die mit dem vorhandenen Zugang messbar ist. */
+      { hoch: true,
+        text: "Die ENTSO-E-Preisreihe für Deutschland/Luxemburg enthält je Tag "
+          + "ZWEI Viertelstundenreihen, die sich nur im Feld "
+          + "classificationSequence (Position 1 und 2) unterscheiden. "
+          + "Position 1 stimmt auf 0,005 €/MWh mit SMARD überein; welche "
+          + "Auktion Position 2 ist, ist nicht belegt. Vor jeder Nutzung der "
+          + "Viertelstundenpreise zu klären." },
       /* ZURUECKGENOMMEN am 07.09.2026. Hier stand, die ENTSO-E-Reihe fuehre
          nur 24 bis 63 % der Redispatch-Arbeit. Das war falsch -- meine
          Abfrage hatte den groessten Teil ausgelassen: Redispatch ZWISCHEN
@@ -5473,7 +5484,7 @@
          deutschen Domaenen, und genau die Kombination hatte ich nie
          abgefragt. Am 28.08.2026 sind das 106.873 von 150.628 MWh, also 71 %
          der ENTSO-E-Summe. */
-      { hoch: true,
+      { hoch: false,
         text: "Warum die Redispatch-Zahlen von ENTSO-E und netztransparenz je "
           + "TAG um bis zu einem Viertel auseinanderliegen. Über acht Tage "
           + "summiert stimmen sie: 607.218 gegen 637.755 MWh, also 95,2 %. Je "
@@ -5482,12 +5493,16 @@
           + "am 11.09.2026 AUSGESCHLOSSEN: keine einzige Maßnahme läuft in den "
           + "Folgetag hinein, die Quelle schneidet selbst an der Tagesgrenze "
           + "(1.328 Sätze aus zwei Jahreszeiten geprüft). Ebenfalls "
-          + "ausgeschlossen ist eine Doppelzählung: kein Zonenpaar ist bei "
-          + "ENTSO-E in beiden Richtungen besetzt, und kein Werteverlauf taucht "
-          + "in beiden Geschäftstypen auf. Offen bleibt ein Kandidat, ungeprüft "
-          + "— die Behandlung grenzüberschreitender Maßnahmen, von denen "
-          + "netztransparenz nur den deutschen Teil veröffentlicht; dafür "
-          + "spricht, dass genau die Tage mit Auslandsanteil über 100 % liegen. "
+          + "ausgeschlossen: eine Doppelzählung in drei Varianten, und die "
+          + "beidseitige Führung grenzüberschreitender Maßnahmen — kein "
+          + "Zonenpaar und keine Grenze ist bei ENTSO-E in beiden Richtungen "
+          + "besetzt. Was TRÄGT, ist die Tagesgröße: je größer der Tag, desto "
+          + "besser stimmen die Quellen überein (Korrelation −0,71). Die beiden "
+          + "größten Tage liegen bei 99,5 und 105,2 %, der kleinste bei "
+          + "148,4 %. Die absoluten Differenzen wachsen nicht mit dem Tag. "
+          + "Welche einzelnen Maßnahmen verschieden zugeordnet werden, ist "
+          + "nicht aufzulösen: dafür bräuchte es eine Kennung, die beide "
+          + "Quellen führen, und die gibt es nicht. "
           + "(Eine frühere Angabe — die Plattform führe nur 24 bis "
           + "63 % — war falsch und ist am 07.09.2026 zurückgenommen: meine "
           + "Abfrage hatte den Redispatch zwischen zwei deutschen Regelzonen "
@@ -5521,13 +5536,6 @@
       { hoch: false,
         text: "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar "
           + "wird, wie stark das Ergebnis am gewählten Zeitraum hängt." },
-      { hoch: false,
-        text: "Die ENTSO-E-Preisreihe für Deutschland/Luxemburg enthält je Tag "
-          + "ZWEI Viertelstundenreihen, die sich nur im Feld "
-          + "classificationSequence (Position 1 und 2) unterscheiden. "
-          + "Position 1 stimmt auf 0,005 €/MWh mit SMARD überein; welche "
-          + "Auktion Position 2 ist, ist nicht belegt. Vor jeder Nutzung der "
-          + "Viertelstundenpreise zu klären." },
       { hoch: false,
         text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
           + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },

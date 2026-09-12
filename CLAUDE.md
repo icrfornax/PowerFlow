@@ -399,10 +399,24 @@ Varianten geprueft an zwei Tagen:
   sie gegenlaeufig (89 % und 125 %), waehrend die Summen auf 5,2 %
   uebereinstimmen. **Nur die Summe ist vergleichbar.**
 
-Offen bleibt ein ungeprüfter Kandidat: die Behandlung grenzueberschreitender
-Massnahmen, von denen netztransparenz nur den deutschen Teil veroeffentlicht.
-Dafuer spricht, dass genau die beiden Tage mit nennenswertem Auslandsanteil
-ueber 100 % liegen.
+**Auch die Grenzmassnahmen sind AUSGESCHLOSSEN** (12.09.2026). Am 24.08.2026
+alle 88 Kombinationen aus vier deutschen und elf auslaendischen Zonen in BEIDEN
+Richtungen abgefragt: drei besetzt, keine einzige beidseitig. Und der
+Auslandstopf ist nicht doppelt so gross wie bei netztransparenz, sondern
+gleich gross (3.316 gegen 3.300 MWh am 21.08.).
+
+**WAS TRAEGT, IST DIE TAGESGROESSE.** Korrelation zwischen Tagesgroesse und
+Abweichung von 100 %: **r = -0,706**. Die beiden groessten Tage liegen bei 99,5
+und 105,2 %, der kleinste bei 148,4 %. Die absoluten Differenzen (-13.313 bis
++7.408 MWh) wachsen NICHT mit dem Tag -- bei 6.819 MWh sind 3.300 MWh eben
+48 %, bei 250.184 MWh sind 1.135 MWh 0,5 %. Vorbehalt: acht Tage sind wenig
+fuer eine Korrelation, die Richtung ist deutlich, die Zahl nicht belastbar.
+
+Damit ist die Frage beantwortet: die Tagesstreuung ist KEIN systematischer
+Unterschied der Erhebung, sondern die Zuordnung einzelner Massnahmen, die sich
+bei grossen Tagen wegmittelt. WELCHE Massnahmen das sind, ist nicht
+aufzuloesen -- dafuer braeuchte es eine Kennung, die beide Quellen fuehren, und
+die `mRID` von ENTSO-E ist eine laufende Nummer je Dokument.
 
 **Erledigt am 03.09.2026:** die Lizenzfrage (Punkt 1, siehe oben), der
 ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF

@@ -170,6 +170,19 @@ class Befund:
         self.ok: list[str] = []
 
     def pruefe(self, bedingung: bool, text: str) -> None:
+        # KONSOLENTAUGLICH MACHEN. Die Windows-Konsole laeuft unter cp1252; ein
+        # typografisches Minus (U+2212), ein Gedankenstrich oder ein
+        # Anfuehrungszeichen in der MELDUNG laesst validate.py mit einem
+        # UnicodeEncodeError sterben -- mitten im Lauf und ohne Bezug zur
+        # Sache. Zweimal passiert, am 07.09. und am 12.09.2026, beide Male beim
+        # Nachrechnen einer Zahl aus dem Seitentext. Beim ersten Mal habe ich
+        # die Stelle repariert; das hier ist die Bedingung. Der gesuchte String
+        # darf jedes Zeichen tragen -- nur die Meldung wird entschaerft.
+        for schlecht, ersatz in ((chr(0x2212), "-"), (chr(0x2014), "--"),
+                                 (chr(0x2013), "-"), (chr(0x201e), '"'),
+                                 (chr(0x201c), '"'), (chr(0x2019), "'"),
+                                 (chr(0x00a0), " ")):
+            text = text.replace(schlecht, ersatz)
         (self.ok if bedingung else self.fehler).append(text)
 
 
@@ -849,6 +862,23 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("22,2 % der Arbeit in Ma" not in js,
              "die widerlegte Mitternachtsannahme steht nicht mehr auf der Seite")
 
+    # --- Die Pruefungen selbst muessen ausgebbar sein ---
+    # Zweimal ist validate.py an einem UnicodeEncodeError gestorben: die
+    # Windows-Konsole laeuft unter cp1252 und kann das typografische Minus
+    # U+2212 nicht ausgeben. Beim ersten Mal habe ich die Stelle repariert,
+    # beim zweiten die Bedingung: pruefe() entschaerft jede Meldung. Hier wird
+    # nachgesehen, dass es wirkt -- eine Pruefung der Pruefung.
+    probe = Befund()
+    probe.pruefe(True, "Probe mit " + chr(0x2212) + "0,706 und " + chr(0x2014))
+    b.pruefe(all(ord(z) < 256 for z in probe.ok[0]),
+             "jede Pruefmeldung ist auf der Konsole ausgebbar")
+    try:
+        probe.ok[0].encode("cp1252")
+        ausgebbar = True
+    except UnicodeEncodeError:
+        ausgebbar = False
+    b.pruefe(ausgebbar, "und laesst sich wirklich nach cp1252 umwandeln")
+
     # --- Die zurueckgenommene Redispatch-Behauptung ---
     # Am 03.09.2026 stand auf der Seite, die ENTSO-E-Reihe fuehre nur 24 bis
     # 63 % der Redispatch-Arbeit. Das war falsch: die Abfrage hatte den
@@ -864,7 +894,9 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  # spaeter wieder als Erklaerung hinschreibt, muss erst hier
                  # vorbei.
                  "Auch die Doppelz", "Gegenrichtung",
-                 "nur die Summe ist vergleichbar"):
+                 "nur die Summe ist vergleichbar",
+                 # Der dritte widerlegte Kandidat und der Befund, der traegt.
+                 "Grenzma", "r = \u22120,706"):
         b.pruefe(satz in rdb, f"beleg-redispatch.md nennt: {satz!r}")
     b.pruefe("24 bis 63 %" not in js or "ZURÜCKGENOMMEN" in js
              or "zurückgenommen" in js.lower(),

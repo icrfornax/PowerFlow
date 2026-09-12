@@ -934,3 +934,85 @@ eigener Angabe nur den deutschen Teil, ENTSO-E führt beide Seiten. Dafür
 spricht, dass die beiden Tage mit ENTSO-E über 100 % genau die mit
 nennenswertem Auslandsanteil sind (24.08. und 21.08.). **Geprüft ist das
 nicht.**
+
+---
+
+## 12.09.2026: Auch die Grenzmaßnahmen erklären es nicht — die Streuung hängt an der Tagesgröße
+
+Der dritte und letzte benannte Kandidat: netztransparenz veröffentlicht bei
+grenzüberschreitenden Maßnahmen nach eigener Angabe nur den deutschen Teil,
+ENTSO-E beide Seiten. Dann müsste der ENTSO-E-Auslandstopf etwa **doppelt** so
+groß sein.
+
+### Er ist es nicht
+
+Arbeit mit ausländischem Anforderer aus `je_anfordernd` gegen den
+ENTSO-E-Auslandstopf:
+
+| Tag | netztransparenz | ENTSO-E | Verhältnis |
+|---|---|---|---|
+| 21.08. | 3.316 MWh | 3.300 MWh | **0,99** |
+| 24.08. | 2.725 | 3.875 | 1,42 |
+| 25.08. | 618 | 720 | 1,17 |
+| 27.08. | 0 | 6.635 | — |
+| 28.08. | 5 | 0 | — |
+
+Kein Faktor 2, nirgends. (Die beiden Tage ohne Gegenstück sind kein
+Widerspruch: `ANFORDERNDER_UENB` sagt, **wer** angefordert hat — eine Maßnahme
+an der österreichischen Grenze kann ein deutscher Betreiber anfordern. Die
+beiden Größen sind verwandt, aber nicht dasselbe.)
+
+### Und beide Seiten führt ENTSO-E auch hier nicht
+
+Für den 24.08.2026 wurden **alle 88 Kombinationen** aus vier deutschen
+Regelzonen und elf Nachbarzonen in **beiden** Richtungen abgefragt. Besetzt
+waren drei:
+
+| Richtung | Menge | Gegenrichtung |
+|---|---|---|
+| TenneT ← APG (AT) | 2.550 MWh | **leer** |
+| Amprion ← APG (AT) | 950 | **leer** |
+| 50Hertz ← APG (AT) | 375 | **leer** |
+
+**Keine Grenze ist in beiden Richtungen besetzt.** Wie schon bei den Zonenpaaren
+führt ENTSO-E jede Maßnahme genau einmal.
+
+### Was die Streuung dann verursacht: die Tagesgröße
+
+| Tag | netztransparenz | Differenz | Anteil |
+|---|---|---|---|
+| 24.08. | 6.819 MWh | +3.300 | **148,4 %** |
+| 21.08. | 15.629 | −2.405 | 84,6 % |
+| 23.08. | 52.280 | −6.909 | 86,8 % |
+| 26.08. | 52.874 | −10.167 | 80,8 % |
+| 22.08. | 56.182 | −13.313 | 76,3 % |
+| 25.08. | 60.567 | −7.316 | 87,9 % |
+| 28.08. | 143.220 | +7.408 | 105,2 % |
+| 27.08. | 250.184 | −1.135 | **99,5 %** |
+
+**Korrelation zwischen Tagesgröße und Abweichung von 100 %: r = −0,706.** Je
+größer der Tag, desto besser stimmen die Quellen überein. Die beiden größten
+Tage liegen bei 99,5 und 105,2 %, der kleinste bei 148,4 %.
+
+Die absoluten Differenzen liegen zwischen −13.313 und +7.408 MWh und wachsen
+**nicht** mit dem Tag. Bei 6.819 MWh sind 3.300 MWh eben 48 %, bei 250.184 MWh
+sind 1.135 MWh nur 0,5 %.
+
+**Vorbehalt:** acht Tage sind wenig für eine Korrelation. Die Richtung ist
+deutlich, die Zahl selbst nicht belastbar.
+
+### Stand der Sache
+
+| Kandidat | Ergebnis |
+|---|---|
+| Zuordnung an den Rändern | **ausgeschlossen** (keine Maßnahme läuft in den Folgetag) |
+| Doppelzählung, 3 Varianten | **ausgeschlossen** (keine Gegenrichtung, keine Typüberschneidung) |
+| Grenzmaßnahmen beidseitig | **ausgeschlossen** (keine Grenze beidseitig besetzt) |
+| Tagesgröße | **trägt** (r = −0,706) |
+
+Über die Summe stimmen die beiden Quellen auf **95,2 %** überein. Die
+verbleibenden −4,8 % und die Tagesstreuung sind damit kein systematischer
+Unterschied der Erhebung, sondern die Zuordnung einzelner Maßnahmen, die sich
+bei großen Tagen wegmittelt. **Welche** Maßnahmen das im Einzelnen sind, ist
+nicht aufgelöst — dafür bräuchte es eine Kennung, die beide Quellen führen, und
+die gibt es nicht: die `mRID` von ENTSO-E ist eine laufende Nummer je Dokument.
