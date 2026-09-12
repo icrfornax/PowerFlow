@@ -93,8 +93,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3129329,
-   "zeitraum": "2015-01-01 bis 2026-09-10",
+   "bytes": 3129609,
+   "zeitraum": "2015-01-01 bis 2026-09-11",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/tage"
@@ -117,8 +117,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 141,
-   "bytes": 14071425,
-   "zeitraum": "2015-01-01 bis 2026-09-11",
+   "bytes": 14074600,
+   "zeitraum": "2015-01-01 bis 2026-09-12",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
@@ -201,8 +201,8 @@
    "quelle": "netztransparenz",
    "beleg": "docs/beleg-redispatch.md",
    "dateien": 6,
-   "bytes": 3678504,
-   "zeitraum": "2021-01-01 bis 2026-09-11",
+   "bytes": 3680222,
+   "zeitraum": "2021-01-01 bis 2026-09-12",
    "muster": "data/redispatch/*.json",
    "abzug": "data/redispatch-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/redispatch"
@@ -225,7 +225,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-kraftwerksdaten.md",
    "dateien": 10,
-   "bytes": 2794485,
+   "bytes": 2794825,
    "zeitraum": null,
    "muster": "data/blockerzeugung/*.json",
    "abzug": "data/blockerzeugung-verzeichnis.json",
@@ -237,8 +237,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-vorschau.md",
    "dateien": 1,
-   "bytes": 7930,
-   "zeitraum": "2026-09-07 bis 2026-09-07",
+   "bytes": 7820,
+   "zeitraum": "2026-09-12 bis 2026-09-12",
    "muster": "data/vorschau.json",
    "abzug": "data/vorschau.json",
    "alle": null
@@ -261,7 +261,7 @@
    "quelle": "entsoe",
    "beleg": "docs/beleg-lastprognose.md",
    "dateien": 8,
-   "bytes": 119578,
+   "bytes": 119760,
    "zeitraum": null,
    "muster": "data/lastprognose/*.json",
    "abzug": "data/lastprognose-verzeichnis.json",
@@ -309,7 +309,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 1,
-   "bytes": 159272,
+   "bytes": 159328,
    "zeitraum": null,
    "muster": "data/aussenhandel-preis.json",
    "abzug": "data/aussenhandel-preis.json",
@@ -353,5 +353,5 @@
   }
  ],
  "dateien_gesamt": 195,
- "bytes_gesamt": 33151871
+ "bytes_gesamt": 33157512
 }
