@@ -862,6 +862,16 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("22,2 % der Arbeit in Ma" not in js,
              "die widerlegte Mitternachtsannahme steht nicht mehr auf der Seite")
 
+    # --- Die zwei ENTSO-E-Preisreihen ---
+    # Wer die A44-Reihe abruft, bekommt ZWEI Preisreihen und muss waehlen.
+    # Sequence 1 trifft SMARD auf 0,0000 EUR/MWh, Sequence 2 liegt bis zu
+    # 21,2 daneben. Der Beleg muss das festhalten, sonst greift beim naechsten
+    # Abruf jemand zur falschen.
+    epd = lade("docs/beleg-entsoe-datenpunkte.md")
+    for satz in ("classificationSequence", "Sequence 1 ist die Reihe",
+                 "01.10.2025", "0,0000"):
+        b.pruefe(satz in epd, f"beleg-entsoe-datenpunkte.md nennt: {satz!r}")
+
     # --- Die Pruefungen selbst muessen ausgebbar sein ---
     # Zweimal ist validate.py an einem UnicodeEncodeError gestorben: die
     # Windows-Konsole laeuft unter cp1252 und kann das typografische Minus

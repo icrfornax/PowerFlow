@@ -112,3 +112,71 @@ Bewertet nach dem, was die Seite heute nicht beantworten kann:
 
 Nichts davon ist beschlossen. Die Tabelle steht hier, damit die Auswahl beim
 nächsten Mal nicht aus dem Gedächtnis getroffen wird.
+
+---
+
+## Die zweite Preisreihe — geklärt am 12.09.2026
+
+Die A44-Antwort für DE-LU enthält je Tag **zwei** Preisreihen, die sich nur im
+Feld `classificationSequence_AttributeInstanceComponent.position` unterscheiden
+(1 und 2). Seit dem 03.09.2026 stand als offener Punkt, was Sequence 2 ist.
+
+### Was belegt ist
+
+**Sequence 1 ist die Reihe, die SMARD veröffentlicht.** Gemessen an sieben
+Tagen quer durch drei Jahre:
+
+| Tag | Seq 1 | Auflösung | Abstand zu SMARD | Seq 2 | Abstand |
+|---|---|---|---|---|---|
+| 20.03.2024 | 78,17 € | PT60M | **0,0000** | PT15M | 1,9087 |
+| 15.01.2025 | 230,94 | PT60M | **0,0000** | PT15M | 21,1650 |
+| 10.06.2025 | 69,30 | PT60M | **0,0000** | PT15M | 16,6938 |
+| 15.10.2025 | 117,62 | PT15M | 0,0025 | PT15M | 8,7412 |
+| 15.01.2026 | 98,44 | PT15M | 0,0037 | PT15M | 3,4625 |
+| 10.06.2026 | 118,19 | PT15M | 0,0025 | PT15M | 8,3638 |
+| 28.08.2026 | 141,16 | PT15M | **0,0000** | PT15M | 2,2050 |
+
+Median über alle sieben Tage: **Sequence 1 = 0,0000 €/MWh**, Sequence 2 =
+8,3638 €/MWh. Die Zuordnung ist eindeutig.
+
+**Sequence 2 ist immer viertelstündlich** — auch 2024 und im ersten Halbjahr
+2025, als Sequence 1 noch Stundenwerte führte. Die Unterschiede sind real
+(Median +1,02 €/MWh am 28.08.2026, größter Einzelwert +20,41), keine
+Rundungen: von 96 gemeinsamen Positionen ist **keine einzige** identisch.
+
+**Sequence 1 wechselte am 1. Oktober 2025 von PT60M auf PT15M.** Durch
+binäre Suche eingegrenzt: der 30.09.2025 liefert PT60M, der 01.10.2025 liefert
+PT15M. Das ist die europäische Umstellung der Marktzeiteinheit im
+Day-ahead-Markt.
+
+### Was NICHT belegt ist
+
+**Welche Auktion Sequence 2 ist.** Drei Wege wurden versucht:
+
+1. **Die Dokumentation der Plattform** (`EnergyPrices_12.1.D_r3.1`, Stand
+   02.06.2026) führt das Feld als „Sequence, Number [0..1], Beispiel 1" — ohne
+   Erklärung. Sie nennt zwar `ContractType` mit den Werten *Day-ahead* und
+   *Intraday* und sagt, Anbieter dürften Intraday-Preise freiwillig mit
+   veröffentlichen; im XML tragen aber **beide** Reihen dasselbe
+   `contract_MarketAgreement.type` (A01) und dieselbe `auction.type` (A01).
+2. **Die übrigen Felder** unterscheiden sich nicht: Zeitraum, Auflösung
+   (seit 10/2025), Domänen, Währung, Einheit, `curveType`, `businessType` —
+   alles gleich. Verschieden sind nur `Sequence` und die laufende `mRID`.
+3. **Eine Gegenprobe über SMARD** schlägt fehl: von sechs geprüften
+   Preisfiltern trifft **4169** die Sequence 1 auf 0,0000 €/MWh, aber
+   **keiner** trifft Sequence 2 (nächster Treffer 3,25 €/MWh). SMARD führt
+   diese Reihe nicht.
+
+Naheliegend wäre die separate 15-Minuten-Auktion — dafür spricht, dass
+Sequence 2 schon viertelstündlich war, als die Hauptauktion es noch nicht war.
+**Das ist eine Vermutung und wird hier nicht als Erklärung ausgegeben.**
+
+### Was das praktisch bedeutet
+
+Wer die A44-Reihe abruft, bekommt **zwei** Preisreihen und muss wählen. Wer
+beide summiert oder die falsche nimmt, bekommt Preise, die um bis zu 21 €/MWh
+danebenliegen.
+
+**Dieses Projekt ist nicht betroffen:** die Preise kommen aus SMARD (Filter
+4169), und der entspricht Sequence 1. Der ENTSO-E-Preisabruf wird nur für
+Gegenproben benutzt — und dort ist ab sofort `Sequence 1` zu nehmen.

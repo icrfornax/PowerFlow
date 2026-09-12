@@ -5466,17 +5466,28 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
+      /* Jetzt der oberste Punkt. Die untersuchbaren Fragen sind beantwortet;
+         was bleibt, braucht fremde Erhebungen. Damit ist der naechste Punkt
+         kein Befund mehr, sondern Arbeit -- und diese haengt an der einen
+         freien Variable der Seite. */
+      { hoch: true,
+        text: "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar "
+          + "wird, wie stark das Ergebnis am gewählten Zeitraum hängt." },
       /* Jetzt der oberste Punkt. Die Redispatch-Frage darueber ist am
          12.09.2026 beantwortet; von den verbleibenden ist dies die einzige,
          die eine Zahl betrifft, die diese Seite ZEIGT -- den Boersenpreis --
          und die mit dem vorhandenen Zugang messbar ist. */
-      { hoch: true,
-        text: "Die ENTSO-E-Preisreihe für Deutschland/Luxemburg enthält je Tag "
-          + "ZWEI Viertelstundenreihen, die sich nur im Feld "
-          + "classificationSequence (Position 1 und 2) unterscheiden. "
-          + "Position 1 stimmt auf 0,005 €/MWh mit SMARD überein; welche "
-          + "Auktion Position 2 ist, ist nicht belegt. Vor jeder Nutzung der "
-          + "Viertelstundenpreise zu klären." },
+      { hoch: false,
+        text: "Welche Auktion die zweite ENTSO-E-Preisreihe ist. Am 12.09.2026 "
+          + "ist geklärt, welche die RICHTIGE ist: von den zwei Reihen, die "
+          + "die Plattform je Tag liefert, trifft Sequence 1 den SMARD-Preis "
+          + "über sieben Tage aus drei Jahren auf 0,0000 €/MWh — Sequence 2 "
+          + "liegt 1,9 bis 21,2 €/MWh daneben und ist schon seit 2024 "
+          + "viertelstündlich, als die Hauptauktion noch Stundenwerte führte. "
+          + "Was sie ist, sagt die Plattform nicht: die Dokumentation erklärt "
+          + "das Feld nicht, alle übrigen Felder sind gleich, und SMARD führt "
+          + "die Reihe nicht. Diese Seite ist nicht betroffen — ihre Preise "
+          + "kommen aus SMARD und entsprechen Sequence 1." },
       /* ZURUECKGENOMMEN am 07.09.2026. Hier stand, die ENTSO-E-Reihe fuehre
          nur 24 bis 63 % der Redispatch-Arbeit. Das war falsch -- meine
          Abfrage hatte den groessten Teil ausgelassen: Redispatch ZWISCHEN
@@ -5533,9 +5544,6 @@
          Markierung heisst "wird als Naechstes angefasst"; sie an etwas zu
          haengen, das bewusst liegen bleibt, macht sie wertlos. Genau EIN
          Eintrag darf sie tragen, und browsertest.mjs prueft das. */
-      { hoch: false,
-        text: "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar "
-          + "wird, wie stark das Ergebnis am gewählten Zeitraum hängt." },
       { hoch: false,
         text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
           + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },

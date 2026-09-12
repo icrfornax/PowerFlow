@@ -681,6 +681,31 @@ die LASTPROGNOSE, 6.1.B, CC BY 4.0.
   zuerst die Klassen des Kostenblocks geerbt, und prompt haben drei Pruefungen
   des Redispatch die Prognosebalken mitgezaehlt.
 
+## Die zwei Preisreihen von ENTSO-E
+
+Geklaert am 12.09.2026. Beleg: `docs/beleg-entsoe-datenpunkte.md`.
+
+Die A44-Antwort fuer DE-LU enthaelt je Tag **ZWEI** Preisreihen, unterschieden
+allein durch `classificationSequence_AttributeInstanceComponent.position`.
+
+- **Sequence 1 ist die richtige.** Sie trifft den SMARD-Preis (Filter 4169)
+  ueber sieben Tage aus drei Jahren auf **0,0000 EUR/MWh**.
+- **Sequence 2 liegt 1,9 bis 21,2 EUR/MWh daneben** und war schon 2024
+  viertelstuendlich, als Sequence 1 noch Stundenwerte fuehrte. Von 96
+  gemeinsamen Positionen ist keine einzige identisch -- das sind verschiedene
+  Preise, keine Rundungen.
+- **Was Sequence 2 ist, sagt die Plattform nicht.** Die Dokumentation erklaert
+  das Feld nicht, alle uebrigen Felder sind gleich (auch
+  `contract_MarketAgreement.type` und `auction.type`), und keine der sechs
+  geprueften SMARD-Preisreihen trifft sie. Naheliegend waere die separate
+  15-Minuten-Auktion -- **Vermutung, nicht belegt.**
+- **Sequence 1 wechselte am 01.10.2025 von PT60M auf PT15M.** Binaer
+  eingegrenzt: 30.09. liefert PT60M, 01.10. liefert PT15M.
+
+**Wer die A44-Reihe abruft, MUSS die Sequence waehlen.** Wer beide summiert
+oder die falsche nimmt, bekommt Preise, die um bis zu 21 EUR/MWh danebenliegen.
+Dieses Projekt ist nicht betroffen -- seine Preise kommen aus SMARD.
+
 ## Kosten des Engpassmanagements
 
 Eingebunden am 03.09.2026. Quelle: ENTSO-E Transparency Platform, Datenpunkt
