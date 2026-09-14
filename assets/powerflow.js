@@ -4538,9 +4538,39 @@
       "# zusammen: kleinster und groesster Wert, Median, und die Spanne in",
       "# Prozent des Medians. Sie sind gerechnet, nicht gemessen -- die Formel",
       "# steht daneben.",
-      "#",
-      "jahr,von,bis,tage,belegt,gruppe,name,wert_mwh"
+      "#"
     ];
+
+    /* DER ERDGAS-BRUCH VON 2018 gehoert in den Kopf DIESER Datei, weil sie
+       zu genau dem Vergleich einlaedt, den er verdirbt: die SMARD-Erdgasreihe
+       springt zwischen 2017 und 2018 um 68 %, waehrend Eurostat fuer dieselbe
+       Groesse ein MINUS von 4,9 % ausweist. Eine real sinkende Erzeugung kann
+       nicht gleichzeitig um zwei Drittel steigen -- die Erfassung hat sich
+       geaendert, nicht die Wirklichkeit.
+
+       Die Warnung erscheint NUR, wenn der Zeitraum ueber 2018 hinweggeht.
+       Eine Warnung, die immer dasteht, wird ueberlesen. */
+    if (zeilen[0].jahr < 2018 && zeilen[zeilen.length - 1].jahr >= 2018) {
+      z.push("# ACHTUNG, ERDGAS: die Reihe hat 2018 einen Bruch. Von 2017 auf");
+      z.push("# 2018 steigt sie um 68 Prozent (25,6 auf 42,9 TWh im Jahr),");
+      z.push("# waehrend Eurostat fuer dieselbe Groesse ein MINUS von 4,9");
+      z.push("# Prozent ausweist (87,7 auf 83,4 TWh). Eine real sinkende");
+      z.push("# Erzeugung kann nicht gleichzeitig um zwei Drittel steigen:");
+      z.push("# die Erfassung hat sich geaendert, nicht die Wirklichkeit.");
+      z.push("#");
+      z.push("# Folge fuer diese Datei: Erdgaszeilen VOR 2018 sind mit denen");
+      z.push("# danach NICHT vergleichbar. Und weil 56 Prozent des Anstiegs");
+      z.push("# der Gesamterzeugung von 2017 auf 2018 auf diese eine Reihe");
+      z.push("# entfallen, gilt dasselbe fuer die Zeilen erzeugung und");
+      z.push("# bilanzrest. Netzlast, Wind, Photovoltaik und die uebrigen");
+      z.push("# Traeger sind NICHT betroffen -- sie laufen glatt durch.");
+      z.push("#");
+      z.push("# Groessenordnung: nach SMARD waechst Erdgas von 2015 bis 2024");
+      z.push("# um 274 Prozent, nach Eurostat um 44. Das ist der 6,3-fache");
+      z.push("# Zuwachs. Beleg: docs/beleg-bilanzrest.md.");
+      z.push("#");
+    }
+    z.push("jahr,von,bis,tage,belegt,gruppe,name,wert_mwh");
 
     function zeile(j, a, b, tage, belegt, gruppe, name, wert) {
       z.push([j, a, b, tage, belegt, gruppe, name,

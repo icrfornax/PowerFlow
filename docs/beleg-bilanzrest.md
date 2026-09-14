@@ -54,6 +54,55 @@ zurückgeht. Ein realer Zubau in dieser Höhe hat nicht stattgefunden; was sich
 geändert hat, ist die **Erfassung**. Damit ist die frühere Angabe auf der Seite
 — „die Ursache der frühen Lücke ist nicht geklärt" — beantwortet.
 
+### Eurostat entscheidet die Frage
+
+Das war zunächst eine Folgerung aus dem Verhalten der SMARD-Reihe selbst. Seit
+der Gegenprobe gegen Eurostat gibt es dafür eine **zweite, unabhängig erhobene
+Zahl** — und sie ist eindeutig:
+
+| Jahr | SMARD | Eurostat | Abstand |
+|---|---|---|---|
+| 2015 | 15,2 TWh | 63,0 TWh | −75,9 % |
+| 2016 | 22,9 | 82,3 | −72,2 % |
+| **2017** | **25,6** | **87,7** | −70,8 % |
+| **2018** | **42,9** | **83,4** | −48,6 % |
+| 2019 | 54,6 | 90,8 | −39,9 % |
+| 2020 | 67,6 | 96,3 | −29,8 % |
+| 2024 | 56,9 | 90,5 | −37,1 % |
+
+**Von 2017 auf 2018 steigt SMARD um 67,6 %, während Eurostat um 4,9 % SINKT.**
+Eine real sinkende Erzeugung kann nicht gleichzeitig um zwei Drittel steigen.
+Damit ist die Erfassungsänderung nicht mehr erschlossen, sondern durch eine
+zweite Erhebung belegt.
+
+Der Abstand schrumpft über die Jahre von −75,9 auf rund −37 %, erreicht aber
+nie null. Das passt zum Befund aus `beleg-erzeugungsluecke.md`: SMARD misst die
+Einspeisung ins öffentliche Netz, Eurostat die gesamte Erzeugung. Bei Erdgas
+ist der industrielle Anteil besonders groß — Blockheizkraftwerke und
+Industriekraftwerke, die ihren Strom selbst verbrauchen.
+
+### Was das für Vergleiche bedeutet
+
+Für die Zahlen dieser Seite:
+
+| | betroffen? |
+|---|---|
+| **Erdgas je Zeitraum** | **ja** — vor 2018 nicht mit danach vergleichbar |
+| **Erzeugung gesamt** | **ja** — 56 % des Anstiegs 2017→2018 (+30,6 TWh) entfallen auf Erdgas allein |
+| **Bilanzrest** | **ja** — er verbessert sich um 5,9 Prozentpunkte |
+| Netzlast | nein — läuft glatt durch (506,8 → 509,2 TWh) |
+| Wind, Photovoltaik, Kohle, Kernenergie | nein — alle ±15 % oder weniger |
+| Anteil der Erneuerbaren | nein — der Nenner ist die **Netzlast**, nicht die Erzeugung |
+
+Die Größenordnung der Verzerrung: nach SMARD wächst Erdgas von 2015 bis 2024 um
+**+274 %**, nach Eurostat um **+44 %**. Die SMARD-Reihe zeigt den **6,3-fachen**
+Zuwachs.
+
+Deshalb trägt der CSV-Abzug „Derselbe Zeitraum in allen Jahren" seit dem
+14.09.2026 eine Warnung im Kopf — aber **nur dann**, wenn der Zeitraum
+tatsächlich über 2018 hinweggeht. Eine Warnung, die immer dasteht, wird
+überlesen.
+
 ## Befund 2: Redispatch erklärt nichts davon
 
 Das war die Ausgangsfrage. Gemessen über **2.050 Tage ab 2021**, für die sowohl

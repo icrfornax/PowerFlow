@@ -472,6 +472,7 @@ try {
       nenntZweck: /wie stark das Ergebnis daran haengt/.test(text),
       nenntSchalttag: /29. Februar/.test(text),
       nenntLizenz: /CC BY 4.0/.test(text),
+      warntGas: /ACHTUNG, ERDGAS/.test(text),
       knopftext: (document.querySelector(".pf-abzug") || {}).textContent || ""
     };
   })()`);
@@ -494,6 +495,52 @@ try {
     pruefe(gesamt.nenntZweck && gesamt.nenntSchalttag,
       "der Kopf nennt den Zweck und die Schalttagsregel");
     pruefe(gesamt.nenntLizenz, "und die Lizenz");
+    /* DIE ERDGAS-WARNUNG. Der gewaehlte Zeitraum reicht von 2015 bis 2026,
+       geht also ueber den Bruch von 2018 hinweg -- dann MUSS sie dastehen. */
+    pruefe(gesamt.warntGas,
+      "der Kopf warnt vor dem Erdgas-Bruch von 2018");
+  }
+
+  /* UND SIE DARF NICHT IMMER DASTEHEN. Eine Warnung, die bei jedem Abzug
+     erscheint, wird ueberlesen. Geprueft an einem Zeitraum, dessen Jahre alle
+     NACH dem Bruch liegen -- den gibt es, seit die Reihe bis 2026 reicht. */
+  const ohneBruch = await js(`(async function () {
+    const echt = URL.createObjectURL;
+    let blob = null;
+    URL.createObjectURL = function (b) { blob = b; return echt.call(URL, b); };
+    // Zeitraum in drei Schritten, sonst begrenzt die Seite.
+    const v = document.getElementById("pf-von"), b2 = document.getElementById("pf-bis");
+    v.value = v.min; v.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 700));
+    b2.value = "2026-03-02"; b2.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 700));
+    v.value = "2026-02-26"; v.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 2500));
+    const knopf = [...document.querySelectorAll(".pf-abzug")]
+      .find((x) => /in allen Jahren/.test(x.textContent));
+    knopf.click();
+    for (let i = 0; i < 250; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+      if (blob) { break; }
+    }
+    URL.createObjectURL = echt;
+    if (!blob) { return null; }
+    const text = await blob.text();
+    // Jahre, die der Abzug tatsaechlich enthaelt
+    const jahre = [...new Set(text.split(String.fromCharCode(10))
+      .filter((z) => z && z[0] !== "#" && /,kennzahl,netzlast,/.test(z))
+      .map((z) => Number(z.split(",")[0])))];
+    return { warnt: /ACHTUNG, ERDGAS/.test(text),
+             erstesJahr: Math.min.apply(null, jahre) };
+  })()`);
+  if (ohneBruch && ohneBruch.erstesJahr < 2018) {
+    pruefe(ohneBruch.warnt,
+      "und sie steht da, solange der Zeitraum Jahre vor 2018 enthaelt",
+      `erstes Jahr ${ohneBruch.erstesJahr}`);
+  } else if (ohneBruch) {
+    pruefe(!ohneBruch.warnt,
+      "ohne Jahre vor 2018 steht keine Erdgas-Warnung da",
+      `erstes Jahr ${ohneBruch.erstesJahr}`);
   }
   await js(`[...document.querySelectorAll(".pf-schnell")]
     .find((b) => b.textContent === "Letzte 7 Tage").click()`);
