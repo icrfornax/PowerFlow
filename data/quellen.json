@@ -129,7 +129,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-viertelstunden.md",
    "dateien": 1,
-   "bytes": 83060,
+   "bytes": 567284,
    "zeitraum": null,
    "muster": "data/viertelstunden-verzeichnis.json",
    "abzug": "data/viertelstunden-verzeichnis.json",
@@ -140,8 +140,8 @@
    "inhalt": "Netzlast, Erzeugung nach Energietraeger, Grosshandelspreis sowie Ein- und Ausfuhr, ein Wert je Viertelstunde, in MWh JE VIERTELSTUNDE bzw. Euro je MWh. TAGESdateien: die Seite zeigt hoechstens zwei Tage viertelstuendlich, und wer zwei Tage ansieht, soll zwei Dateien laden.",
    "quelle": "smard",
    "beleg": "docs/beleg-viertelstunden.md",
-   "dateien": 624,
-   "bytes": 8785061,
+   "dateien": 4275,
+   "bytes": 60004855,
    "zeitraum": null,
    "muster": "data/viertelstunden/*.json",
    "abzug": "data/viertelstunden-verzeichnis.json",
@@ -369,13 +369,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 15685,
+   "bytes": 15689,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 820,
- "bytes_gesamt": 42037729
+ "dateien_gesamt": 4471,
+ "bytes_gesamt": 93741751
 }

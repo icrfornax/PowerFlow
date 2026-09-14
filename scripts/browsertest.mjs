@@ -1349,6 +1349,45 @@ try {
         frueh.legende.slice(-90));
     }
 
+    /* DER AELTESTE TAG. Die ganze Nachholarbeit war fuer die alten Jahre --
+       also wird auch dort nachgesehen und nicht nur am Rand von gestern.
+       2015 hat zwei Besonderheiten, die es sonst nicht mehr gibt: es gibt
+       KEINEN Grosshandelspreis (die Reihe beginnt am 01.10.2018, davor waere
+       es ein anderer Markt) und es gibt Kernenergie. Beides muss das Bild
+       vertragen. */
+    const valt = await js(`(async function () {
+      const v = await fetch("data/viertelstunden-verzeichnis.json").then((r) => r.json());
+      const e = (v.tage || []).find((x) => x.marken === 96);
+      return e ? e.tag : null;
+    })()`);
+    if (valt) {
+      await setzeZeitraum(js, valt, valt);
+      await schlafen(1500);
+      const alt = await js(`(function () {
+        const h2 = [...document.querySelectorAll(".pf-abschnitt h2")]
+          .map((e) => e.textContent).find((x) => /^Verlauf/.test(x)) || "";
+        const leg = (document.querySelector(".pf-legende-traeger") || {}).textContent || "";
+        return { ueberschrift: h2, legende: leg,
+                 preisstreifen: document.querySelectorAll(".pf-preis-pos, .pf-preis-neg").length,
+                 baender: document.querySelectorAll(".pf-flaechen path").length };
+      })()`);
+      pruefe(/Viertelstundenwerte/.test(alt.ueberschrift),
+        `auch der aelteste Tag ${valt} wird viertelstuendlich gezeigt`);
+      pruefe(/Kernenergie/.test(alt.legende),
+        "und er fuehrt Kernenergie als eigenes Band");
+      pruefe(alt.preisstreifen === 0,
+        "ohne Preisstreifen -- die Preisreihe beginnt erst am 01.10.2018",
+        `${alt.preisstreifen} Streifen`);
+      pruefe(alt.baender >= 7, `mit ${alt.baender} Traegerbaendern`);
+      await js(`(function () {
+        const svg = document.querySelector(".pf-diagramm");
+        svg.scrollIntoView({ block: "start", behavior: "instant" });
+        window.scrollBy(0, -140);
+      })()`);
+      await schlafen(300);
+      await foto("verlauf-viertelstunden-2015");
+    }
+
     /* UND DIE STUFE MUSS AUCH WIEDER GEHEN. Drei Tage sind mehr als die
        Grenze von zwei -- dort MUSS die Kurve stuendlich sein, sonst waeren es
        288 Punkte und die Regel stuende nur im Kommentar. */

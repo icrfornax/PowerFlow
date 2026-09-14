@@ -433,12 +433,16 @@ ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF
 der Seite, obwohl zwei davon laengst lagen. Was erledigt ist, gehoert nicht in
 eine Liste offener Punkte -- sonst glaubt sie irgendwann niemand mehr.
 
-**Es steht noch GENAU EIN offener Punkt auf der Seite:** die
-Viertelstundenwerte fuer die Jahre vor 2025 nachholen. Die Stufe selbst ist am
-14.09.2026 gebaut (siehe eigenen Abschnitt); geholt ist der Bestand ab
-30.12.2024. Was bleibt, ist eine Entscheidung ueber die Groesse des
-Repositorys -- rund 55 MB und 21.400 Abrufe fuer die volle Historie --, keine
-Messfrage.
+**Es steht noch GENAU EIN offener Punkt auf der Seite:** denselben
+Kalenderausschnitt ueber alle Jahre AUF DER SEITE zeigen, nicht nur als
+CSV-Abzug. Gerechnet wird er laengst -- `gesamtlaufCsv()` liefert fuer jedes
+verfuegbare Jahr dieselbe Kalenderspanne samt Streuung --, sichtbar ist davon
+nichts; auf der Seite steht nur der Vergleich mit dem Vorjahr.
+
+Die Viertelstundenwerte sind am 15.09.2026 vollstaendig nachgeholt und damit
+erledigt. Faellt auch dieser Punkt weg, bleibt der Abschnitt trotzdem stehen --
+mit dem Satz "Zurzeit keiner". Eine Seite, die ihn dann weglaesst, behauptet
+stillschweigend, es gaebe nichts mehr zu tun.
 
 **Am 14.09.2026 sind fuenf Punkte nach "Grenzen" gewandert** -- die zweite
 ENTSO-E-Preisreihe, die Tagesstreuung des Redispatch, der Anteil der
@@ -1089,8 +1093,25 @@ Lesbarkeitsgrenze.
   Datei, faellt die ganze Anzeige auf Stundenwerte zurueck. Eine Kurve, die auf
   halber Strecke die Aufloesung wechselt, waere eine Falschaussage, die man
   nicht einmal sieht.
-- **Der Bestand reicht ab 30.12.2024.** Die Reihe liegt bei SMARD ab 2015 vor;
-  die uebrigen Jahre nachzuholen ist der einzige offene Punkt der Seite.
+- **Der Bestand ist seit dem 15.09.2026 vollstaendig:** 4.275 Tage vom
+  01.01.2015 bis heute, 57 MB in 4.275 Tagesdateien, geholt in einem Lauf ueber
+  612 Wochenbloecke (rund 21.400 Abrufe). `validate.py` prueft, dass das
+  Verzeichnis am 01.01.2015 beginnt -- ein Bestand, der spaeter wieder bei 2025
+  anfinge, waere ein Datenverlust, den sonst niemand bemerkt.
+- **Der Tuersteher behaelt von jeder Datei nur eine Zusammenfassung**
+  (`_viertel_kurz`). Gelesen und geprueft wird jede einzelne; sie alle als Baum
+  im Speicher zu halten waere ein halbes Gigabyte je Lauf.
+- **Der bekannte Fehlwert der Quelle taucht hier vierfach auf:** Schweiz-Import
+  am 09.02.2015, in Viertelstunden vier Punkte statt einem. Er wird als fehlend
+  gefuehrt, nicht korrigiert. `validate.py` prueft ihn in BEIDE Richtungen --
+  verschwindet er, ist die Plausibilitaetsgrenze wirkungslos geworden; kommt
+  ein anderer dazu, hat die Quelle einen neuen Fehler.
+- **Zwei Fallen beim Bauen, beide gefangen:** die Zusammenfassung fuehrt
+  `auffaellig` als LISTE, das Verzeichnis als ANZAHL -- `0 != []` hat beim
+  ersten vollen Lauf alle 4.275 Tage als abweichend gemeldet. Und die
+  Textsuche nach der zurueckgenommenen Begruendung stolperte ueber die eigenen
+  Kommentare; sie laeuft jetzt ueber `ohne_kommentare(js)`. Beides sind
+  Wiederholungen bekannter Muster aus diesem Projekt.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 

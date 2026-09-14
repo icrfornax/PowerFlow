@@ -6120,32 +6120,29 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
-      /* Jetzt der oberste Punkt -- und eine Entscheidung, die Immo treffen
-         muss, keine Messung: 48 statt 12 MB, die JEDER Besucher mitlaedt. */
-      /* ZURUECKGENOMMEN am 14.09.2026: die Begruendung war falsch gerechnet.
-         Hier stand, Viertelstunden seien "48 statt 12 MB, die jeder Besucher
-         mitlaedt". Niemand laedt den ganzen Bestand -- weder die 14 MB
-         Stundenwerte noch sonst etwas. Geladen wird, was der gewaehlte
-         Zeitraum braucht. Gemessen: eine Tagesdatei mit Viertelstunden ist
-         13 kB, und die Seite zeigt hoechstens zwei Tage davon.
+      /* ERLEDIGT am 15.09.2026: die Viertelstundenwerte liegen jetzt
+         vollstaendig ab 01.01.2015 vor -- 4.275 Tage, 57 MB, ein Lauf ueber
+         612 Wochenbloecke. Was erledigt ist, gehoert nicht in eine Liste
+         offener Punkte.
 
-         Was BLEIBT, ist die Reichweite: die Jahre vor 2025 sind noch nicht
-         geholt. Das ist Arbeit und gehoert deshalb hier her -- mit den
-         gemessenen Kosten, nicht mit einer Schaetzung. */
+         Die falsch gerechnete Begruendung von damals ("48 statt 12 MB, die
+         jeder Besucher mitlaedt") ist in docs/beleg-viertelstunden.md
+         ausdruecklich zurueckgenommen und dort nachzulesen. Auf der Seite
+         steht sie nicht mehr, weil auch der Punkt nicht mehr dasteht.
+
+         NEU an dieser Stelle: der Vergleich ueber alle Jahre ist rechnerisch
+         fertig und wird als CSV ausgegeben -- aber nicht gezeigt. Das ist
+         Arbeit und keine Grenze, also steht es hier. */
       { hoch: true,
-        text: "Viertelstundenwerte für die Jahre vor "
-          + (Z.viertelVerzeichnis && Z.viertelVerzeichnis.von
-              ? Z.viertelVerzeichnis.von.slice(0, 4) : "2025")
-          + " nachholen. Die Reihe liegt bei SMARD ab 2015 vollständig vor; "
-          + "geholt ist bisher der Bestand ab "
-          + viertelBeginn() + ". Gemessen kostet ein Tag 13 kB und eine Woche "
-          + "35 Abrufe — die volle Historie wären rund 55 MB im Repository und "
-          + "21.400 Abrufe. Das ist eine Entscheidung über die Größe des "
-          + "Repositorys, keine Messfrage. "
-          + "(Die frühere Begründung — „48 statt 12 MB, die jeder Besucher "
-          + "mitlädt“ — war falsch und ist am 14.09.2026 zurückgenommen: "
-          + "niemand lädt den ganzen Bestand, sondern nur den gewählten "
-          + "Zeitraum.)" },
+        text: "Denselben Kalenderausschnitt über alle Jahre auf der SEITE "
+          + "zeigen, nicht nur als Abzug. Gerechnet wird er längst: der "
+          + "CSV-Abzug „Derselbe Zeitraum in allen Jahren“ liefert für jedes "
+          + "verfügbare Jahr dieselbe Kalenderspanne mit Netzlast, Erzeugung, "
+          + "Residuallast und Außensaldo, dazu die Streuung über die "
+          + "vollständigen Jahre. Auf der Seite steht davon nichts — sichtbar "
+          + "ist nur der Vergleich mit dem Vorjahr. Wer wissen will, wie "
+          + "ungewöhnlich die gewählte Woche war, muss die Datei "
+          + "herunterladen und selbst hineinsehen." },
       /* AM 14.09.2026 SIND FUENF PUNKTE NACH "GRENZEN" GEWANDERT: die zweite
          ENTSO-E-Preisreihe, die Tagesstreuung des Redispatch, der Anteil der
          industriellen Eigenerzeugung, die Aussenhandelsdifferenz bei Eurostat
@@ -6167,12 +6164,20 @@
       li.appendChild(document.createTextNode(p.text));
       ul2.appendChild(li);
     });
-    offen.appendChild(ul2);
-    /* "1 Punkte" waere schlampig, und die Liste ist am 14.09.2026 auf genau
-       einen Eintrag geschrumpft. Dieselbe Form auch bei den Grenzen, damit sie
-       nicht beim naechsten Verschieben dort auftaucht. */
+    /* Eine LEERE Liste bleibt trotzdem stehen -- mit einem Satz statt mit
+       nichts. Eine Seite, die den Abschnitt einfach weglaesst, behauptet
+       stillschweigend, es gaebe nichts mehr zu tun. */
+    if (ul2.querySelectorAll("li").length) {
+      offen.appendChild(ul2);
+    } else {
+      offen.appendChild(el("p", { "class": "pf-bezug",
+        text: "Zurzeit keiner. Was hier stand, ist abgearbeitet; was sich mit "
+          + "diesen Quellen nicht klären lässt, steht unter „Grenzen“." }));
+    }
     neu.appendChild(klappabschnitt("offen", "Offene Punkte", offen,
-      zaehlwort(offen.querySelectorAll("li").length, "Punkt", "Punkte"), false));
+      ul2.querySelectorAll("li").length
+        ? zaehlwort(ul2.querySelectorAll("li").length, "Punkt", "Punkte")
+        : "keiner offen", false));
 
     // --- Quellen und Downloads ---
     var qhuelle = el("div", { "class": "pf-verlauf" });

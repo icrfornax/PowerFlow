@@ -1013,17 +1013,31 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
              + (f" -- Unterschied: {sorted(im_verzeichnis ^ set(vtage))[:5]}"
                 if im_verzeichnis != set(vtage) else ""))
 
+    # 1b. DAS VERZEICHNIS FUEHRT ZAHLEN -- also werden sie nachgerechnet.
+    #     Gleiche Tage sind nur die halbe Bedingung. Ein Verzeichnis, dessen
+    #     Felder niemand gegen die Dateien haelt, ist kein Verzeichnis.
+    verz_schief = []
+    for e in vv["tage"]:
+        d = vtage.get(e["tag"])
+        if not d:
+            continue
+        if (e["marken"] != d["marken"]
+                or e["erzeugungsreihen"] != d["erzeugungsreihen"]
+                or e["preis_viertelstuendlich"] != d["preis_flagge"]
+                # Im Verzeichnis steht die ANZAHL, in der Zusammenfassung die
+                # Liste. Sie zu vergleichen hiesse 0 gegen [] -- immer
+                # verschieden. Genau so hat diese Pruefung beim ersten vollen
+                # Lauf 4.275 Tage als abweichend gemeldet.
+                or e["auffaellig"] != len(d["auffaellig"])):
+            verz_schief.append(e["tag"])
+    b.pruefe(not verz_schief,
+             "Viertelstunden: das Verzeichnis nennt dieselben Zahlen wie die "
+             "Dateien"
+             + (f" -- abweichend: {verz_schief[:5]}" if verz_schief else ""))
+
     # 2. Jede Reihe so lang wie die Achse. Eine Datei, die das selbst nicht
     #    einhaelt, ist in sich widerspruechlich.
-    schief = []
-    for tag, d in vtage.items():
-        n = len(d["marken"])
-        for feld in ("netzlast", "preis_eur_mwh", "import_mwh", "export_mwh"):
-            if len(d[feld]) != n:
-                schief.append(f"{tag}/{feld}")
-        for name, reihe in d["erzeugung"].items():
-            if len(reihe) != n:
-                schief.append(f"{tag}/erzeugung/{name}")
+    schief = [f"{tag}/{s}" for tag, d in vtage.items() for s in d["schief"]]
     b.pruefe(not schief,
              f"Viertelstunden: alle Reihen passen zur Achse"
              + (f" -- schief: {schief[:5]}" if schief else ""))
@@ -1032,8 +1046,8 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     #    am laufenden letzten Tag. Alles andere ist eine Meldeluecke, die
     #    niemandem aufgefallen ist.
     letzter = max(vtage) if vtage else None
-    ungewoehnlich = {tag: len(d["marken"]) for tag, d in vtage.items()
-                     if len(d["marken"]) not in (92, 96, 100) and tag != letzter}
+    ungewoehnlich = {tag: d["marken"] for tag, d in vtage.items()
+                     if d["marken"] not in (92, 96, 100) and tag != letzter}
     b.pruefe(not ungewoehnlich,
              "Viertelstunden: jeder Tag hat 96 Marken (92/100 an den "
              "Umstellungstagen)"
@@ -1051,12 +1065,12 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     schlimmste, geprueft, wo = 0.0, 0, ""
     for tag in sorted(vtage)[::37]:
         d = vtage[tag]
-        if len(d["marken"]) != 96 or tag == letzter:
+        if d["marken"] != 96 or d["netzlast_belegt"] != 96 or tag == letzter:
             continue
         mon = verlauf.get(tag[:7])
         if not mon:
             continue
-        vsumme = sum(x for x in d["netzlast"] if x is not None)
+        vsumme = d["netzlast_summe"]
         hsumme = sum(v for m, v in zip(mon["stunden"], mon["netzlast"])
                      if m[:10] == tag and v is not None)
         if not hsumme or len([1 for m in mon["stunden"] if m[:10] == tag]) != 24:
@@ -1074,20 +1088,8 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     #    ist kein Feld. Vor dem 01.10.2025 wiederholt die Quelle jeden
     #    Stundenpreis viermal; danach nicht mehr. Das steht gemessen in der
     #    Datei -- also nachmessen.
-    falsch_geflaggt = []
-    for tag, d in sorted(vtage.items()):
-        p = d["preis_eur_mwh"]
-        gruppen = gleich = 0
-        for i in range(0, len(p) - 3, 4):
-            vier = p[i:i + 4]
-            if any(w is None for w in vier):
-                continue
-            gruppen += 1
-            if len(set(vier)) == 1:
-                gleich += 1
-        erwartet = None if gruppen < 8 else gleich < gruppen * 0.5
-        if d.get("preis_viertelstuendlich") != erwartet:
-            falsch_geflaggt.append(tag)
+    falsch_geflaggt = [tag for tag, d in sorted(vtage.items())
+                       if d["preis_flagge"] != d["preis_gemessen"]]
     b.pruefe(not falsch_geflaggt,
              "Viertelstunden: preis_viertelstuendlich stimmt mit den Preisen "
              "ueberein"
@@ -1098,29 +1100,63 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     #    ENTSO-E-Reihe sagt. Waendert die Quelle das rueckwirkend, faellt es
     #    hier auf.
     vorher = [tg for tg, d in vtage.items()
-              if tg < "2025-10-01" and d.get("preis_viertelstuendlich") is True]
+              if tg < "2025-10-01" and d["preis_flagge"] is True]
     nachher = [tg for tg, d in vtage.items()
-               if tg >= "2025-10-01" and d.get("preis_viertelstuendlich") is False]
+               if tg >= "2025-10-01" and d["preis_flagge"] is False]
     b.pruefe(not vorher and not nachher,
              "Viertelstunden: der Preis wird genau ab 01.10.2025 "
              "viertelstuendlich geraeumt"
              + (f" -- Ausreisser: {(vorher + nachher)[:5]}"
                 if (vorher or nachher) else ""))
 
-    # 7. Der Zaehler der auffaelligen Werte -- und jemand sieht hinein.
-    mit_auffaellig = {tg: len(d.get("auffaellig") or [])
-                      for tg, d in vtage.items() if d.get("auffaellig")}
-    b.pruefe(not mit_auffaellig,
-             "Viertelstunden: keine Quelle hat Zahlen still verworfen"
-             + (f" -- {dict(list(mit_auffaellig.items())[:5])}"
-                if mit_auffaellig else ""))
+    # 7. DER ZAEHLER DER AUFFAELLIGEN WERTE -- und jemand sieht hinein.
+    #    Genau EIN Tag darf welche haben: der 09.02.2015 mit dem bekannten
+    #    Fehlwert der Quelle (Schweiz, Einfuhr, 25.009.206 MWh -- das
+    #    Sechzehnhundertfache des groessten je beobachteten Wertes). In
+    #    Viertelstunden sind das vier Punkte statt einem. Er wird als FEHLEND
+    #    gefuehrt, nicht korrigiert.
+    #
+    #    Die Pruefung ist bewusst in BEIDE Richtungen scharf: taucht er nicht
+    #    mehr auf, ist die Plausibilitaetsgrenze wirkungslos geworden; taucht
+    #    ein anderer auf, hat die Quelle einen neuen Fehler.
+    BEKANNT = "2015-02-09"
+    fremd = {tg: d["auffaellig"] for tg, d in vtage.items()
+             if d["auffaellig"] and tg != BEKANNT}
+    b.pruefe(not fremd,
+             "Viertelstunden: ausser dem bekannten Fehlwert hat keine Quelle "
+             "Zahlen verworfen"
+             + (f" -- neu: {dict(list(fremd.items())[:3])}" if fremd else ""))
+    if BEKANNT in vtage:
+        bek = vtage[BEKANNT]["auffaellig"]
+        b.pruefe(len(bek) == 4
+                 and all(a["land"] == "Schweiz" and a["richtung"] == "import"
+                         for a in bek),
+                 "Viertelstunden: der bekannte Fehlwert vom 09.02.2015 wird in "
+                 f"allen vier Viertelstunden gefangen ({len(bek)})")
 
     # 8. Die Seite kennt die Stufe -- und die zurueckgenommene Begruendung
     #    steht nur noch als Ruecknahme da.
     b.pruefe("VIERTEL_BIS_TAGE" in js and "data/viertelstunden/" in js,
              "die Seite kennt die viertelstuendliche Stufe")
-    b.pruefe("48 statt 12 MB" not in js or "zurückgenommen" in js.lower(),
-             "die falsch gerechnete Begruendung steht nur noch als Ruecknahme")
+    # Die falsch gerechnete Begruendung ist am 15.09.2026 ganz von der Seite
+    # verschwunden, weil auch der Punkt verschwunden ist. Nachzulesen bleibt
+    # sie im Beleg -- eine zurueckgenommene Behauptung wird benannt, nicht
+    # geloescht. Geprueft wird deshalb BEIDES.
+    # OHNE KOMMENTARE gesucht. Die Ruecknahme selbst steht als Kommentar im
+    # Modul und wird dort auch gebraucht -- eine Textsuche, die ueber die
+    # eigenen Kommentare stolpert, ist in diesem Projekt schon dreimal
+    # schiefgegangen.
+    b.pruefe("48 statt 12 MB" not in ohne_kommentare(js),
+             "die falsch gerechnete Begruendung steht nicht mehr auf der Seite")
+    b.pruefe("48 statt 12 MB" in lade("docs/beleg-viertelstunden.md"),
+             "sie bleibt im Beleg als Ruecknahme nachlesbar")
+    # Der Bestand ist seit dem 15.09.2026 vollstaendig. Ein Verzeichnis, das
+    # spaeter wieder bei 2025 anfinge, waere ein Datenverlust -- und faellt
+    # sonst niemandem auf.
+    b.pruefe(vv["von"] == "2015-01-01",
+             f"Viertelstunden: der Bestand beginnt am 01.01.2015 ({vv['von']})")
+    b.pruefe(len(vv["tage"]) > 4200,
+             f"Viertelstunden: {len(vv['tage'])} Tage im Bestand")
     vb = lade("docs/beleg-viertelstunden.md")
     for satz in ("MWh je Viertelstunde", "01.10.2025", "ZURÜCKGENOMMEN",
                  "13,1 kB", "Nichtvorhanden", "index_quarterhour"):
@@ -1683,18 +1719,64 @@ def netzdateien() -> dict[str, dict]:
     return {n: json.loads(lade(n)) for n in NETZDATEIEN}
 
 
+def _viertel_kurz(d: dict) -> dict:
+    """Was der Tuersteher von einer Viertelstundendatei braucht.
+
+    Gebildet beim Lesen; die Datei selbst wird danach weggeworfen. Alles, was
+    hier nicht drinsteht, kann spaeter nicht mehr geprueft werden -- also steht
+    hier alles drin, was geprueft wird.
+    """
+    n = len(d["marken"])
+    schief = [f for f in ("netzlast", "preis_eur_mwh", "import_mwh", "export_mwh")
+              if len(d[f]) != n]
+    schief += [f"erzeugung/{k}" for k, r in d["erzeugung"].items() if len(r) != n]
+    # Der Preisschalter wird NACHGERECHNET. Vor dem 01.10.2025 wiederholt die
+    # Quelle jeden Stundenpreis viermal; danach nicht mehr.
+    p = d["preis_eur_mwh"]
+    gruppen = gleich = 0
+    for i in range(0, len(p) - 3, 4):
+        vier = p[i:i + 4]
+        if any(w is None for w in vier):
+            continue
+        gruppen += 1
+        if len(set(vier)) == 1:
+            gleich += 1
+    return {
+        "tag": d["tag"],
+        "marken": n,
+        "schief": schief,
+        "netzlast_summe": sum(w for w in d["netzlast"] if w is not None),
+        "netzlast_belegt": sum(1 for w in d["netzlast"] if w is not None),
+        "preis_flagge": d.get("preis_viertelstuendlich"),
+        "preis_gemessen": None if gruppen < 8 else gleich < gruppen * 0.5,
+        # Die auffaelligen Werte bleiben als LISTE stehen, nicht als Zahl:
+        # es sind eine Handvoll, und die Pruefung muss WELCHE fragen koennen,
+        # nicht nur WIE VIELE. Der bekannte Fehlwert der Quelle -- Schweiz,
+        # Einfuhr, 09.02.2015 -- MUSS auftauchen; jeder andere waere neu.
+        "auffaellig": [{"land": a.get("land"), "richtung": a.get("richtung")}
+                       for a in (d.get("auffaellig") or [])],
+        "erzeugungsreihen": len(d["erzeugung"]),
+    }
+
+
 def viertelstundendateien() -> dict:
     """Verzeichnis UND Ordner -- beides, damit die Pruefung sie vergleichen kann.
 
     Am 06.09.2026 hat ein aus dem LAUF gebautes Verzeichnis beinahe acht Jahre
     Blockerzeugung unsichtbar gemacht. Die Bedingung lautet seitdem ueberall:
     Verzeichnis gleich Ordner. Dafuer muessen hier beide Seiten herkommen.
+
+    Je Tag bleibt nur die Zusammenfassung aus _viertel_kurz zurueck. Bei ueber
+    4.200 Tagen ist das der Unterschied zwischen einem halben Gigabyte und ein
+    paar Megabyte -- gelesen und geprueft wird trotzdem jede Datei.
     """
     ordner = WURZEL / "data" / "viertelstunden"
+    tage = {}
+    for p in sorted(ordner.glob("*.json")):
+        tage[p.stem] = _viertel_kurz(json.loads(p.read_text(encoding="utf-8")))
     return {
         "verzeichnis": json.loads(lade("data/viertelstunden-verzeichnis.json")),
-        "tage": {p.stem: json.loads(p.read_text(encoding="utf-8"))
-                 for p in sorted(ordner.glob("*.json"))},
+        "tage": tage,
     }
 
 
@@ -1724,25 +1806,34 @@ def _viertel_mal_vier(v: dict) -> dict:
     """
     import copy
     k = copy.deepcopy(v)
-    tag = sorted(t for t, d in k["tage"].items() if len(d["marken"]) == 96)[0]
-    d = k["tage"][tag]
-    d["netzlast"] = [None if w is None else w * 4 for w in d["netzlast"]]
+    tag = sorted(t for t, d in k["tage"].items()
+                 if d["marken"] == 96 and d["netzlast_belegt"] == 96)[0]
+    k["tage"][tag]["netzlast_summe"] *= 4
     return k
 
 
 def _viertel_preisflagge(v: dict) -> dict:
     import copy
     k = copy.deepcopy(v)
-    tag = sorted(k["tage"])[0]
-    d = k["tage"][tag]
-    d["preis_viertelstuendlich"] = not d["preis_viertelstuendlich"]
+    k["tage"][sorted(k["tage"])[0]]["preis_flagge"] = "verstellt"
     return k
 
 
 def _viertel_auffaellig(v: dict) -> dict:
+    """Ein NEUER auffaelliger Wert an einem Tag, der keinen haben darf."""
     import copy
     k = copy.deepcopy(v)
-    k["tage"][sorted(k["tage"])[0]]["auffaellig"] = [{"marke": "x"}]
+    tag = sorted(tg for tg in k["tage"] if tg != "2015-02-09")[0]
+    k["tage"][tag]["auffaellig"] = [{"land": "Frankreich", "richtung": "export"}]
+    return k
+
+
+def _viertel_fehlwert_weg(v: dict) -> dict:
+    """Der bekannte Fehlwert vom 09.02.2015 wird nicht mehr gefangen."""
+    import copy
+    k = copy.deepcopy(v)
+    if "2015-02-09" in k["tage"]:
+        k["tage"]["2015-02-09"]["auffaellig"] = []
     return k
 
 
@@ -1840,8 +1931,10 @@ def negativtests() -> int:
          lambda: {"viertel": _viertel_mal_vier(basis["viertel"])}),
         ("Preisschalter eines Tages verstellt",
          lambda: {"viertel": _viertel_preisflagge(basis["viertel"])}),
-        ("Ein verworfener Viertelstundenwert",
+        ("Ein NEUER verworfener Viertelstundenwert",
          lambda: {"viertel": _viertel_auffaellig(basis["viertel"])}),
+        ("Der bekannte Fehlwert vom 09.02.2015 wird nicht mehr gefangen",
+         lambda: {"viertel": _viertel_fehlwert_weg(basis["viertel"])}),
         ("Viertelstundenstufe aus dem Modul entfernt",
          lambda: ersetze("js", "VIERTEL_BIS_TAGE", "EGAL_BIS_TAGE")),
         ("Tabelle rechnet die Deckung wieder ohne die Einfuhr",
