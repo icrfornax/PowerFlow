@@ -46,10 +46,12 @@ Waehlbar ist jeder Zeitraum ab 01.01.2015.
 Der **Bezugswert ist damit fest**: derselbe Zeitraum ein Jahr frueher, reale
 Messwerte. Kein Monatsmittel, keine geglaettete Kurve.
 
-**Darstellungstiefe folgt der Laenge:** bis einschliesslich sieben Tage
-stuendlich (`data/verlauf/`), darueber tageweise (`data/tage/`). Eine Woche sind
-168 Punkte und noch gut zu lesen; ein Monat in Stundenwerten waere Kammputz.
-Vorbild fuer die Darstellung ist energy-charts.info.
+**Darstellungstiefe folgt der Laenge**, seit dem 14.09.2026 in DREI Stufen:
+bis zwei Tage viertelstuendlich (`data/viertelstunden/`), bis einschliesslich
+sieben Tage stuendlich (`data/verlauf/`), darueber tageweise (`data/tage/`).
+Die Grenze ist ueberall dieselbe und heisst Lesbarkeit: sieben Tage stuendlich
+sind 168 Punkte, zwei Tage viertelstuendlich 192. Ein Monat in Stundenwerten
+waere Kammputz. Vorbild fuer die Darstellung ist energy-charts.info.
 
 ## Umfang
 
@@ -432,8 +434,11 @@ der Seite, obwohl zwei davon laengst lagen. Was erledigt ist, gehoert nicht in
 eine Liste offener Punkte -- sonst glaubt sie irgendwann niemand mehr.
 
 **Es steht noch GENAU EIN offener Punkt auf der Seite:** die
-Viertelstundenwerte (48 statt 12 MB, die jeder Besucher mitlaedt). Das ist eine
-Entscheidung von Immo, keine Messung.
+Viertelstundenwerte fuer die Jahre vor 2025 nachholen. Die Stufe selbst ist am
+14.09.2026 gebaut (siehe eigenen Abschnitt); geholt ist der Bestand ab
+30.12.2024. Was bleibt, ist eine Entscheidung ueber die Groesse des
+Repositorys -- rund 55 MB und 21.400 Abrufe fuer die volle Historie --, keine
+Messfrage.
 
 **Am 14.09.2026 sind fuenf Punkte nach "Grenzen" gewandert** -- die zweite
 ENTSO-E-Preisreihe, die Tagesstreuung des Redispatch, der Anteil der
@@ -1028,6 +1033,64 @@ Zahlen unter einem Namen, und die Zeile ging nicht auf. Seitdem gilt: was als
 Die Probe steht im Browsertest -- **Erzeugung + Einfuhr - Netzlast =
 Ueberdeckung**, gerechnet ueber die Tage ohne Meldeluecke. Der Saldo steht in
 den Kennzahlen und im Abschnitt Zufluss/Abfluss, wo er hingehoert.
+
+## Viertelstundenwerte
+
+Gebaut am 14.09.2026. Beleg: `docs/beleg-viertelstunden.md`, Abruf durch
+`scripts/fetch-viertelstunden.py`, taeglich im SMARD-Workflow (zwei Wochen).
+
+Die dritte Aufloesungsstufe. Sie greift bis zu **zwei Tagen** und faellt
+darueber auf Stundenwerte zurueck -- 192 Punkte gegen 168, dieselbe
+Lesbarkeitsgrenze.
+
+- **ZURUECKGENOMMEN: "48 statt 12 MB, die jeder Besucher mitlaedt".** So stand
+  der offene Punkt seit dem 31.08.2026 auf der Seite, und die Zahl war falsch:
+  **niemand laedt den ganzen Bestand.** `data/verlauf/` sind 141 Monatsdateien,
+  und ein Seitenaufruf holt die ein bis zwei, die der Zeitraum beruehrt. Der
+  Fehler ist der klassische -- eine Gesamtgroesse als Ladelast ausgegeben. Er
+  hat einen sinnvollen Ausbau ein Vierteljahr lang blockiert. Gemessen wird,
+  was EIN Seitenaufruf kostet.
+- **TAGESdateien, nicht Monatsdateien.** Die Seite zeigt hoechstens zwei Tage;
+  eine Monatsdatei waere rund 400 kB fuer einen Tag Anzeige, eine Tagesdatei
+  ist 13,1 kB. Dreissigmal so viel fuer dieselbe Auskunft.
+- **Die Einheit ist MWh JE VIERTELSTUNDE, nicht MW** -- aus den Daten bewiesen:
+  die Summe der vier Viertelstunden trifft den Stundenwert derselben Quelle
+  (groesste Abweichung 0,02 MWh). Das Abrufskript rechnet die Probe bei JEDEM
+  Lauf nach und bricht ab. Fuer die Anzeige in GW ist der Teiler deshalb 250
+  und nicht 1000. Als Leistung gelesen laege alles um den Faktor vier daneben;
+  bei der Vorschau auf morgen ist genau das schon passiert.
+- **DER PREIS IST VOR DEM 01.10.2025 KEIN VIERTELSTUNDENWERT.** SMARD liefert
+  die Reihe durchgehend viertelstuendlich, aber davor ist es der VIERMAL
+  WIEDERHOLTE Stundenpreis. Gemessen ueber die Vierergruppen: bis 30.09.2025
+  sind 100 % in sich identisch, ab 01.10.2025 keine einzige; die
+  Umstellungswoche zeigt genau den Bruch (48 von 168 Gruppen = zwei Tage).
+  **Das bestaetigt aus einer zweiten, unabhaengigen Richtung**, was in
+  `docs/beleg-entsoe-datenpunkte.md` ueber die ENTSO-E-Reihe steht: Sequence 1
+  wechselte am 01.10.2025 von PT60M auf PT15M. Zwei verschiedene Endpunkte,
+  derselbe Tag.
+  Das Feld `preis_viertelstuendlich` steht deshalb in JEDER Tagesdatei und wird
+  GEMESSEN, nicht aus dem Datum abgeleitet -- eine Schwelle, die man
+  hinschreibt, veraltet still. Die Legende beschriftet die Preiskurve danach
+  und schreibt im frueheren Zeitraum ausdruecklich "STUNDENWERTE". **Drei
+  Zustaende, nicht zwei:** `true`, `false` und `null` fuer "keine Preise" -- der
+  juengste Tag hat oft noch keinen, und ein falsches Wort im Protokoll schickt
+  einen auf die Suche nach einem Fehler, den es nicht gibt.
+- **Kernenergie endet, wie sie muss:** ab 2024 antwortet die Reihe mit HTTP 404.
+  Das ist eine ANTWORT (`smard.Nichtvorhanden`) und kein Ausfall; die Reihe
+  wird WEGGELASSEN und nicht mit Nullen gefuellt.
+- **Ein Tag hat 92, 96 oder 100 Marken.** Geschluesselt wird ueber den
+  ZEITSTEMPEL, nie ueber die Marke -- am Tag der Rueckstellung gibt es 02:00
+  bis 02:45 zweimal. `validate.py` prueft die Markenzahl je Datei.
+- **Verzeichnis gleich Ordner**, wie ueberall seit dem 06.09.2026.
+- **Die Aufloesung steht in der Ueberschrift** ("· Viertelstundenwerte") und
+  wird an EINER Stelle entschieden (`taktFuer`), damit Ueberschrift und Bild
+  nicht auseinanderlaufen koennen.
+- **Eine halbe Kurve gibt es nicht:** fehlt fuer einen Tag des Zeitraums die
+  Datei, faellt die ganze Anzeige auf Stundenwerte zurueck. Eine Kurve, die auf
+  halber Strecke die Aufloesung wechselt, waere eine Falschaussage, die man
+  nicht einmal sieht.
+- **Der Bestand reicht ab 30.12.2024.** Die Reihe liegt bei SMARD ab 2015 vor;
+  die uebrigen Jahre nachzuholen ist der einzige offene Punkt der Seite.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 

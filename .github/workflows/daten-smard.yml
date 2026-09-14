@@ -45,6 +45,17 @@ jobs:
       - name: Stundenwerte nachtragen (letzte vier Wochen)
         run: python scripts/fetch-verlauf.py --wochen 4
 
+      - name: Viertelstundenwerte nachtragen (letzte zwei Wochen)
+        # Zwei Wochen reichen: die Seite zeigt Viertelstunden nur fuer
+        # hoechstens zwei Tage, und was aelter ist, aendert sich kaum noch.
+        # Ein Block sind 35 Abrufe -- zwei Wochen also 70.
+        #
+        # Im SELBEN Lauf wie die Stundenwerte, aus demselben Grund: SMARD
+        # meldet zurueckliegende Werte nach, und der Tuersteher rechnet die
+        # Viertelstundensumme gegen die Stundenreihe. Zu verschiedenen Zeiten
+        # geholt waeren das zwei Staende, und die Probe schluege zu Recht an.
+        run: python scripts/fetch-viertelstunden.py --wochen 2
+
       - name: Erzeugung je Kraftwerksblock (laufendes und voriges Jahr)
         # Nur zwei Jahrgaenge: die Reihe je Block liegt als TAGESreihe vor, ein
         # Jahr sind rund 210 Abrufe. Aeltere Jahre aendern sich nicht mehr --

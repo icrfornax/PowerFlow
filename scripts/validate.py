@@ -321,7 +321,7 @@ def tagesbefunde(jahr: int, d: dict) -> list[str]:
 def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  kraftwerke: dict, grundkarte: dict, netz: dict,
                  css: str, verlauf: dict, workflows: dict,
-                 engpasskosten: dict, rdv: dict) -> Befund:
+                 engpasskosten: dict, rdv: dict, viertel: dict) -> Befund:
     b = Befund()
 
     for name in PFLICHTDATEIEN:
@@ -998,6 +998,134 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("Tageswerte im Zeitraum" in js,
              "unter der stuendlichen Kurve steht eine Uebersicht der Tageswerte")
 
+    # --- Viertelstundenwerte, erschlossen am 14.09.2026 ---
+    vv = viertel["verzeichnis"]
+    vtage = viertel["tage"]
+
+    # 1. VERZEICHNIS GLEICH ORDNER. Nicht "mindestens so viele" -- gleich.
+    #    Die Lehre vom 06.09.2026: ein aus dem Lauf gebautes Verzeichnis haette
+    #    zehn Jahre Blockerzeugung auf zwei gekuerzt, obwohl alle zehn Dateien
+    #    dalagen. Die Pruefung "mindestens acht" hat es gefangen -- richtig,
+    #    aber ungenau. Geprueft wird die BEDINGUNG.
+    im_verzeichnis = {e["tag"] for e in vv["tage"]}
+    b.pruefe(im_verzeichnis == set(vtage),
+             f"Viertelstunden: Verzeichnis gleich Ordner ({len(vtage)} Tage)"
+             + (f" -- Unterschied: {sorted(im_verzeichnis ^ set(vtage))[:5]}"
+                if im_verzeichnis != set(vtage) else ""))
+
+    # 2. Jede Reihe so lang wie die Achse. Eine Datei, die das selbst nicht
+    #    einhaelt, ist in sich widerspruechlich.
+    schief = []
+    for tag, d in vtage.items():
+        n = len(d["marken"])
+        for feld in ("netzlast", "preis_eur_mwh", "import_mwh", "export_mwh"):
+            if len(d[feld]) != n:
+                schief.append(f"{tag}/{feld}")
+        for name, reihe in d["erzeugung"].items():
+            if len(reihe) != n:
+                schief.append(f"{tag}/erzeugung/{name}")
+    b.pruefe(not schief,
+             f"Viertelstunden: alle Reihen passen zur Achse"
+             + (f" -- schief: {schief[:5]}" if schief else ""))
+
+    # 3. 96 Marken je Tag -- ausser an den Umstellungstagen (92 bzw. 100) und
+    #    am laufenden letzten Tag. Alles andere ist eine Meldeluecke, die
+    #    niemandem aufgefallen ist.
+    letzter = max(vtage) if vtage else None
+    ungewoehnlich = {tag: len(d["marken"]) for tag, d in vtage.items()
+                     if len(d["marken"]) not in (92, 96, 100) and tag != letzter}
+    b.pruefe(not ungewoehnlich,
+             "Viertelstunden: jeder Tag hat 96 Marken (92/100 an den "
+             "Umstellungstagen)"
+             + (f" -- ungewoehnlich: {dict(list(ungewoehnlich.items())[:5])}"
+                if ungewoehnlich else ""))
+
+    # 4. GROESSENORDNUNGSPROBE GEGEN DIE STUNDENWERTE.
+    #    Die Werte sind MWh JE VIERTELSTUNDE, also Arbeit. Wer sie fuer
+    #    Leistung haelt, liegt um den Faktor vier daneben -- genau dieser
+    #    Fehler ist am 05.09.2026 bei der Vorschau passiert. Verglichen wird
+    #    die TAGESSUMME, nicht die einzelne Stunde: SMARD meldet
+    #    zurueckliegende Werte nach, und die beiden Dateien sind zu
+    #    verschiedenen Zeiten geholt. 0,5 % Toleranz laesst jede Nachmeldung
+    #    durch und faengt den Faktor vier mit riesigem Abstand.
+    schlimmste, geprueft, wo = 0.0, 0, ""
+    for tag in sorted(vtage)[::37]:
+        d = vtage[tag]
+        if len(d["marken"]) != 96 or tag == letzter:
+            continue
+        mon = verlauf.get(tag[:7])
+        if not mon:
+            continue
+        vsumme = sum(x for x in d["netzlast"] if x is not None)
+        hsumme = sum(v for m, v in zip(mon["stunden"], mon["netzlast"])
+                     if m[:10] == tag and v is not None)
+        if not hsumme or len([1 for m in mon["stunden"] if m[:10] == tag]) != 24:
+            continue
+        geprueft += 1
+        ab = abs(vsumme - hsumme) / hsumme
+        if ab > schlimmste:
+            schlimmste, wo = ab, tag
+    b.pruefe(geprueft >= 5 and schlimmste < 0.005,
+             f"Viertelstunden: Tagessumme trifft die Stundenreihe auf "
+             f"{schlimmste * 100:.3f} % ({geprueft} Tage geprueft"
+             + (f", schlimmster {wo}" if wo else "") + ")")
+
+    # 5. DER PREIS-SCHALTER WIRD NACHGERECHNET. Ein Feld, das niemand prueft,
+    #    ist kein Feld. Vor dem 01.10.2025 wiederholt die Quelle jeden
+    #    Stundenpreis viermal; danach nicht mehr. Das steht gemessen in der
+    #    Datei -- also nachmessen.
+    falsch_geflaggt = []
+    for tag, d in sorted(vtage.items()):
+        p = d["preis_eur_mwh"]
+        gruppen = gleich = 0
+        for i in range(0, len(p) - 3, 4):
+            vier = p[i:i + 4]
+            if any(w is None for w in vier):
+                continue
+            gruppen += 1
+            if len(set(vier)) == 1:
+                gleich += 1
+        erwartet = None if gruppen < 8 else gleich < gruppen * 0.5
+        if d.get("preis_viertelstuendlich") != erwartet:
+            falsch_geflaggt.append(tag)
+    b.pruefe(not falsch_geflaggt,
+             "Viertelstunden: preis_viertelstuendlich stimmt mit den Preisen "
+             "ueberein"
+             + (f" -- falsch: {falsch_geflaggt[:5]}" if falsch_geflaggt else ""))
+
+    # 6. DER BRUCH LIEGT AM 01.10.2025 -- und zwar in BEIDE Richtungen. Er
+    #    bestaetigt unabhaengig, was docs/beleg-entsoe-datenpunkte.md ueber die
+    #    ENTSO-E-Reihe sagt. Waendert die Quelle das rueckwirkend, faellt es
+    #    hier auf.
+    vorher = [tg for tg, d in vtage.items()
+              if tg < "2025-10-01" and d.get("preis_viertelstuendlich") is True]
+    nachher = [tg for tg, d in vtage.items()
+               if tg >= "2025-10-01" and d.get("preis_viertelstuendlich") is False]
+    b.pruefe(not vorher and not nachher,
+             "Viertelstunden: der Preis wird genau ab 01.10.2025 "
+             "viertelstuendlich geraeumt"
+             + (f" -- Ausreisser: {(vorher + nachher)[:5]}"
+                if (vorher or nachher) else ""))
+
+    # 7. Der Zaehler der auffaelligen Werte -- und jemand sieht hinein.
+    mit_auffaellig = {tg: len(d.get("auffaellig") or [])
+                      for tg, d in vtage.items() if d.get("auffaellig")}
+    b.pruefe(not mit_auffaellig,
+             "Viertelstunden: keine Quelle hat Zahlen still verworfen"
+             + (f" -- {dict(list(mit_auffaellig.items())[:5])}"
+                if mit_auffaellig else ""))
+
+    # 8. Die Seite kennt die Stufe -- und die zurueckgenommene Begruendung
+    #    steht nur noch als Ruecknahme da.
+    b.pruefe("VIERTEL_BIS_TAGE" in js and "data/viertelstunden/" in js,
+             "die Seite kennt die viertelstuendliche Stufe")
+    b.pruefe("48 statt 12 MB" not in js or "zurückgenommen" in js.lower(),
+             "die falsch gerechnete Begruendung steht nur noch als Ruecknahme")
+    vb = lade("docs/beleg-viertelstunden.md")
+    for satz in ("MWh je Viertelstunde", "01.10.2025", "ZURÜCKGENOMMEN",
+                 "13,1 kB", "Nichtvorhanden", "index_quarterhour"):
+        b.pruefe(satz in vb, f"beleg-viertelstunden.md nennt: {satz!r}")
+
     # --- Der Bilanzrest, untersucht am 03.09.2026 ---
     # Die Seite nennt jetzt Zahlen aus dieser Untersuchung. Sie stehen in Prosa
     # und veralten still -- wie schon zweimal die Redispatch-Schieflage.
@@ -1535,7 +1663,7 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
 # Reihenfolge der Eingaben von eingaben(). Die Negativtests arbeiten ueber
 # diese Namen statt ueber Stellungsargumente.
 FELDER = ("jahre", "index_html", "js", "kraftwerke", "grundkarte", "netz",
-          "css", "verlauf", "workflows", "engpasskosten", "rdv")
+          "css", "verlauf", "workflows", "engpasskosten", "rdv", "viertel")
 
 
 def _kosten_doppelt(doc: dict) -> dict:
@@ -1555,13 +1683,67 @@ def netzdateien() -> dict[str, dict]:
     return {n: json.loads(lade(n)) for n in NETZDATEIEN}
 
 
+def viertelstundendateien() -> dict:
+    """Verzeichnis UND Ordner -- beides, damit die Pruefung sie vergleichen kann.
+
+    Am 06.09.2026 hat ein aus dem LAUF gebautes Verzeichnis beinahe acht Jahre
+    Blockerzeugung unsichtbar gemacht. Die Bedingung lautet seitdem ueberall:
+    Verzeichnis gleich Ordner. Dafuer muessen hier beide Seiten herkommen.
+    """
+    ordner = WURZEL / "data" / "viertelstunden"
+    return {
+        "verzeichnis": json.loads(lade("data/viertelstunden-verzeichnis.json")),
+        "tage": {p.stem: json.loads(p.read_text(encoding="utf-8"))
+                 for p in sorted(ordner.glob("*.json"))},
+    }
+
+
 def eingaben() -> tuple:
     return (jahresdateien(), lade("index.html"), lade("assets/powerflow.js"),
             json.loads(lade("data/kraftwerke.json")),
             json.loads(lade("data/grundkarte.json")),
             netzdateien(), lade("assets/powerflow.css"), verlaufdateien(),
             workflowdateien(), json.loads(lade("data/engpasskosten.json")),
-            json.loads(lade("data/redispatch-verzeichnis.json")))
+            json.loads(lade("data/redispatch-verzeichnis.json")),
+            viertelstundendateien())
+
+
+def _viertel_ohne_tag(v: dict) -> dict:
+    """Nimmt einen Tag aus dem Ordner -- das Verzeichnis kennt ihn noch."""
+    import copy
+    k = copy.deepcopy(v)
+    k["tage"].pop(sorted(k["tage"])[0])
+    return k
+
+
+def _viertel_mal_vier(v: dict) -> dict:
+    """Macht aus der Arbeit je Viertelstunde eine Leistung.
+
+    Genau der Fehler, der bei der Vorschau auf morgen einmal passiert ist.
+    Die Groessenordnungsprobe gegen die Stundenreihe muss ihn fangen.
+    """
+    import copy
+    k = copy.deepcopy(v)
+    tag = sorted(t for t, d in k["tage"].items() if len(d["marken"]) == 96)[0]
+    d = k["tage"][tag]
+    d["netzlast"] = [None if w is None else w * 4 for w in d["netzlast"]]
+    return k
+
+
+def _viertel_preisflagge(v: dict) -> dict:
+    import copy
+    k = copy.deepcopy(v)
+    tag = sorted(k["tage"])[0]
+    d = k["tage"][tag]
+    d["preis_viertelstuendlich"] = not d["preis_viertelstuendlich"]
+    return k
+
+
+def _viertel_auffaellig(v: dict) -> dict:
+    import copy
+    k = copy.deepcopy(v)
+    k["tage"][sorted(k["tage"])[0]]["auffaellig"] = [{"marke": "x"}]
+    return k
 
 
 def _ohne_erstes_jahr(rdv: dict) -> dict:
@@ -1652,6 +1834,16 @@ def negativtests() -> int:
                   '{ "class": "pf-ablesung-grund" });'}),
         ("Uebersicht der Tageswerte entfernt",
          lambda: ersetze("js", "Tageswerte im Zeitraum", "Nichts")),
+        ("Ein Viertelstundentag fehlt im Ordner",
+         lambda: {"viertel": _viertel_ohne_tag(basis["viertel"])}),
+        ("Viertelstunden als Leistung statt Arbeit gelesen",
+         lambda: {"viertel": _viertel_mal_vier(basis["viertel"])}),
+        ("Preisschalter eines Tages verstellt",
+         lambda: {"viertel": _viertel_preisflagge(basis["viertel"])}),
+        ("Ein verworfener Viertelstundenwert",
+         lambda: {"viertel": _viertel_auffaellig(basis["viertel"])}),
+        ("Viertelstundenstufe aus dem Modul entfernt",
+         lambda: ersetze("js", "VIERTEL_BIS_TAGE", "EGAL_BIS_TAGE")),
         ("Tabelle rechnet die Deckung wieder ohne die Einfuhr",
          lambda: ersetze("js", "(einfuhrOben[k] - v.netzlast[k]) / v.teiler",
                          "(stapelOben[k] - v.netzlast[k]) / v.teiler")),

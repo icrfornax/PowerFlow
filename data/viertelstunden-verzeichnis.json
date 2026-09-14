@@ -1,0 +1,4378 @@
+{
+ "_quelle": "Bundesnetzagentur | SMARD.de, chart_data, Aufloesung quarterhour",
+ "_lizenz": "CC BY 4.0",
+ "_namensnennung": "Bundesnetzagentur | SMARD.de",
+ "_hinweis": "Welcher Tag viertelstuendlich vorliegt und mit wie vielen Marken. Aus dem ORDNER gebaut, nicht aus dem letzten Lauf. Die Seite liest daraus, ab wann sie Viertelstunden anbieten darf.",
+ "tage": [
+  {
+   "tag": "2024-12-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2024-12-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-01-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-02-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-30",
+   "marken": 92,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-03-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-04-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-05-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-06-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-07-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-08-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-09-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": false,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-26",
+   "marken": 100,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-10-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-11-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2025-12-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-01-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-02-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-29",
+   "marken": 92,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-03-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-04-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-05-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-06-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-07-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-14",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-15",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-16",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-17",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-18",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-19",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-22",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-23",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-24",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-25",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-26",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-27",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-28",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-29",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-30",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-08-31",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-01",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-02",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-03",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-04",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-05",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-06",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-08",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-12",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-13",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": null,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-14",
+   "marken": 88,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  }
+ ],
+ "von": "2024-12-30",
+ "bis": "2026-09-14"
+}

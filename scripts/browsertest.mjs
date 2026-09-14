@@ -1222,6 +1222,155 @@ try {
     "und die Tabelle sagt, welche Spalte zu welcher Flaeche gehoert",
     spalten.erklaert.slice(0, 70));
 
+  /* --- DIE DRITTE AUFLOESUNGSSTUFE: VIERTELSTUNDEN ---
+
+     Sieben Tage stuendlich sind 168 Punkte, zwei Tage viertelstuendlich 192 --
+     dieselbe Lesbarkeitsgrenze. Geprueft wird an EINEM Tag, weil dort die
+     Stufe eindeutig greift und die Zahl der Punkte nachzaehlbar ist.
+
+     Der Tag wird aus dem VERZEICHNIS geholt, nicht hingeschrieben: ein festes
+     Datum im Test veraltet still, und der Bestand waechst taeglich. Gewaehlt
+     wird der letzte Tag mit vollen 96 Marken -- der laufende Tag ist
+     unvollstaendig, und an den Umstellungstagen sind es 92 oder 100. */
+  const vtag = await js(`(async function () {
+    const v = await fetch("data/viertelstunden-verzeichnis.json").then((r) => r.json());
+    /* Voll UND mit Preis. Der 13.09.2026 hat 96 Marken, aber noch keine
+       Preise -- dort liefe die Pruefung der Preisbeschriftung ins Leere, und
+       eine Pruefung, die nichts prueft, ist keine. */
+    const voll = (v.tage || []).filter(
+      (e) => e.marken === 96 && e.preis_viertelstuendlich !== null);
+    const letzter = voll[voll.length - 1];
+    return letzter ? { tag: letzter.tag, marken: letzter.marken,
+                       preis: letzter.preis_viertelstuendlich,
+                       tage: (v.tage || []).length, von: v.von } : null;
+  })()`);
+  pruefe(vtag && vtag.tage > 0,
+    `das Viertelstundenverzeichnis fuehrt ${vtag && vtag.tage} Tage ab ${vtag && vtag.von}`);
+
+  if (vtag) {
+    await setzeZeitraum(js, vtag.tag, vtag.tag);
+    await schlafen(1500);
+    const viertel = await js(`(function () {
+      const h2 = [...document.querySelectorAll(".pf-abschnitt h2")]
+        .map((e) => e.textContent).find((x) => /^Verlauf/.test(x)) || "";
+      const t = document.querySelector(".pf-verlauf table.pf-verlaufstabelle");
+      const schalter = document.querySelector(".pf-tabellenschalter");
+      return { ueberschrift: h2,
+               legende: (document.querySelector(".pf-legende-traeger") || {}).textContent || "",
+               achse: (document.querySelector(".pf-verlauf .pf-achsentitel") || {}).textContent || "",
+               tabelleOffen: !!t };
+    })()`);
+    pruefe(/Viertelstundenwerte/.test(viertel.ueberschrift),
+      "die Ueberschrift nennt die Viertelstundenstufe", viertel.ueberschrift);
+
+    /* 96 PUNKTE, NACHGEZAEHLT IN DER TABELLE. Das ist die eigentliche
+       Pruefung: eine Ueberschrift kann jeder hinschreiben. */
+    await js(`document.querySelector(".pf-tabellenschalter").click()`);
+    await schlafen(600);
+    const vzeilen = await js(`(function () {
+      const t = document.querySelector(".pf-verlauf table.pf-verlaufstabelle");
+      const kopf = [...t.querySelectorAll("thead th")].map((e) => e.textContent);
+      const erste = t.querySelector("tbody tr td").textContent;
+      return { zeilen: t.querySelectorAll("tbody tr").length,
+               kopf1: kopf[0], erste: erste,
+               tagesz: document.querySelectorAll(".pf-tagesuebersicht tbody tr").length };
+    })()`);
+    pruefe(vzeilen.zeilen === 96,
+      `der Tag hat 96 Viertelstunden (${vzeilen.zeilen})`);
+    pruefe(vzeilen.kopf1 === "Viertelstunde",
+      "die Tabelle nennt die Spalte 'Viertelstunde'", vzeilen.kopf1);
+    pruefe(/\d\d:(00|15|30|45)$/.test(vzeilen.erste.trim()),
+      "und ihre Marken tragen Minuten", vzeilen.erste);
+    pruefe(vzeilen.tagesz === 1,
+      `die Tagesuebersicht fuehrt genau diesen einen Tag (${vzeilen.tagesz})`);
+
+    /* DIE ABLESUNG NENNT DIE VIERTELSTUNDE -- und der Preis sagt, was er ist.
+       Vor dem 01.10.2025 wiederholt die Quelle jeden Stundenpreis viermal;
+       eine Viertelstundentreppe daraus waere eine Behauptung ueber eine
+       Aufloesung, die es nicht gibt. */
+    const vablese = await js(`(function () {
+      const svg = document.querySelector(".pf-diagramm");
+      const r = svg.getBoundingClientRect();
+      svg.dispatchEvent(new MouseEvent("mousemove", { bubbles: true,
+        clientX: r.left + r.width * 0.5, clientY: r.top + r.height * 0.5 }));
+      const feld = document.querySelector(".pf-rd-info-verlauf");
+      return { text: feld ? feld.textContent : "",
+               legende: (document.querySelector(".pf-legende-traeger") || {}).textContent || "" };
+    })()`);
+    pruefe(/Bilanz dieser Viertelstunde/.test(vablese.text),
+      "die Ablesung nennt die Viertelstunde", vablese.text.slice(0, 60));
+    if (vtag.preis === true) {
+      pruefe(/viertelstündlich geräumt/.test(vablese.legende),
+        "die Preislegende sagt, dass viertelstuendlich geraeumt wurde");
+    } else if (vtag.preis === false) {
+      pruefe(/STUNDENWERTE/.test(vablese.legende),
+        "die Preislegende warnt vor dem wiederholten Stundenpreis");
+    }
+    /* Tabelle zu, BEVOR das Bild entsteht -- sonst zeigt das Bildschirmfoto
+       96 Tabellenzeilen und nicht die Kurve, um die es geht. Genau so ist das
+       erste Bild dieser Stufe entstanden. */
+    await js(`document.querySelector(".pf-tabellenschalter").click()`);
+    await schlafen(300);
+    await js(`(function () {
+      const svg = document.querySelector(".pf-diagramm");
+      svg.scrollIntoView({ block: "start", behavior: "instant" });
+      window.scrollBy(0, -140);
+      const r = svg.getBoundingClientRect();
+      svg.dispatchEvent(new MouseEvent("mousemove", { bubbles: true,
+        clientX: r.left + r.width * 0.5, clientY: r.top + r.height * 0.5 }));
+    })()`);
+    await schlafen(300);
+    await foto("verlauf-viertelstunden");
+    await js(`document.querySelector(".pf-diagramm")`
+      + `.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }))`);
+
+    /* DER GEFAEHRLICHE FALL: ein Tag VOR dem 01.10.2025. Dort liefert die
+       Quelle denselben Stundenpreis viermal, und eine Viertelstundentreppe
+       daraus waere eine Behauptung ueber eine Aufloesung, die es nicht gibt.
+       Die Legende MUSS das sagen. */
+    const vfrueh = await js(`(async function () {
+      const v = await fetch("data/viertelstunden-verzeichnis.json").then((r) => r.json());
+      const e = (v.tage || []).filter(
+        (x) => x.marken === 96 && x.preis_viertelstuendlich === false);
+      return e.length ? e[e.length - 1].tag : null;
+    })()`);
+    if (vfrueh) {
+      await setzeZeitraum(js, vfrueh, vfrueh);
+      await schlafen(1500);
+      const frueh = await js(`(function () {
+        return { legende: (document.querySelector(".pf-legende-traeger") || {}).textContent || "",
+                 ueberschrift: [...document.querySelectorAll(".pf-abschnitt h2")]
+                   .map((e) => e.textContent).find((x) => /^Verlauf/.test(x)) || "" };
+      })()`);
+      pruefe(/Viertelstundenwerte/.test(frueh.ueberschrift),
+        `auch ${vfrueh} wird viertelstuendlich gezeigt`);
+      pruefe(/STUNDENWERTE/.test(frueh.legende),
+        "und die Legende warnt dort vor dem wiederholten Stundenpreis",
+        frueh.legende.slice(-90));
+    }
+
+    /* UND DIE STUFE MUSS AUCH WIEDER GEHEN. Drei Tage sind mehr als die
+       Grenze von zwei -- dort MUSS die Kurve stuendlich sein, sonst waeren es
+       288 Punkte und die Regel stuende nur im Kommentar. */
+    const dreiVon = new Date(new Date(vtag.tag + "T12:00:00").getTime()
+      - 2 * 86400000).toISOString().slice(0, 10);
+    await setzeZeitraum(js, dreiVon, vtag.tag);
+    await schlafen(1500);
+    const drei = await js(`(function () {
+      const h2 = [...document.querySelectorAll(".pf-abschnitt h2")]
+        .map((e) => e.textContent).find((x) => /^Verlauf/.test(x)) || "";
+      return h2;
+    })()`);
+    pruefe(/Stundenwerte/.test(drei) && !/Viertelstundenwerte/.test(drei),
+      "drei Tage werden wieder stuendlich gezeigt", drei);
+  }
+
+  // Zurueck auf den Anfangszeitraum, damit die folgenden Pruefungen wieder
+  // den Zustand sehen, den sie erwarten.
+  await js(`[...document.querySelectorAll(".pf-schnell")]
+    .find((b) => b.textContent === "Letzte 7 Tage").click()`);
+  await schlafen(2500);
+
   // --- Karte: Zoom, Auswahl, Ebenen ---
   const vorZoom = await js(`document.querySelector(".pf-karte").getAttribute("viewBox")`);
   await js(`document.querySelector(".pf-kartenbedienung .pf-schritt[aria-label='Hineinzoomen']").click()`);

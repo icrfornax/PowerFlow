@@ -124,6 +124,30 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
   },
   {
+   "titel": "Verzeichnis der Viertelstundenreihen",
+   "inhalt": "Welcher Tag viertelstuendlich vorliegt, mit wie vielen Marken, und ob sein Preis ein echter Viertelstundenwert ist.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-viertelstunden.md",
+   "dateien": 1,
+   "bytes": 83060,
+   "zeitraum": null,
+   "muster": "data/viertelstunden-verzeichnis.json",
+   "abzug": "data/viertelstunden-verzeichnis.json",
+   "alle": null
+  },
+  {
+   "titel": "Viertelstundenwerte je Tag",
+   "inhalt": "Netzlast, Erzeugung nach Energietraeger, Grosshandelspreis sowie Ein- und Ausfuhr, ein Wert je Viertelstunde, in MWh JE VIERTELSTUNDE bzw. Euro je MWh. TAGESdateien: die Seite zeigt hoechstens zwei Tage viertelstuendlich, und wer zwei Tage ansieht, soll zwei Dateien laden.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-viertelstunden.md",
+   "dateien": 624,
+   "bytes": 8785061,
+   "zeitraum": null,
+   "muster": "data/viertelstunden/*.json",
+   "abzug": "data/viertelstunden-verzeichnis.json",
+   "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/viertelstunden"
+  },
+  {
    "titel": "Kraftwerksstandorte",
    "inhalt": "Stammdaten mit Koordinaten, Betreiber, Energietraeger, Nettoleistung und Bloecken. Aus einem UNDOKUMENTIERTEN Endpunkt.",
    "quelle": "smard",
@@ -345,13 +369,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 14603,
+   "bytes": 15685,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 195,
- "bytes_gesamt": 33168526
+ "dateien_gesamt": 820,
+ "bytes_gesamt": 42037729
 }

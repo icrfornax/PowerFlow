@@ -123,6 +123,17 @@ GRUPPEN = [
      "Netzlast, Erzeugung nach Energietraeger und Grosshandelspreis, "
      "ein Wert je Stunde, in MWh bzw. Euro je MWh.",
      "docs/beleg-verlauf.md", "verlauf-verzeichnis.json"),
+    ("viertelstunden-verzeichnis.json", "smard",
+     "Verzeichnis der Viertelstundenreihen",
+     "Welcher Tag viertelstuendlich vorliegt, mit wie vielen Marken, und ob "
+     "sein Preis ein echter Viertelstundenwert ist.",
+     "docs/beleg-viertelstunden.md", None),
+    ("viertelstunden/*.json", "smard", "Viertelstundenwerte je Tag",
+     "Netzlast, Erzeugung nach Energietraeger, Grosshandelspreis sowie Ein- "
+     "und Ausfuhr, ein Wert je Viertelstunde, in MWh JE VIERTELSTUNDE bzw. "
+     "Euro je MWh. TAGESdateien: die Seite zeigt hoechstens zwei Tage "
+     "viertelstuendlich, und wer zwei Tage ansieht, soll zwei Dateien laden.",
+     "docs/beleg-viertelstunden.md", "viertelstunden-verzeichnis.json"),
     ("kraftwerke.json", "smard", "Kraftwerksstandorte",
      "Stammdaten mit Koordinaten, Betreiber, Energietraeger, Nettoleistung und "
      "Bloecken. Aus einem UNDOKUMENTIERTEN Endpunkt.",

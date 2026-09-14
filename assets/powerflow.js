@@ -121,6 +121,9 @@
     kraftwerke: null,
     jahre: {},          // Jahr -> geladene Jahresdatei mit Tageswerten
     verlauf: {},
+    viertel: {},           // Tag -> Tagesdatei mit Viertelstundenwerten
+    viertelTage: null,     // Tag -> Eintrag im Verzeichnis; null = nicht geladen
+    viertelVerzeichnis: null,
     redispatch: {},
     rdVerzeichnis: null,
     quellen: null,        // Monat -> geladene Monatsdatei mit Stundenwerten
@@ -708,6 +711,15 @@
      dann soll sie es auch richtig sagen. */
   function zaehlwort(n, eins, viele) {
     return nf0.format(n) + " " + (n === 1 ? eins : viele);
+  }
+
+  /* Ab wann liegen Viertelstunden vor? Aus dem Verzeichnis, nicht aus dem
+     Code -- der Bestand waechst taeglich, und eine Jahreszahl in Prosa
+     veraltet ohne jedes Geraeusch. */
+  function viertelBeginn() {
+    var v = Z.viertelVerzeichnis;
+    if (!v || !v.von) { return "liegt nicht vor"; }
+    return datumKurz(v.von);
   }
 
   function abschnitt(titel, inhalt) {
@@ -1919,6 +1931,174 @@
      das ist auf 900 px noch gut zu lesen. Darueber wird es Kammputz. */
   var STUNDEN_BIS_TAGE = 7;
 
+  /* DIE DRITTE STUFE: VIERTELSTUNDEN.
+
+     Dieselbe Regel wie bei den Stunden, an derselben Grenze gemessen: sieben
+     Tage stuendlich sind 168 Punkte, zwei Tage viertelstuendlich sind 192.
+     Darueber wird jede Kurve zum Kammputz.
+
+     Warum ueberhaupt: weil der Markt sie hat. Seit dem 01.10.2025 wird die
+     Day-ahead-Auktion fuer DE-LU viertelstuendlich geraeumt -- eine
+     Stundenkurve mittelt genau die Preisspitzen weg, um die es dabei geht.
+     Und die steilste Stelle eines Sonnenuntergangs ist in Stundenwerten eine
+     Gerade.
+
+     TAGESDATEIEN, nicht Monatsdateien. Der offene Punkt auf der Seite hat
+     jahrelang behauptet, Viertelstunden seien "48 statt 12 MB, die jeder
+     Besucher mitlaedt". Das war falsch: niemand laedt den ganzen Bestand,
+     weder hier noch bei den Stunden. Gemessen wird, was EIN Seitenaufruf holt.
+     Bei hoechstens zwei angezeigten Tagen sind das zwei Dateien zu je rund
+     13 kB. Eine Monatsdatei waere rund 400 kB fuer einen Tag Anzeige gewesen --
+     dreissigmal so viel fuer dieselbe Auskunft. */
+  var VIERTEL_BIS_TAGE = 2;
+
+  function viertelVerzeichnisLaden() {
+    if (Z.viertelTage) { return Promise.resolve(Z.viertelTage); }
+    return fetch("data/viertelstunden-verzeichnis.json?v=" + VERSION)
+      .then(function (r) {
+        if (!r.ok) { throw new Error("kein Verzeichnis"); }
+        return r.json();
+      })
+      .then(function (d) {
+        Z.viertelVerzeichnis = d;
+        Z.viertelTage = {};
+        (d.tage || []).forEach(function (e) { Z.viertelTage[e.tag] = e; });
+        return Z.viertelTage;
+      })
+      /* Faellt die Datei aus, faellt die Stufe aus -- nicht die Seite. Der
+         Verlauf zeigt dann Stundenwerte, wie vorher auch. */
+      .catch(function () { Z.viertelTage = {}; return Z.viertelTage; });
+  }
+
+  function viertelLaden(tag) {
+    if (Object.prototype.hasOwnProperty.call(Z.viertel, tag)) {
+      return Promise.resolve(Z.viertel[tag]);
+    }
+    return fetch("data/viertelstunden/" + tag + ".json?v=" + VERSION)
+      .then(function (r) {
+        if (!r.ok) { throw new Error("kein Tag"); }
+        return r.json();
+      })
+      .then(function (d) { Z.viertel[tag] = d; return d; })
+      .catch(function () { Z.viertel[tag] = null; return null; });
+  }
+
+  /* Liegt fuer JEDEN Tag des Zeitraums eine Datei vor? Nur dann wird
+     viertelstuendlich gezeigt. Eine Kurve, die auf halber Strecke die
+     Aufloesung wechselt, waere eine Aussage ueber die Daten, die nicht
+     stimmt -- und man saehe sie nicht einmal. */
+  function viertelVerfuegbar(von, bis) {
+    if (anzahlTage(von, bis) > VIERTEL_BIS_TAGE) { return false; }
+    if (!Z.viertelTage) { return false; }
+    var alle = tageImZeitraum(von, bis);
+    return alle.length > 0 && alle.every(function (tg) {
+      return !!Z.viertelTage[tg];
+    });
+  }
+
+  /* Verfuegbar heisst noch nicht geladen. Beide Fragen muessen dieselbe
+     Antwort geben wie das, was am Ende gezeichnet wird -- sonst nennt die
+     Ueberschrift eine Aufloesung, die das Bild nicht hat. */
+  function viertelBereit(von, bis) {
+    return viertelVerfuegbar(von, bis) && tageImZeitraum(von, bis).every(function (tg) {
+      return !!Z.viertel[tg];
+    });
+  }
+
+  function viertelLadenZeitraum(von, bis) {
+    return viertelVerzeichnisLaden().then(function () {
+      if (!viertelVerfuegbar(von, bis)) { return null; }
+      return Promise.all(tageImZeitraum(von, bis).map(viertelLaden));
+    });
+  }
+
+  /* WELCHE AUFLOESUNG ZEIGT DIESER ZEITRAUM? Eine Stelle, die es entscheidet;
+     Ueberschrift und Diagramm lesen beide von hier. */
+  function taktFuer(von, bis) {
+    if (viertelBereit(von, bis)) { return "viertelstunde"; }
+    if (anzahlTage(von, bis) <= STUNDEN_BIS_TAGE) { return "stunde"; }
+    return "tag";
+  }
+
+  /* Viertelstundenwerte eines Zeitraums, gruppiert. Eine Tagesdatei je Tag.
+
+     Gibt null zurueck, sobald ein Tag fehlt -- dann faellt die Anzeige auf
+     Stundenwerte zurueck. Eine halbe Kurve waere schlimmer als eine groebere. */
+  function reiheViertelstuendlich(von, bis) {
+    var tageListe = tageImZeitraum(von, bis);
+    if (!tageListe.length) { return null; }
+    var marken = [], netzlast = [], preis = [], rohe = {}, tage = [], netto = [];
+    TRAEGERGRUPPEN.forEach(function (g) { rohe[g.name] = []; });
+    var preisViertel = true, preisBekannt = false, gefunden = false;
+    for (var ti = 0; ti < tageListe.length; ti++) {
+      var d = Z.viertel[tageListe[ti]];
+      if (!d) { return null; }
+      if (d.preis_viertelstuendlich === false) { preisViertel = false; }
+      if (d.preis_viertelstuendlich === true || d.preis_viertelstuendlich === false) {
+        preisBekannt = true;
+      }
+      for (var i = 0; i < d.marken.length; i++) {
+        gefunden = true;
+        marken.push(d.marken[i].slice(11));      // "HH:MM"
+        tage.push(d.tag);
+        netzlast.push(d.netzlast[i]);
+        preis.push(d.preis_eur_mwh ? d.preis_eur_mwh[i] : null);
+        var ein = d.import_mwh ? d.import_mwh[i] : null;
+        var aus = d.export_mwh ? d.export_mwh[i] : null;
+        netto.push(ein === null || ein === undefined ? null
+                   : ein - (aus === null || aus === undefined ? 0 : aus));
+        /* Wie bei den Stunden: eine Gruppe OHNE jeden Wert ist eine Luecke,
+           keine Null. Der Unterschied ist der zwischen "nichts erzeugt" und
+           "nichts gemeldet", und im Bild sieht er gleich aus, wenn man ihn
+           nicht macht. */
+        vierteltraeger(d, i, rohe);
+      }
+    }
+    if (!gefunden) { return null; }
+    return {
+      /* MWh JE VIERTELSTUNDE -> GW. Durch 0,25 h ergibt MW, durch 1000 ergibt
+         GW; zusammen also 250. Die Einheit ist AUS DEN DATEN bewiesen -- die
+         Summe der vier Viertelstunden trifft den Stundenwert derselben
+         Quelle -- und das Abrufskript rechnet die Probe bei jedem Lauf nach.
+         Als Leistung gelesen laege alles um den Faktor vier daneben; bei der
+         Vorschau auf morgen ist genau das schon einmal passiert. */
+      teiler: 250,
+      einheit: "GW",
+      takt: "viertelstunde",
+      imTag: true,
+      zeitmarke: "",
+      wort: { ez: "Viertelstunde", mz: "Viertelstunden", dat: "Viertelstunden",
+              zeit: "Viertelstunde", bilanz: "Bilanz dieser Viertelstunde" },
+      preisViertelstuendlich: preisBekannt ? preisViertel : null,
+      marken: marken,
+      tage: tage,
+      netzlast: netzlast,
+      preis: preis,
+      netto: netto,
+      reihen: TRAEGERGRUPPEN.map(function (g) {
+        return { name: g.name, token: g.token, werte: rohe[g.name],
+                 summe: rohe[g.name].reduce(function (a, b) {
+                   return a + (b || 0); }, 0) };
+      })
+    };
+  }
+
+  /* Dieselbe Gruppierung wie bei den Stunden, als eigene Funktion -- damit die
+     Regel "eine Gruppe ohne jeden Wert ist eine Luecke" an EINER Stelle steht
+     und nicht an zweien auseinanderlaufen kann. */
+  function vierteltraeger(d, i, rohe) {
+    TRAEGERGRUPPEN.forEach(function (g) {
+      var summe = 0, gefundenWert = false;
+      g.quellen.forEach(function (q) {
+        var r = d.erzeugung[q];
+        if (r && r[i] !== null && r[i] !== undefined) {
+          summe += r[i]; gefundenWert = true;
+        }
+      });
+      rohe[g.name].push(gefundenWert ? summe : null);
+    });
+  }
+
   /* Stundenwerte eines Zeitraums, gruppiert. Laeuft ueber alle beruehrten
      Monatsdateien; eine Woche liegt oft in zweien. */
   function reiheStuendlich(von, bis) {
@@ -1965,7 +2145,11 @@
     return {
       teiler: 1000,           // MWh je Stunde -> GW
       einheit: "GW",
-      stuendlich: true,
+      takt: "stunde",
+      imTag: true,
+      zeitmarke: ":00",
+      wort: { ez: "Stunde", mz: "Stunden", dat: "Stunden",
+              zeit: "Stunde", bilanz: "Bilanz dieser Stunde" },
       marken: marken,
       tage: tage,
       netzlast: netzlast,
@@ -1986,6 +2170,11 @@
     return {
       teiler: 1000,           // MWh je Tag -> GWh je Tag
       einheit: "GWh am Tag",
+      takt: "tag",
+      imTag: false,
+      zeitmarke: "",
+      wort: { ez: "Tag", mz: "Tage", dat: "Tagen",
+              zeit: "Tageszeit", bilanz: "Bilanz dieses Tages" },
       marken: tage.map(function (t) { return t.slice(8) + "." + t.slice(5, 7) + "."; }),
       tage: tage,
       netzlast: tage.map(function (t) { return zeileImJahr(t, ["netzlast"]); }),
@@ -2021,6 +2210,10 @@
   }
 
   function zeitreihe(von, bis) {
+    if (viertelBereit(von, bis)) {
+      var q = reiheViertelstuendlich(von, bis);
+      if (q) { return q; }
+    }
     if (anzahlTage(von, bis) <= STUNDEN_BIS_TAGE) {
       var s = reiheStuendlich(von, bis);
       if (s) { return s; }
@@ -2168,7 +2361,7 @@
         if (w === 0 || v.tage[w] !== v.tage[w - 1]) { wechsel.push(w); }
       }
     }
-    if (v.stuendlich && wechsel.length > 1) {
+    if (v.imTag && wechsel.length > 1) {
       wechsel.forEach(function (anfang, idx) {
         if (idx > 0) {
           gitter.appendChild(s("line", { "class": "pf-tagestrenner",
@@ -2469,10 +2662,10 @@
       kreuz.setAttribute("x1", X(k));
       kreuz.setAttribute("x2", X(k));
 
-      var kopf = v.stuendlich
+      var kopf = v.imTag
         ? ausIso(v.tage[k]).toLocaleDateString("de-DE",
             { weekday: "short", day: "2-digit", month: "2-digit" })
-          + ", " + v.marken[k] + ":00"
+          + ", " + v.marken[k] + v.zeitmarke
         : datumLang(v.tage[k]);
       var worte = [kopf], bilanz = [], preiszeile = [], traegerz = [];
       var wert = null;
@@ -2500,7 +2693,9 @@
         worte.push("keine Meldung der Quelle");
       }
       if (hatPreis && v.preis[k] !== null) {
-        preiszeile.push({ name: "Day-Ahead",
+        preiszeile.push({
+          name: "Day-Ahead" + (v.takt === "viertelstunde"
+            && v.preisViertelstuendlich === false ? " (Stundenwert)" : ""),
           token: v.preis[k] < 0 ? "--orange" : "--preis-linie",
           wert: nf2.format(v.preis[k]) + " €/MWh" });
         worte.push("Preis " + nf2.format(v.preis[k]) + " Euro je MWh");
@@ -2523,8 +2718,7 @@
         wert: wert,
         einheit: wert === null ? null : v.einheit + " Netzlast",
         abschnitte: [
-          { titel: v.stuendlich ? "Bilanz dieser Stunde" : "Bilanz dieses Tages",
-            zeilen: bilanz },
+          { titel: v.wort.bilanz, zeilen: bilanz },
           { titel: "Großhandelspreis", zeilen: preiszeile },
           { titel: "Erzeugung nach Energieträger", zeilen: traegerz }
         ]
@@ -2588,7 +2782,7 @@
       fehlstellen.forEach(function (a) { fehlt += a[1] - a[0] + 1; });
       spf.appendChild(document.createTextNode(
         "keine Daten der Quelle — " + fehlt
-        + (v.stuendlich ? " Stunden" : " Tage") + " ohne Meldung"));
+        + " " + v.wort.mz + " ohne Meldung"));
       legende.appendChild(spf);
     }
     var spd = el("span");
@@ -2602,12 +2796,28 @@
     if (hatPreis) {
       var spp = el("span");
       spp.appendChild(el("i", { "class": "pf-strich pf-preis" }));
+      /* WAS DIE PREISKURVE AUFLOEST, SAGT SIE SELBST.
+
+         Im viertelstuendlichen Bild waere eine Preistreppe aus vervierfachten
+         Stundenwerten eine Behauptung ueber eine Aufloesung, die es nicht
+         gibt. Die Day-ahead-Auktion fuer DE-LU wurde erst zum 01.10.2025 auf
+         Viertelstunden umgestellt; davor liefert die Quelle denselben
+         Stundenpreis viermal. Das steht nicht als Datum im Code, sondern wird
+         beim Abruf je Tag GEMESSEN und in der Tagesdatei vermerkt. */
+      var preishinweis = "";
+      if (v.takt === "viertelstunde" && v.preisViertelstuendlich === false) {
+        preishinweis = " — STUNDENWERTE: die Auktion lief in diesem Zeitraum "
+          + "noch stündlich, die Quelle wiederholt jeden Preis viermal";
+      } else if (v.takt === "viertelstunde" && v.preisViertelstuendlich === true) {
+        preishinweis = " — viertelstündlich geräumt";
+      }
       spp.appendChild(document.createTextNode(
         "Großhandelspreis Day-Ahead, Achse " + nf0.format(preisRahmen.unten)
         + " bis " + nf0.format(preisRahmen.oben) + " €/MWh"
         + (preisRahmen.geweitet
             ? " — geweitet, der Zeitraum geht über −100 bis 400 hinaus"
-            : "")));
+            : "")
+        + preishinweis));
       legende.appendChild(spp);
     }
     huelle.appendChild(legende);
@@ -2631,14 +2841,14 @@
         luecke.offen += Math.max(0, v.netzlast[i] - einfuhrOben[i]);
       }
     }
-    var einheitSumme = v.stuendlich ? "GWh" : "GWh";
+    var einheitSumme = "GWh";
     var summeTeiler = 1000;
     if (luecke.punkte) {
       var anteil = luecke.roh ? luecke.gedeckt / luecke.roh * 100 : 0;
       huelle.appendChild(langtext(
         "Wie die Lücke gedeckt wird: in " + nf0.format(luecke.punkte)
           + " von " + nf0.format(luecke.belegt)
-          + (v.stuendlich ? " Stunden" : " Tagen")
+          + " " + v.wort.dat
           + " dieses Zeitraums lag die Erzeugung unter der Netzlast, zusammen um "
           + nf1.format(luecke.roh / summeTeiler) + " " + einheitSumme + ". "
           + nf1.format(luecke.gedeckt / summeTeiler) + " " + einheitSumme
@@ -2659,7 +2869,7 @@
     } else if (luecke.belegt) {
       huelle.appendChild(el("p", { "class": "pf-bezug pf-deckungstext",
         text: "In diesem Zeitraum lag die Erzeugung zu keiner "
-          + (v.stuendlich ? "Stunde" : "Tageszeit") + " unter der Netzlast; "
+          + v.wort.zeit + " unter der Netzlast; "
           + "es gibt keine Lücke zu decken." }));
     }
 
@@ -2701,14 +2911,15 @@
       var kasten = el("div", { "class": "pf-tagesuebersicht" });
       kasten.appendChild(el("h4", { text: "Tageswerte im Zeitraum" }));
       kasten.appendChild(el("p", { "class": "pf-bezug",
-        text: "Summen über genau die Stunden des Bildes, in GWh am Tag. "
+        text: "Summen über genau die " + v.wort.mz + " des Bildes, in GWh am Tag. "
           + "„Einfuhr (netto)“ ist die teal schraffierte Fläche — gezählt "
           + "werden nur Stunden mit Zufluss, eine Nettoausfuhr deckt nichts "
           + "und wird auch im Bild nicht gezeichnet. "
           + "„Überdeckung / Lücke“ ist Erzeugung plus Einfuhr minus Netzlast; "
           + "negativ ist die orange Fläche. Solange die Quelle alle Stunden "
           + "gemeldet hat, geht jede Zeile so auf. "
-          + "Der Preis ist das Mittel der Stunden, nicht nach Menge gewichtet." }));
+          + "Der Preis ist das Mittel der " + v.wort.mz
+          + ", nicht nach Menge gewichtet." }));
       var roll = el("div", { "class": "pf-tabellen-rollbereich" });
       var tab = el("table", { "class": "pf-tabelle pf-tagestabelle" });
       var kz = el("tr");
@@ -2717,7 +2928,7 @@
         kz.appendChild(el("th", { text: b, scope: "col" }));
       });
       if (hatPreis) { kz.appendChild(el("th", { text: "Ø €/MWh", scope: "col" })); }
-      kz.appendChild(el("th", { text: "Stunden ohne Meldung", scope: "col" }));
+      kz.appendChild(el("th", { text: v.wort.mz + " ohne Meldung", scope: "col" }));
       var kp = el("thead"); kp.appendChild(kz); tab.appendChild(kp);
       var kb = el("tbody");
       var alle = { last: 0, erz: 0, einfuhr: 0, deck: 0, preis: 0, preisN: 0, fehlt: 0 };
@@ -2777,7 +2988,7 @@
       kasten.appendChild(roll);
       return kasten;
     }
-    if (v.stuendlich) { huelle.appendChild(tagesuebersicht()); }
+    if (v.imTag) { huelle.appendChild(tagesuebersicht()); }
 
     var schalter = el("button", { "class": "pf-tabellenschalter", type: "button",
       "aria-expanded": "false", text: "Als Tabelle anzeigen" });
@@ -2809,7 +3020,7 @@
             + "minus Netzlast; negativ ist die orange Fläche. "
             + "„—“ heißt: die Quelle hat nichts gemeldet. Das ist keine Null." }));
         var kopfz = el("tr");
-        kopfz.appendChild(el("th", { text: v.stuendlich ? "Stunde" : "Tag", scope: "col" }));
+        kopfz.appendChild(el("th", { text: v.wort.ez, scope: "col" }));
         v.reihen.forEach(function (r) {
           if (r.summe) { kopfz.appendChild(el("th", { text: r.name, scope: "col" })); }
         });
@@ -2824,7 +3035,7 @@
         v.marken.forEach(function (mk, k) {
           var tr = el("tr");
           tr.appendChild(el("td", {
-            text: v.stuendlich ? v.tage[k] + " " + mk + ":00" : v.tage[k] }));
+            text: v.imTag ? v.tage[k] + " " + mk + v.zeitmarke : v.tage[k] }));
           v.reihen.forEach(function (r) {
             if (!r.summe) { return; }
             var w2 = r.werte[k];
@@ -5232,10 +5443,11 @@
     }
 
     // --- Zeitreihe ---
-    var stuendlich = anzahlTage(von, bis) <= STUNDEN_BIS_TAGE;
+    var takt = taktFuer(von, bis);
     neu.appendChild(abschnitt(
       "Verlauf · Erzeugung nach Energieträger"
-        + (stuendlich ? " · Stundenwerte" : " · Tageswerte"),
+        + (takt === "viertelstunde" ? " · Viertelstundenwerte"
+           : takt === "stunde" ? " · Stundenwerte" : " · Tageswerte"),
       zeitreihenDiagramm(von, bis)));
 
     // --- Vorschau und Prognosegüte ---
@@ -5765,7 +5977,15 @@
       ["Großhandelspreis", "01.10.2018", "Teilung der Gebotszone Deutschland-Österreich"],
       ["Redispatch", "01.01.2021", "davor antwortet die Quelle mit HTTP 400"],
       ["Kernenergie", "endet 15.04.2023", "Abschaltung der letzten Kraftwerke"],
-      ["Norwegen, Belgien", "2020 bzw. 2021", "NordLink und ALEGrO gingen erst dann ans Netz"]
+      ["Norwegen, Belgien", "2020 bzw. 2021", "NordLink und ALEGrO gingen erst dann ans Netz"],
+      /* AUS DEM VERZEICHNIS GELESEN, nicht hingeschrieben. Die Reihe waechst
+         mit jedem Tag, und ein festes Datum im Code veraltet still. */
+      ["Viertelstundenwerte", viertelBeginn(),
+       "Tagesdateien unter data/viertelstunden/; gezeigt bis "
+         + VIERTEL_BIS_TAGE + " Tage"],
+      ["Preis viertelstündlich", "01.10.2025",
+       "Umstellung der Day-ahead-Auktion — GEMESSEN: davor wiederholt die "
+         + "Quelle jeden Stundenpreis viermal"]
     ].forEach(function (z) {
       var tr = el("tr");
       tr.appendChild(el("td", { text: z[0] }));
@@ -5902,9 +6122,30 @@
     [
       /* Jetzt der oberste Punkt -- und eine Entscheidung, die Immo treffen
          muss, keine Messung: 48 statt 12 MB, die JEDER Besucher mitlaedt. */
+      /* ZURUECKGENOMMEN am 14.09.2026: die Begruendung war falsch gerechnet.
+         Hier stand, Viertelstunden seien "48 statt 12 MB, die jeder Besucher
+         mitlaedt". Niemand laedt den ganzen Bestand -- weder die 14 MB
+         Stundenwerte noch sonst etwas. Geladen wird, was der gewaehlte
+         Zeitraum braucht. Gemessen: eine Tagesdatei mit Viertelstunden ist
+         13 kB, und die Seite zeigt hoechstens zwei Tage davon.
+
+         Was BLEIBT, ist die Reichweite: die Jahre vor 2025 sind noch nicht
+         geholt. Das ist Arbeit und gehoert deshalb hier her -- mit den
+         gemessenen Kosten, nicht mit einer Schaetzung. */
       { hoch: true,
-        text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
-          + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
+        text: "Viertelstundenwerte für die Jahre vor "
+          + (Z.viertelVerzeichnis && Z.viertelVerzeichnis.von
+              ? Z.viertelVerzeichnis.von.slice(0, 4) : "2025")
+          + " nachholen. Die Reihe liegt bei SMARD ab 2015 vollständig vor; "
+          + "geholt ist bisher der Bestand ab "
+          + viertelBeginn() + ". Gemessen kostet ein Tag 13 kB und eine Woche "
+          + "35 Abrufe — die volle Historie wären rund 55 MB im Repository und "
+          + "21.400 Abrufe. Das ist eine Entscheidung über die Größe des "
+          + "Repositorys, keine Messfrage. "
+          + "(Die frühere Begründung — „48 statt 12 MB, die jeder Besucher "
+          + "mitlädt“ — war falsch und ist am 14.09.2026 zurückgenommen: "
+          + "niemand lädt den ganzen Bestand, sondern nur den gewählten "
+          + "Zeitraum.)" },
       /* AM 14.09.2026 SIND FUENF PUNKTE NACH "GRENZEN" GEWANDERT: die zweite
          ENTSO-E-Preisreihe, die Tagesstreuung des Redispatch, der Anteil der
          industriellen Eigenerzeugung, die Aussenhandelsdifferenz bei Eurostat
@@ -6096,6 +6337,12 @@
     if (anzahlTage(von, bis) <= STUNDEN_BIS_TAGE) {
       auftraege.push(verlaufLadenZeitraum(von, bis));
     }
+    /* Die Viertelstunden werden IMMER angefragt, wenn der Zeitraum kurz genug
+       ist -- das Verzeichnis entscheidet dann, ob es sie gibt. Faellt beides
+       aus, bleibt es bei den Stundenwerten. */
+    if (anzahlTage(von, bis) <= VIERTEL_BIS_TAGE) {
+      auftraege.push(viertelLadenZeitraum(von, bis));
+    }
     auftraege.push(redispatchLadenZeitraum(von, bis));
     auftraege.push(redispatchLadenZeitraum(vorjahrstag(von), vorjahrstag(bis)));
     Promise.all(auftraege).then(function () {
@@ -6177,6 +6424,10 @@
         jahreImZeitraum(vorjahrstag(Z.startVon), vorjahrstag(Z.startBis)));
       return Promise.all(noetig.map(jahrLaden).concat([
         verlaufLadenZeitraum(Z.startVon, Z.startBis),
+        /* Beim Start wird das Verzeichnis geholt, damit die Seite weiss, ab
+           wann es Viertelstunden gibt -- der Anfangszeitraum ist sieben Tage
+           und zeigt sie nicht. Es sind ein paar Kilobyte. */
+        viertelVerzeichnisLaden(),
         redispatchLadenZeitraum(Z.startVon, Z.startBis),
         redispatchLadenZeitraum(vorjahrstag(Z.startVon), vorjahrstag(Z.startBis))]));
     }).then(function () {
