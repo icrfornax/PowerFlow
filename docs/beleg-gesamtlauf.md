@@ -100,6 +100,14 @@ JavaScript zu benutzen. Ergebnis: **96 Kennzahlen, 0 Abweichungen**; Minimum,
 Maximum, Median und Spanne stimmen für alle geprüften Größen auf zwei
 Nachkommastellen.
 
+## Wie es auf der Seite aussieht
+
+![Die drei Abzugsknöpfe](Screens/Abzuege_Gesamtlauf.png)
+
+Der neue Knopf steht neben dem bisherigen. Beide Beschriftungen tragen den
+gewählten Zeitraum und ändern sich mit dem Regler — der Gesamtlauf nennt nur
+Tag und Monat, weil das Jahr gerade der Punkt ist.
+
 ## Prüfungen
 
 - `scripts/validate.py`: die Funktionen stehen im Modul, der Knopf ist da, es

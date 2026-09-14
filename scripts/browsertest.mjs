@@ -1975,6 +1975,31 @@ try {
   pruefe(qu.lizenzen.length >= 3, `${qu.lizenzen.length} verschiedene Lizenzen genannt`);
   pruefe(qu.abzuege >= 12, `${qu.abzuege} Abzugsknoepfe im Verzeichnis`);
   await foto("quellen", ".pf-abschnitt:last-of-type");
+  /* Die Abzugsknoepfe einzeln -- seit dem 14.09.2026 sind es drei, und der
+     neue traegt den gewaehlten Zeitraum im Text. Ein Knopf, dessen Beschriftung
+     sich mit dem Regler aendert, gehoert ins Bild. */
+  /* ERST AUFKLAPPEN. "Quellen und Downloads" ist voreingestellt zu -- der
+     erste Anlauf fotografierte deshalb eine Liste zugeklappter Ueberschriften
+     statt der Knoepfe. */
+  await js(`(function () {
+    // Ueber das details-Element, nicht ueber einen Klick auf summary: der
+    // Klick schaltet um, und wer nicht weiss, wie der Zustand war, macht ihn
+    // vielleicht zu statt auf.
+    const d = [...document.querySelectorAll(".pf-klapp-details")]
+      .find((x) => /Quellen und Downloads/.test(
+        (x.querySelector("summary") || {}).textContent || ""));
+    if (d) { d.open = true; }
+    return !!d;
+  })()`);
+  await schlafen(600);
+  await js(`(function () {
+    const a = document.querySelector(".pf-abzuege");
+    if (a) { a.scrollIntoView({ block: "center", behavior: "instant" });
+             window.scrollBy(0, -60); }
+    return !!a;
+  })()`);
+  await schlafen(400);
+  await foto("abzuege");
 
   /* --- Gegenprobe --------------------------------------------------------
      Der einzige Abschnitt mit einer ANDEREN Erhebung. Geprueft wird, dass er
