@@ -5671,6 +5671,37 @@
         + "eine Behauptung.",
       "Der Betreiber von 45,5 % der Höchstspannungsabschnitte. OpenStreetMap kennt "
         + "ihn dort nicht; diese Leitungen bleiben grau statt geraten.",
+      /* Am 14.09.2026 aus "Was noch fehlt" hierher. Beide Fragen sind
+         gemessen beantwortet; der Rest ist nicht erhoben bzw. nicht
+         veroeffentlicht. */
+      "Was die zweite Preisreihe der ENTSO-E Transparency Platform ist. Die "
+        + "Antwort für DE-LU enthält je Tag ZWEI Preisreihen, unterschieden "
+        + "allein durch eine Positionsnummer. Welche die richtige ist, ist am "
+        + "12.09.2026 gemessen: Sequence 1 trifft den SMARD-Preis über sieben "
+        + "Tage aus drei Jahren auf 0,0000 €/MWh, Sequence 2 liegt 1,9 bis "
+        + "21,2 €/MWh daneben und war schon 2024 viertelstündlich, als "
+        + "Sequence 1 noch Stundenwerte führte. WAS Sequence 2 ist, sagt die "
+        + "Plattform nicht: die Dokumentation erklärt das Feld nicht, alle "
+        + "übrigen Felder sind gleich, und keine der sechs geprüften "
+        + "SMARD-Preisreihen trifft sie. Diese Seite ist nicht betroffen — "
+        + "ihre Preise kommen aus SMARD und entsprechen Sequence 1.",
+      "Welche einzelnen Redispatch-Maßnahmen ENTSO-E und netztransparenz.de "
+        + "verschieden zuordnen. Über die Summe stimmen die beiden Quellen "
+        + "überein: 607.218 gegen 637.755 MWh über acht Tage, also 95,2 %. Je "
+        + "einzelnem Tag streut es von 76,3 bis 148,4 %, und woran das liegt, "
+        + "ist gemessen — an der Tagesgröße (Korrelation −0,71): bei einem "
+        + "kleinen Tag fällt eine einzeln verschobene Maßnahme schwer ins "
+        + "Gewicht, bei einem großen nicht. Drei andere Ursachen sind "
+        + "ausgeschlossen: die Zuordnung an den Tagesrändern (keine Maßnahme "
+        + "läuft in den Folgetag hinein, 1.328 Sätze aus zwei Jahreszeiten "
+        + "geprüft), eine Doppelzählung in drei Varianten, und die beidseitige "
+        + "Führung grenzüberschreitender Maßnahmen. Weiter aufzulösen ist es "
+        + "nicht: dafür bräuchte es eine Kennung, die beide Quellen führen, "
+        + "und die mRID von ENTSO-E ist nur eine laufende Nummer je Dokument. "
+        + "(Eine frühere Angabe — die Plattform führe nur 24 bis 63 % der "
+        + "Arbeit — war falsch und ist am 07.09.2026 zurückgenommen: meine "
+        + "Abfrage hatte den Redispatch zwischen zwei deutschen Regelzonen "
+        + "ausgelassen, und der ist mit 62 % der größte Teil.)",
       "Eine belegte Grenze der Regelzonen. Es gibt keine — OpenStreetMap führt "
         + "keine Grenzrelation dafür, die Bundesnetzagentur veröffentlicht eine "
         + "Netzkarte als PDF. Die Karte kann eine Fläche einblenden, aber die ist "
@@ -5845,47 +5876,13 @@
       { hoch: true,
         text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
           + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
-      { hoch: false,
-        text: "Welche Auktion die zweite ENTSO-E-Preisreihe ist. Am 12.09.2026 "
-          + "ist geklärt, welche die RICHTIGE ist: von den zwei Reihen, die "
-          + "die Plattform je Tag liefert, trifft Sequence 1 den SMARD-Preis "
-          + "über sieben Tage aus drei Jahren auf 0,0000 €/MWh — Sequence 2 "
-          + "liegt 1,9 bis 21,2 €/MWh daneben und ist schon seit 2024 "
-          + "viertelstündlich, als die Hauptauktion noch Stundenwerte führte. "
-          + "Was sie ist, sagt die Plattform nicht: die Dokumentation erklärt "
-          + "das Feld nicht, alle übrigen Felder sind gleich, und SMARD führt "
-          + "die Reihe nicht. Diese Seite ist nicht betroffen — ihre Preise "
-          + "kommen aus SMARD und entsprechen Sequence 1." },
-      /* ZURUECKGENOMMEN am 07.09.2026. Hier stand, die ENTSO-E-Reihe fuehre
-         nur 24 bis 63 % der Redispatch-Arbeit. Das war falsch -- meine
-         Abfrage hatte den groessten Teil ausgelassen: Redispatch ZWISCHEN
-         zwei deutschen Regelzonen steht dort unter businessType A46 mit zwei
-         deutschen Domaenen, und genau die Kombination hatte ich nie
-         abgefragt. Am 28.08.2026 sind das 106.873 von 150.628 MWh, also 71 %
-         der ENTSO-E-Summe. */
-      { hoch: false,
-        text: "Warum die Redispatch-Zahlen von ENTSO-E und netztransparenz je "
-          + "TAG um bis zu einem Viertel auseinanderliegen. Über acht Tage "
-          + "summiert stimmen sie: 607.218 gegen 637.755 MWh, also 95,2 %. Je "
-          + "einzelnem Tag streut es aber von 76,3 bis 148,4 % — am stärksten "
-          + "an kleinen Tagen. Die Zuordnung an den Rändern ist als Ursache "
-          + "am 11.09.2026 AUSGESCHLOSSEN: keine einzige Maßnahme läuft in den "
-          + "Folgetag hinein, die Quelle schneidet selbst an der Tagesgrenze "
-          + "(1.328 Sätze aus zwei Jahreszeiten geprüft). Ebenfalls "
-          + "ausgeschlossen: eine Doppelzählung in drei Varianten, und die "
-          + "beidseitige Führung grenzüberschreitender Maßnahmen — kein "
-          + "Zonenpaar und keine Grenze ist bei ENTSO-E in beiden Richtungen "
-          + "besetzt. Was TRÄGT, ist die Tagesgröße: je größer der Tag, desto "
-          + "besser stimmen die Quellen überein (Korrelation −0,71). Die beiden "
-          + "größten Tage liegen bei 99,5 und 105,2 %, der kleinste bei "
-          + "148,4 %. Die absoluten Differenzen wachsen nicht mit dem Tag. "
-          + "Welche einzelnen Maßnahmen verschieden zugeordnet werden, ist "
-          + "nicht aufzulösen: dafür bräuchte es eine Kennung, die beide "
-          + "Quellen führen, und die gibt es nicht. "
-          + "(Eine frühere Angabe — die Plattform führe nur 24 bis "
-          + "63 % — war falsch und ist am 07.09.2026 zurückgenommen: meine "
-          + "Abfrage hatte den Redispatch zwischen zwei deutschen Regelzonen "
-          + "ausgelassen, und der ist mit 62 % der größte Teil.)" },
+      /* ZWEI PUNKTE SIND AM 14.09.2026 NACH "GRENZEN" GEWANDERT -- die zweite
+         ENTSO-E-Preisreihe und die Tagesstreuung des Redispatch. Beide Fragen
+         SIND beantwortet, soweit die Quellen es hergeben; was bleibt, ist eine
+         Grenze der Quellenlage und keine Arbeit. Dieselbe Regel wie am
+         31.08.2026 bei der Regelzone je Windpark und beim Redispatch auf der
+         Karte. Der Kasten sagt von sich selbst, dass hier Arbeit steht und
+         keine Grenzen -- dann muss er sich auch daran halten. */
       { hoch: false,
         text: "Wie groß der Anteil der industriellen Eigenerzeugung an der "
           + "Erzeugungslücke ist. Am 07.09.2026 ist die Lücke aufgeteilt: die "

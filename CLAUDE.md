@@ -431,9 +431,16 @@ ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF
 der Seite, obwohl zwei davon laengst lagen. Was erledigt ist, gehoert nicht in
 eine Liste offener Punkte -- sonst glaubt sie irgendwann niemand mehr.
 
-**Niedrig:** Gesamtlauf ueber alle Vergleichsjahre als CSV; Viertelstundenwerte
-(48 statt 12 MB, die jeder mitlaedt); die 1.030 Windanlagen ohne Koordinate im
-Register.
+**Niedrig:** Viertelstundenwerte (48 statt 12 MB, die jeder mitlaedt); die
+1.030 Windanlagen ohne Koordinate im Register. Der Gesamtlauf ueber alle
+Vergleichsjahre stand hier bis zum 14.09.2026 und ist gebaut -- siehe den
+eigenen Abschnitt.
+
+**Am 14.09.2026 nach "Grenzen" verschoben:** die zweite ENTSO-E-Preisreihe und
+die Tagesstreuung des Redispatch. Beide Fragen sind gemessen beantwortet; was
+bleibt, ist nicht erhoben oder nicht veroeffentlicht. Eine Grenze der Quelle
+ist keine Aufgabe -- dieselbe Regel wie am 31.08.2026. Damit stehen unter
+"Offene Punkte" noch vier.
 
 **Erledigt am 31.08.2026:** Import und Export im Verlauf. `data/verlauf/*.json`
 fuehrt jetzt `import_mwh` und `export_mwh` je Stunde, summiert ueber alle elf

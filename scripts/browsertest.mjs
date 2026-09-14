@@ -1925,9 +1925,19 @@ try {
   pruefe(schieflage.satz.includes(String(schieflage.jahre) + " Jahre"),
     `und die Zahl der Jahre (${schieflage.jahre})`);
 
-  // Der Gesamtlauf ist am 14.09.2026 gebaut und faellt damit aus der Liste.
-  pruefe(offen && offen.anzahl === 6,
-    `sechs offene Punkte (${offen && offen.anzahl})`);
+  /* Der Gesamtlauf ist am 14.09.2026 gebaut und faellt damit aus der Liste.
+     Am selben Tag sind zwei weitere Punkte nach "Grenzen" gewandert: die
+     zweite ENTSO-E-Preisreihe und die Tagesstreuung des Redispatch. Beide
+     Fragen sind beantwortet, soweit die Quellen es hergeben -- was bleibt, ist
+     eine Grenze der Quellenlage und keine Arbeit. */
+  pruefe(offen && offen.anzahl === 4,
+    `vier offene Punkte (${offen && offen.anzahl})`);
+  pruefe(offen && !/zweite ENTSO-E-Preisreihe|Warum die Redispatch-Zahlen/
+    .test(offen.texte),
+    "die zwei abgehakten Punkte stehen nicht mehr unter Offene Punkte");
+  pruefe(offen && /zweite Preisreihe/.test(offen.grenzen)
+    && /verschieden zuordnen/.test(offen.grenzen),
+    "sondern unter Grenzen");
   pruefe(offen && offen.hoch === 1,
     `einer davon ist als "Als Naechstes" markiert (${offen && offen.hoch})`);
   pruefe(offen && /Als N/.test(offen.erste),
