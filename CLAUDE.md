@@ -431,16 +431,22 @@ ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF
 der Seite, obwohl zwei davon laengst lagen. Was erledigt ist, gehoert nicht in
 eine Liste offener Punkte -- sonst glaubt sie irgendwann niemand mehr.
 
-**Niedrig:** Viertelstundenwerte (48 statt 12 MB, die jeder mitlaedt); die
-1.030 Windanlagen ohne Koordinate im Register. Der Gesamtlauf ueber alle
-Vergleichsjahre stand hier bis zum 14.09.2026 und ist gebaut -- siehe den
-eigenen Abschnitt.
+**Es steht noch GENAU EIN offener Punkt auf der Seite:** die
+Viertelstundenwerte (48 statt 12 MB, die jeder Besucher mitlaedt). Das ist eine
+Entscheidung von Immo, keine Messung.
 
-**Am 14.09.2026 nach "Grenzen" verschoben:** die zweite ENTSO-E-Preisreihe und
-die Tagesstreuung des Redispatch. Beide Fragen sind gemessen beantwortet; was
+**Am 14.09.2026 sind fuenf Punkte nach "Grenzen" gewandert** -- die zweite
+ENTSO-E-Preisreihe, die Tagesstreuung des Redispatch, der Anteil der
+industriellen Eigenerzeugung, die Aussenhandelsdifferenz bei Eurostat und die
+1.030 Windanlagen ohne Koordinate. Alle fuenf enden mit demselben Satz: mit
+diesen Quellen nicht aufzuloesen. Was gemessen werden konnte, IST gemessen; was
 bleibt, ist nicht erhoben oder nicht veroeffentlicht. Eine Grenze der Quelle
-ist keine Aufgabe -- dieselbe Regel wie am 31.08.2026. Damit stehen unter
-"Offene Punkte" noch vier.
+ist keine Aufgabe -- dieselbe Regel wie am 31.08.2026 bei der Regelzone je
+Windpark. Der Gesamtlauf ueber alle Vergleichsjahre stand hier ebenfalls noch
+und ist gebaut; er hat seinen eigenen Abschnitt.
+
+Damit hat die Trennung einen Preis, den sie wert ist: "Offene Punkte" ist fast
+leer, und genau das macht den einen verbliebenen Eintrag glaubwuerdig.
 
 **Erledigt am 31.08.2026:** Import und Export im Verlauf. `data/verlauf/*.json`
 fuehrt jetzt `import_mwh` und `export_mwh` je Stunde, summiert ueber alle elf

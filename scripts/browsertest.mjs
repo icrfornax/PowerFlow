@@ -1926,18 +1926,31 @@ try {
     `und die Zahl der Jahre (${schieflage.jahre})`);
 
   /* Der Gesamtlauf ist am 14.09.2026 gebaut und faellt damit aus der Liste.
-     Am selben Tag sind zwei weitere Punkte nach "Grenzen" gewandert: die
-     zweite ENTSO-E-Preisreihe und die Tagesstreuung des Redispatch. Beide
-     Fragen sind beantwortet, soweit die Quellen es hergeben -- was bleibt, ist
-     eine Grenze der Quellenlage und keine Arbeit. */
-  pruefe(offen && offen.anzahl === 4,
-    `vier offene Punkte (${offen && offen.anzahl})`);
+     Am selben Tag sind FUENF weitere Punkte nach "Grenzen" gewandert -- alle
+     fuenf enden mit demselben Satz, mit diesen Quellen nicht aufzuloesen. Das
+     sind Grenzen der Quellenlage und keine Arbeit; der Kasten sagt von sich
+     selbst, dass dort nur Arbeit steht. Uebrig bleibt genau einer. */
+  pruefe(offen && offen.anzahl === 1,
+    `genau ein offener Punkt (${offen && offen.anzahl})`);
   pruefe(offen && !/zweite ENTSO-E-Preisreihe|Warum die Redispatch-Zahlen/
+    .test(offen.texte)
+    && !/industriellen Eigenerzeugung|Woraus die Differenz|1\.030 Wind/
     .test(offen.texte),
-    "die zwei abgehakten Punkte stehen nicht mehr unter Offene Punkte");
+    "die fuenf abgehakten Punkte stehen nicht mehr unter Offene Punkte");
   pruefe(offen && /zweite Preisreihe/.test(offen.grenzen)
-    && /verschieden zuordnen/.test(offen.grenzen),
-    "sondern unter Grenzen");
+    && /verschieden zuordnen/.test(offen.grenzen)
+    && /industriellen Eigenerzeugung/.test(offen.grenzen)
+    && /Woraus die Differenz/.test(offen.grenzen)
+    && /1\.030 Windenergieanlagen/.test(offen.grenzen),
+    "sondern alle fuenf unter Grenzen");
+  /* "1 Punkte" waere schlampig. Geprueft wird die Zusammenfassung selbst. */
+  const zaehlwort = await js(`(function () {
+    const s = [...document.querySelectorAll("summary")].find(
+      (e) => /Offene Punkte/.test(e.textContent));
+    return s ? s.textContent : "";
+  })()`);
+  pruefe(/1 Punkt(?!e)/.test(zaehlwort),
+    "die Zusammenfassung sagt \"1 Punkt\", nicht \"1 Punkte\"", zaehlwort);
   pruefe(offen && offen.hoch === 1,
     `einer davon ist als "Als Naechstes" markiert (${offen && offen.hoch})`);
   pruefe(offen && /Als N/.test(offen.erste),

@@ -704,6 +704,12 @@
     return s;
   }
 
+  /* Eins ist nicht zwei. Eine Zusammenfassung sagt, WIE VIEL darin steht --
+     dann soll sie es auch richtig sagen. */
+  function zaehlwort(n, eins, viele) {
+    return nf0.format(n) + " " + (n === 1 ? eins : viele);
+  }
+
   function abschnitt(titel, inhalt) {
     var a = el("section", { "class": "pf-abschnitt" });
     a.appendChild(el("h2", { text: titel }));
@@ -5702,6 +5708,29 @@
         + "Arbeit — war falsch und ist am 07.09.2026 zurückgenommen: meine "
         + "Abfrage hatte den Redispatch zwischen zwei deutschen Regelzonen "
         + "ausgelassen, und der ist mit 62 % der größte Teil.)",
+      "Wie groß der Anteil der industriellen Eigenerzeugung an der "
+        + "Erzeugungslücke ist. Am 07.09.2026 ist die Lücke aufgeteilt: die "
+        + "Kraftwerksliste von SMARD endet hart bei 10,0 MW, und darunter "
+        + "liegen 89 % der Biomasse-, 62 % der Öl- und 54 % der "
+        + "Wasserkraftleistung. Steinkohle hat dort NICHTS und trotzdem "
+        + "24,8 % Lücke — das ist Erzeugung, die das öffentliche Netz nicht "
+        + "erreicht. Beziffern lässt sich dieser Teil mit den hier "
+        + "verfügbaren Quellen nicht; er ergibt sich als Rest, und ein Rest "
+        + "ist keine Messung.",
+      "Woraus die Differenz zwischen SMARD und Eurostat beim Außenhandel bei "
+        + "Eurostat entsteht. Am 07.09.2026 ist geklärt, wo sie NICHT "
+        + "herkommt: die physikalischen Flüsse dieser Seite sind durch "
+        + "ENTSO-E 12.1.G Grenze für Grenze bestätigt (0,0 bis 1,0 %), und "
+        + "der kommerzielle Handel liegt weit über beiden Zahlen. Bei Eurostat "
+        + "selbst stehen sechs der elf Nachbarn auf null und 46 % der Einfuhr "
+        + "unter „nicht angegeben“ — mit dieser Aufteilung ist die Frage "
+        + "nicht weiter aufzulösen. Sie bräuchte die Methodik des "
+        + "Statistischen Bundesamts.",
+      "1.030 Windenergieanlagen in Betrieb haben im Marktstammdatenregister "
+        + "keine Koordinate und fehlen deshalb auf der Karte. Das ist eine "
+        + "Lücke der Quelle, keine Auswahl — und sie schließt sich von selbst, "
+        + "sobald das Register die Orte nachträgt. Ein Ort, den diese Seite "
+        + "schätzt, wäre keiner.",
       "Eine belegte Grenze der Regelzonen. Es gibt keine — OpenStreetMap führt "
         + "keine Grenzrelation dafür, die Bundesnetzagentur veröffentlicht eine "
         + "Netzkarte als PDF. Die Karte kann eine Fläche einblenden, aber die ist "
@@ -5713,7 +5742,7 @@
     ].forEach(function (t) { ul.appendChild(el("li", { text: t })); });
     nicht.appendChild(ul);
     neu.appendChild(klappabschnitt("grenzen", "Grenzen", nicht,
-      nicht.querySelectorAll("li").length + " Punkte", false));
+      zaehlwort(nicht.querySelectorAll("li").length, "Punkt", "Punkte"), false));
 
     // --- Ab wann welche Reihe beginnt ---
     var beginn = el("div", { "class": "pf-kasten", "data-art": "offen" });
@@ -5876,43 +5905,21 @@
       { hoch: true,
         text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
           + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
-      /* ZWEI PUNKTE SIND AM 14.09.2026 NACH "GRENZEN" GEWANDERT -- die zweite
-         ENTSO-E-Preisreihe und die Tagesstreuung des Redispatch. Beide Fragen
-         SIND beantwortet, soweit die Quellen es hergeben; was bleibt, ist eine
-         Grenze der Quellenlage und keine Arbeit. Dieselbe Regel wie am
-         31.08.2026 bei der Regelzone je Windpark und beim Redispatch auf der
-         Karte. Der Kasten sagt von sich selbst, dass hier Arbeit steht und
-         keine Grenzen -- dann muss er sich auch daran halten. */
-      { hoch: false,
-        text: "Wie groß der Anteil der industriellen Eigenerzeugung an der "
-          + "Erzeugungslücke ist. Am 07.09.2026 ist die Lücke aufgeteilt: die "
-          + "Kraftwerksliste von SMARD endet hart bei 10,0 MW, und darunter "
-          + "liegen 89 % der Biomasse-, 62 % der Öl- und 54 % der "
-          + "Wasserkraftleistung. Steinkohle hat dort NICHTS und trotzdem "
-          + "24,8 % Lücke — das ist Erzeugung, die das öffentliche Netz nicht "
-          + "erreicht. Beziffern lässt sich dieser Teil mit den hier "
-          + "verfügbaren Quellen nicht; er ergibt sich als Rest, und ein Rest "
-          + "ist keine Messung." },
-      { hoch: false,
-        text: "Woraus die Differenz zwischen SMARD und Eurostat beim "
-          + "Außenhandel bei Eurostat entsteht. Am 07.09.2026 ist geklärt, wo "
-          + "sie NICHT herkommt: die physikalischen Flüsse dieser Seite sind "
-          + "durch ENTSO-E 12.1.G Grenze für Grenze bestätigt (0,0 bis 1,0 %), "
-          + "und der kommerzielle Handel liegt weit über beiden Zahlen. Bei "
-          + "Eurostat selbst stehen sechs der elf Nachbarn auf null und 46 % "
-          + "der Einfuhr unter „nicht angegeben“ — mit dieser "
-          + "Aufteilung ist "
-          + "die Frage nicht weiter aufzulösen. Sie bräuchte die Methodik des "
-          + "Statistischen Bundesamts." },
-      /* NICHT mehr "Als Naechstes". Der Punkt ist am 03.09.2026 geprueft und
-         die Umstellung verworfen -- er wird also gerade nicht angefasst. Die
-         Markierung heisst "wird als Naechstes angefasst"; sie an etwas zu
-         haengen, das bewusst liegen bleibt, macht sie wertlos. Genau EIN
-         Eintrag darf sie tragen, und browsertest.mjs prueft das. */
-      { hoch: false,
-        text: "1.030 Windenergieanlagen in Betrieb haben im Register keine "
-          + "Koordinate und fehlen auf der Karte. Das ist eine Lücke der "
-          + "Quelle, keine Auswahl." }
+      /* AM 14.09.2026 SIND FUENF PUNKTE NACH "GRENZEN" GEWANDERT: die zweite
+         ENTSO-E-Preisreihe, die Tagesstreuung des Redispatch, der Anteil der
+         industriellen Eigenerzeugung, die Aussenhandelsdifferenz bei Eurostat
+         und die 1.030 Windanlagen ohne Koordinate.
+
+         Alle fuenf enden mit demselben Satz -- mit diesen Quellen nicht
+         aufzuloesen. Damit sind es Grenzen der Quellenlage und keine Arbeit,
+         und dieser Kasten sagt von sich selbst, dass hier nur Arbeit steht.
+         Dieselbe Regel wie am 31.08.2026 bei der Regelzone je Windpark und
+         beim Redispatch auf der Karte: eine Grenze der Quelle ist keine
+         Aufgabe.
+
+         Uebrig bleibt genau EIN Punkt -- und das ist keine Verkuerzung der
+         Liste, sondern ihr ehrlicher Stand. Eine Liste, in der Beantwortetes
+         als offen weitersteht, glaubt irgendwann niemand mehr. */
     ].forEach(function (p) {
       var li = el("li");
       if (p.hoch) { li.appendChild(el("b", { text: "Als Nächstes. " })); }
@@ -5920,8 +5927,11 @@
       ul2.appendChild(li);
     });
     offen.appendChild(ul2);
+    /* "1 Punkte" waere schlampig, und die Liste ist am 14.09.2026 auf genau
+       einen Eintrag geschrumpft. Dieselbe Form auch bei den Grenzen, damit sie
+       nicht beim naechsten Verschieben dort auftaucht. */
     neu.appendChild(klappabschnitt("offen", "Offene Punkte", offen,
-      offen.querySelectorAll("li").length + " Punkte", false));
+      zaehlwort(offen.querySelectorAll("li").length, "Punkt", "Punkte"), false));
 
     // --- Quellen und Downloads ---
     var qhuelle = el("div", { "class": "pf-verlauf" });
