@@ -225,10 +225,17 @@ die Regelzonenbilanz.
   erst nach einer Sekunde. Der Fehler ist zweimal passiert -- beim Zeitprofil
   und gleich wieder beim Kostenblock. Deshalb gibt es jetzt EINE Funktion,
   `ablesungAn(rahmen)`, die alle Grafiken bedienen: Zeitprofil, Kosten,
-  Regelzonenbalken. Ein `title` ist nur noch zulaessig, wenn derselbe Wert
-  ohnehin sichtbar danebensteht (etwa als voller Text einer gekuerzten
-  Beschriftung). `browsertest.mjs` prueft, dass keine Grafikmarke ihre Auskunft
-  im `title` traegt.
+  Regelzonenbalken, Vorschau -- und seit dem 14.09.2026 auch der Verlauf, der
+  als letzter noch eine eigene Fassung hatte. Ein `title` ist nur noch
+  zulaessig, wenn derselbe Wert ohnehin sichtbar danebensteht (etwa als voller
+  Text einer gekuerzten Beschriftung). `browsertest.mjs` prueft, dass keine
+  Grafikmarke ihre Auskunft im `title` traegt.
+- **Eine Ablesung steht UNTER der Grafik, nie darauf.** Das ist keine
+  Geschmacksfrage: ein Kasten am Fadenkreuz liegt zwangslaeufig auf den Daten,
+  die er erklaert -- man muss den Zeiger wegnehmen, um zu sehen, worauf er
+  zeigte. `browsertest.mjs` misst die Lage nach (Oberkante des Kastens
+  unterhalb der Unterkante der Grafik), `validate.py` prueft, dass keine
+  Grafik ihre Ablesung noch selbst ins Bild zeichnet.
 - **Lange Erklaerungen klappen auf, der erste Satz bleibt stehen.**
   `langtext()` teilt am ersten Satzende; darunter steht der Rest in einem
   `<details>`. Nicht umgekehrt -- was zaehlt, darf nicht hinter einem Klick
@@ -964,6 +971,50 @@ Drei Regeln, die dabei nicht verrutschen duerfen:
 begrenzt `von` auf <= `bis` und umgekehrt; wer nur zwei Felder in der falschen
 Reihenfolge setzt, misst einen ganz anderen Zeitraum und merkt es nicht. Der
 erste Testlauf hat so 193 Tage statt 6 gemessen.
+
+## Drei Maengel am Verlauf -- gefunden am 14.09.2026
+
+Alle drei von Immo im Bildschirmfoto gesehen, alle drei von keiner der 238
+Pruefungen gemeldet. Das ist der dritte Beleg fuer dieselbe Regel: **die
+Bildschirmfotos ansehen, nicht die Haken zaehlen.**
+
+1. **Die Ablesung lag auf den Kurven.** Sie war ein SVG-Kasten senkrecht am
+   Fadenkreuz -- also immer dort, wo man gerade hinsah. Die Loesung lag seit
+   dem 04.09.2026 im Abschnitt "Vorschau auf morgen": `ablesungAn()`, ein
+   HTML-Kasten unter der Grafik. Der Verlauf war der letzte Ausreisser mit
+   eigener Fassung. Die alte Pruefung verlangte sogar ausdruecklich "Ablesung
+   steht IM Bild" -- **eine Pruefung kann einen Mangel auch festschreiben.**
+   Jetzt wird die LAGE gemessen, nicht die Bauart.
+2. **Die beiden schraffierten Flaechen hatten keine Zahl in der Tabelle.** Es
+   gab eine Spalte "Ueber-/Unterdeckung", die `Erzeugung - Netzlast` rechnete.
+   Die orange Flaeche im Bild misst aber gegen die OBERKANTE DER EINFUHR --
+   wer die Zahl zur Flaeche suchte, fand eine andere Groesse unter einem
+   aehnlichen Namen. Jetzt fuehrt die Tabelle "Erzeugung gesamt", "Einfuhr
+   (netto)" und "Ueberdeckung (+) / Luecke (−)", und ihre Beschriftung sagt,
+   welche Spalte zu welcher Flaeche gehoert. Dabei fiel auf: eine Stunde ohne
+   Meldung stand hier als "0,0" in jeder Traegerspalte -- derselbe Fehler, der
+   im BILD am 03.09.2026 behoben wurde und in der TABELLE stehen blieb.
+3. **Es fehlte eine Uebersicht der Tageswerte.** 168 Stundenzeilen beantworten
+   die Frage "wie war der Dienstag?" nicht. Unter der stuendlichen Kurve steht
+   jetzt eine Zeile je Tag, gesummt aus genau den Stunden des Bildes, mit einer
+   Fusszeile fuer den ganzen Zeitraum.
+
+**Und ein vierter, beim Pruefen entstanden:** der Browsertest erkannte die
+Quellentabelle an ihrer SPALTENZAHL -- sieben. Die neue Tagesuebersicht hatte
+auch sieben, und die Pruefung zaehlte ihre Tage als Quellen mit. *Eine Tabelle
+an ihrer Form zu erkennen ist keine Erkennung.* Beide tragen jetzt einen
+eigenen Namen (`pf-quellentabelle`, `pf-verlaufstabelle`).
+
+**Eine Spalte fuehrt die FLAECHE, nicht den Saldo.** Die Spalte "Einfuhr
+(netto)" zeigte zuerst den Tagessaldo: am 07.09.2026 -1,9 GWh, waehrend das
+schraffierte Band im Bild 30,5 GWh misst. Der Unterschied ist keine Rundung --
+das Band zaehlt die Nettoeinfuhr JE STUNDE und nur dort, wo sie positiv ist;
+eine Nettoausfuhr wird nicht nach unten gezeichnet, weil sie nichts deckt. Zwei
+Zahlen unter einem Namen, und die Zeile ging nicht auf. Seitdem gilt: was als
+"die schraffierte Flaeche" beschriftet ist, IST die schraffierte Flaeche.
+Die Probe steht im Browsertest -- **Erzeugung + Einfuhr - Netzlast =
+Ueberdeckung**, gerechnet ueber die Tage ohne Meldeluecke. Der Saldo steht in
+den Kennzahlen und im Abschnitt Zufluss/Abfluss, wo er hingehoert.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 

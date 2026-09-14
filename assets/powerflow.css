@@ -707,19 +707,26 @@ table.pf-tabelle tr td.pf-hinweis { color: var(--schrift-still); font-size: 0.78
 .pf-legende i.pf-preis { width: 16px; height: 2px; border-radius: 1px;
   background: var(--preis-linie); }
 
-/* Ablesung IM Bild, senkrecht am Fadenkreuz. */
-.pf-ablesung-svg { pointer-events: none; }
-.pf-ablesung-grund { fill: var(--flaeche-hoch); stroke: var(--linie);
-  fill-opacity: 0.96; vector-effect: non-scaling-stroke; }
-.pf-ablesung-kopf { fill: var(--schrift); font-size: 11px; font-weight: 600;
-  font-family: var(--schrift-zahl); }
-.pf-ablesung-label { fill: var(--schrift-leise); font-size: 11px; }
-.pf-ablesung-label.pf-ablesung-aktiv, .pf-ablesung-wert.pf-ablesung-aktiv {
-  fill: var(--schrift); font-weight: 600; }
-.pf-ablesung-wert { fill: var(--schrift); font-size: 11px;
-  font-family: var(--schrift-zahl); }
+/* Die Ablesung des Verlaufs steht UNTER dem Bild -- .pf-rd-info, dieselbe wie
+   bei Vorschau, Kosten und Zeitprofil. Bis zum 14.09.2026 lag sie als Kasten
+   IM Diagramm und verdeckte die Kurven, die sie erklaeren sollte. Die frueheren
+   Regeln (.pf-ablesung-grund, -kopf, -label, -wert) sind damit weg; geblieben
+   ist die Markierung der Zeile unter dem Zeiger und der Text fuer
+   Vorlesesoftware. */
+.pf-verlauf-rahmen { position: relative; }
+.pf-rd-info-verlauf { width: min(380px, 94vw); }
+.pf-rd-info-liste dt.pf-ablesung-aktiv, .pf-rd-info-liste dd.pf-ablesung-aktiv {
+  color: var(--schrift); font-weight: 600; }
 .pf-ablesung-text { position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap; }
+/* Uebersicht der Tageswerte unter der stuendlichen Kurve. */
+.pf-tagesuebersicht { margin: 16px 0 0; }
+.pf-tagesuebersicht h4 { margin: 0 0 2px; font-size: 0.95rem; }
+.pf-tagesuebersicht .pf-bezug { margin: 0 0 8px; }
+table.pf-tagestabelle tfoot th, table.pf-tagestabelle tfoot td {
+  border-top: 2px solid var(--linie); font-weight: 600; }
+table.pf-tabelle caption { caption-side: top; text-align: left;
+  margin: 0 0 8px; }
 .pf-kreuz { stroke: var(--schrift-still); stroke-width: 1; stroke-dasharray: 3 3;
   vector-effect: non-scaling-stroke; }
 /* Trennlinie um Mitternacht. Ohne sie verschwimmt eine Woche in Stundenwerten

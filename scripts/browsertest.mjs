@@ -547,9 +547,22 @@ try {
   await schlafen(2500);
 
   await foto("prognoseguete", ".pf-prognoseguete");
-
-  await foto("prognoseguete", ".pf-prognoseguete");
   await foto("verlauf-woche", ".pf-verlauf");
+
+  /* EIN BILD MIT GEOEFFNETER ABLESUNG. Die drei Maengel am Verlauf sind alle
+     drei im Bildschirmfoto aufgefallen und in keiner Pruefung -- also gehoert
+     der Zustand, um den es ging, auch aufs Bild. Ohne Zeiger ist die Ablesung
+     zu, und genau sie war der Mangel. */
+  await js(`(function () {
+    const svg = document.querySelector(".pf-diagramm");
+    const r = svg.getBoundingClientRect();
+    svg.dispatchEvent(new MouseEvent("mousemove", { bubbles: true,
+      clientX: r.left + r.width * 0.45, clientY: r.top + r.height * 0.45 }));
+  })()`);
+  await schlafen(250);
+  await foto("verlauf-ablesung", ".pf-verlauf");
+  await js(`document.querySelector(".pf-diagramm")`
+    + `.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }))`);
 
   /* Zufluss/Abfluss und die Regelzonen. Nachgerechnet wird die Bilanz aus den
      ANGEZEIGTEN Zahlen -- wenn die Saeulen und die Gleichung auseinanderlaufen,
@@ -1002,21 +1015,78 @@ try {
   pruefe(nachReset === start,
     `Zuruecksetzen stellt den Anfangszustand her (${nachReset})`, `erwartet ${start}`);
 
-  // --- Diagramm: Ablesung und Tabelle ---
+  /* --- Diagramm: Ablesung und Tabelle ---
+
+     DIE ABLESUNG DARF NICHT AUF DEN KURVEN LIEGEN. Bis zum 14.09.2026 tat sie
+     das: ein Kasten IM Diagramm, senkrecht am Fadenkreuz, genau ueber den
+     Daten, die er erklaeren sollte. Keine der 238 Pruefungen hat das gemeldet
+     -- die alte hier verlangte sogar ausdruecklich "Ablesung steht IM Bild".
+     Gefunden hat es Immo im Bildschirmfoto.
+
+     Geprueft wird deshalb jetzt die LAGE, gemessen, nicht die Bauart: die
+     Oberkante des Kastens liegt unterhalb der Unterkante der Grafik. */
   const ablesung = await js(`(function () {
     const svg = document.querySelector(".pf-diagramm");
     const r = svg.getBoundingClientRect();
     svg.dispatchEvent(new MouseEvent("mousemove", {
       bubbles: true, clientX: r.left + r.width * 0.4, clientY: r.top + r.height / 2 }));
-    const g = document.querySelector(".pf-ablesung-svg");
-    return { zeilen: g.querySelectorAll("text").length,
-             kasten: g.querySelectorAll("rect.pf-ablesung-grund").length,
+    const feld = document.querySelector(".pf-rd-info-verlauf");
+    const f = feld.getBoundingClientRect();
+    return { offen: !feld.hasAttribute("hidden"),
+             zeilen: feld.querySelectorAll(".pf-rd-info-liste dt").length,
+             imBild: document.querySelectorAll(".pf-diagramm .pf-ablesung-svg,"
+               + " .pf-diagramm .pf-ablesung-grund").length,
+             abstand: Math.round(f.top - r.bottom),
              text: (document.querySelector(".pf-ablesung-text") || {}).textContent || "" };
   })()`);
-  pruefe(ablesung.zeilen >= 8 && ablesung.kasten === 1,
-    `Ablesung steht IM Bild (${ablesung.zeilen} Textzeilen)`);
-  pruefe(/Netzlast/.test(ablesung.text) && /deckung/.test(ablesung.text),
+  pruefe(ablesung.offen && ablesung.zeilen >= 8,
+    `Ablesung geht beim Zeigen auf (${ablesung.zeilen} Zeilen)`);
+  pruefe(ablesung.imBild === 0, "und sie steht NICHT mehr im Bild");
+  pruefe(ablesung.abstand >= 0,
+    `sie steht unter der Grafik (${ablesung.abstand} px darunter)`);
+  pruefe(/Netzlast/.test(ablesung.text) && /(deckung|Lücke)/.test(ablesung.text),
     "Ablesung nennt Netzlast und Ueber-/Unterdeckung", ablesung.text.slice(0, 80));
+
+  /* UEBERSICHT DER TAGESWERTE. Eine Zeile je Tag, dazu eine Fusszeile mit dem
+     ganzen Zeitraum. Der Anfangszeitraum ist stuendlich -- dort MUSS sie
+     dastehen. */
+  const tagesuebersicht = await js(`(function () {
+    const k = document.querySelector(".pf-tagesuebersicht");
+    if (!k) { return { da: false }; }
+    const kopf = [...k.querySelectorAll("thead th")].map((e) => e.textContent);
+    return { da: true, zeilen: k.querySelectorAll("tbody tr").length,
+             fuss: k.querySelectorAll("tfoot tr").length, kopf: kopf };
+  })()`);
+  pruefe(tagesuebersicht.da && tagesuebersicht.zeilen >= 2,
+    `die stuendliche Ansicht fuehrt ${tagesuebersicht.zeilen} Tageswerte`);
+  pruefe(tagesuebersicht.fuss === 1, "mit einer Fusszeile fuer den ganzen Zeitraum");
+  pruefe((tagesuebersicht.kopf || []).some((t) => /Einfuhr/.test(t))
+    && (tagesuebersicht.kopf || []).some((t) => /Lücke/.test(t)),
+    "und sie nennt Einfuhr und Luecke", JSON.stringify(tagesuebersicht.kopf));
+
+  /* UND DIE ZEILE MUSS AUFGEHEN: Erzeugung + Einfuhr - Netzlast = Ueberdeckung.
+     Das ist die eigentliche Pruefung dieser Tabelle. Sie ging zuerst NICHT auf:
+     die Spalte "Einfuhr" fuehrte den Tagessaldo (-1,9 GWh am 07.09.2026),
+     waehrend die schraffierte Flaeche im Bild die stuendlichen Zufluesse misst
+     (30,6 GWh). Zwei Zahlen unter einem Namen. Gerechnet wird nur ueber Tage
+     OHNE Meldeluecke -- bei einer Luecke geht sie zu Recht nicht auf. */
+  const aufgehen = await js(`(function () {
+    const z = (e) => Number(e.textContent.replace(/−/g, "-")
+      .split(".").join("").split(",").join(".").replace("+", ""));
+    const zeilen = [...document.querySelectorAll(".pf-tagesuebersicht tbody tr")];
+    let geprueft = 0, groesster = 0;
+    for (const r of zeilen) {
+      const c = r.children;
+      if (c[6].textContent.trim() !== "—") { continue; }   // Stunden ohne Meldung
+      const ab = Math.abs(z(c[2]) + z(c[3]) - z(c[1]) - z(c[4]));
+      groesster = Math.max(groesster, ab);
+      geprueft++;
+    }
+    return { geprueft: geprueft, groesster: Math.round(groesster * 100) / 100 };
+  })()`);
+  pruefe(aufgehen.geprueft >= 2 && aufgehen.groesster <= 0.15,
+    `jede Tageszeile geht auf: Erzeugung + Einfuhr - Netzlast = Ueberdeckung `
+    + `(${aufgehen.geprueft} Tage, groesster Abstand ${aufgehen.groesster} GWh)`);
 
   /* Gedaempfte Flaechen, Oberkante statt Umrandung, Preisstreifen.
      Die frueheren Pruefungen verlangten hier eine Schraffur auf jeder Flaeche.
@@ -1100,11 +1170,37 @@ try {
   await js(`document.querySelector(".pf-tabellenschalter").click()`);
   await schlafen(500);
   const tabelle = await js(`(function () {
-    const t = document.querySelectorAll(".pf-verlauf table.pf-tabelle tbody tr").length;
+    const t = document.querySelectorAll(
+      ".pf-verlauf table.pf-verlaufstabelle tbody tr").length;
     return { zeilen: t, beschriftung: document.querySelector(".pf-tabellenschalter").textContent };
   })()`);
   pruefe(tabelle.zeilen > 5, `Tabellenansicht zeigt ${tabelle.zeilen} Zeilen`);
   pruefe(/ausblenden/i.test(tabelle.beschriftung), "Tabellenschalter beschriftet sich um");
+
+  /* DIE SCHRAFFIERTEN FLAECHEN HABEN JETZT EINE ZAHL. Vorher fuehrte die
+     Tabelle eine einzige Spalte "Ueber-/Unterdeckung", die Erzeugung MINUS
+     Netzlast rechnete -- die Einfuhr kam darin gar nicht vor, obwohl sie im
+     Bild als eigenes schraffiertes Band auf der Erzeugung sitzt. */
+  const spalten = await js(`(function () {
+    const t = document.querySelector(".pf-verlauf table.pf-verlaufstabelle");
+    const kopf = [...t.querySelectorAll("thead th")].map((e) => e.textContent);
+    const z = t.querySelector("tbody tr");
+    return { kopf: kopf, zellen: z ? z.children.length : 0,
+             getoent: t.querySelectorAll("tbody td.pf-plus, tbody td.pf-minus").length,
+             erklaert: (t.querySelector("caption") || {}).textContent || "" };
+  })()`);
+  pruefe(spalten.kopf.some((t) => /Einfuhr/.test(t)),
+    "die Tabelle fuehrt die Einfuhr als eigene Spalte", JSON.stringify(spalten.kopf));
+  pruefe(spalten.kopf.some((t) => /Lücke/.test(t)),
+    "und die Luecke als eigene Spalte");
+  pruefe(spalten.kopf.some((t) => /Erzeugung gesamt/.test(t)),
+    "und die Erzeugung in Summe");
+  pruefe(spalten.zellen === spalten.kopf.length,
+    `jede Zeile hat so viele Zellen wie der Kopf (${spalten.zellen}/${spalten.kopf.length})`);
+  pruefe(spalten.getoent > 0, "Vorzeichenspalten sind getoent");
+  pruefe(/schraffierte/.test(spalten.erklaert),
+    "und die Tabelle sagt, welche Spalte zu welcher Flaeche gehoert",
+    spalten.erklaert.slice(0, 70));
 
   // --- Karte: Zoom, Auswahl, Ebenen ---
   const vorZoom = await js(`document.querySelector(".pf-karte").getAttribute("viewBox")`);
@@ -1689,8 +1785,12 @@ try {
     // Nicht mehr "> h2": die grossen Bloecke sind seit dem 04.09.2026 zum
     // Zuklappen, ihre Ueberschrift sitzt in einem <summary>.
     const kopf = [...document.querySelectorAll(".pf-abschnitt h2")].map((h) => h.textContent);
-    const zeilen = [...document.querySelectorAll(".pf-abschnitt table.pf-tabelle tbody tr")];
-    const quellenTab = zeilen.filter((r) => r.cells.length === 7);
+    /* An der KLASSE erkannt, nicht an der Spaltenzahl. Bis zum 14.09.2026
+       stand hier ein Filter auf sieben Zellen -- und als die Uebersicht der
+       Tageswerte im Verlauf ebenfalls sieben Spalten bekam, zaehlte diese
+       Pruefung deren Tage als Quellen mit. */
+    const quellenTab = [...document.querySelectorAll(
+      ".pf-abschnitt table.pf-quellentabelle tbody tr")];
     const quellenNamen = new Set(quellenTab.map((r) => r.cells[3].textContent));
     const lizenzen = new Set(quellenTab.map((r) => r.cells[4].textContent));
     return {

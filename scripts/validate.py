@@ -696,6 +696,11 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
         "pf-einfuhrband", "pf-luecke-flaeche",  # tragen fill="url(#schraffur)"
         "pf-pfeil",              # Farbe kommt vom Zustand der Kuppelstelle
         "pf-rechnung-kosten",    # nur ein Zusatzgriff neben .pf-rechnung
+        # Zwei Namen, die nur da sind, damit eine Pruefung die richtige
+        # Tabelle erwischt. Vorher wurde die Quellentabelle an ihrer
+        # SPALTENZAHL erkannt -- und die Uebersicht der Tageswerte hatte
+        # dieselbe. Eine Tabelle an ihrer Form zu erkennen ist keine Erkennung.
+        "pf-quellentabelle", "pf-verlaufstabelle",
     }
     js_ohne = re.sub(r"/\*.*?\*/", " ", js, flags=re.S)
     vergeben = set()
@@ -962,6 +967,36 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     kleinste = min(a["leistung_mw"] for a in kw["anlagen"] if a.get("leistung_mw"))
     b.pruefe(f"{kleinste:.1f}".replace(".", ",") + " MW" in js,
              f"die genannte Schwelle ist die gemessene ({kleinste:.1f} MW)")
+
+    # --- Die Ablesung des Verlaufs, berichtigt am 14.09.2026 ---
+    # Drei Maengel, alle drei nur im Bildschirmfoto zu sehen gewesen.
+    #
+    # 1. Die Ablesung lag als Kasten IM Diagramm, senkrecht am Fadenkreuz --
+    #    also ueber genau den Kurven, die sie erklaeren sollte. Geprueft wird
+    #    die BEDINGUNG: keine Grafik dieser Seite baut ihre Ablesung noch
+    #    selbst. Es gibt genau eine, ablesungAn(), und sie steht unter dem
+    #    Bild. Der Browsertest misst die Lage nach.
+    b.pruefe("pf-ablesung-grund" not in js and "pf-ablesung-svg" not in js,
+             "keine Grafik zeichnet ihre Ablesung mehr ins Bild")
+    b.pruefe("pf-verlauf-rahmen" in js and ".pf-verlauf-rahmen" in css,
+             "der Verlauf haengt seine Ablesung an einen eigenen Rahmen")
+    # 2. Die beiden schraffierten Flaechen hatten keine Zahl in der Tabelle.
+    #    Die Spalte, die es gab, rechnete Erzeugung MINUS Netzlast -- ohne die
+    #    Einfuhr, und damit eine ANDERE Groesse als die orange Flaeche im Bild,
+    #    die gegen die Oberkante der Einfuhr misst. Zwei Bedingungen: die alte
+    #    Rechnung darf nicht wiederkommen, und beide Flaechen muessen als
+    #    eigene Spalte dastehen.
+    b.pruefe("(stapelOben[k] - v.netzlast[k])" not in js,
+             "die Tabelle rechnet die Deckung nicht mehr ohne die Einfuhr")
+    b.pruefe(js.count("(einfuhrOben[k] - v.netzlast[k]) / v.teiler") >= 2,
+             "Ablesung und Tabelle messen die Deckung gegen dieselbe Oberkante")
+    for spalte in ("Einfuhr (netto)", "Überdeckung (+) / Lücke (−)"):
+        b.pruefe(spalte in js,
+                 f"die Tabelle fuehrt eine Spalte {spalte!r}")
+    # 3. In der stuendlichen Ansicht fehlte eine Uebersicht der Tageswerte.
+    #    168 Stundenzeilen beantworten die Frage "wie war der Dienstag?" nicht.
+    b.pruefe("Tageswerte im Zeitraum" in js,
+             "unter der stuendlichen Kurve steht eine Uebersicht der Tageswerte")
 
     # --- Der Bilanzrest, untersucht am 03.09.2026 ---
     # Die Seite nennt jetzt Zahlen aus dieser Untersuchung. Sie stehen in Prosa
@@ -1612,6 +1647,14 @@ def negativtests() -> int:
          lambda: ersetze("js", "schematisch", "genau")),
         ("Tabellenansicht des Diagramms entfernt",
          lambda: ersetze("js", "Als Tabelle anzeigen", "Nichts")),
+        ("Ablesung wieder ins Bild gelegt",
+         lambda: {"js": basis["js"] + '\nvar w9 = s("rect", '
+                  '{ "class": "pf-ablesung-grund" });'}),
+        ("Uebersicht der Tageswerte entfernt",
+         lambda: ersetze("js", "Tageswerte im Zeitraum", "Nichts")),
+        ("Tabelle rechnet die Deckung wieder ohne die Einfuhr",
+         lambda: ersetze("js", "(einfuhrOben[k] - v.netzlast[k]) / v.teiler",
+                         "(stapelOben[k] - v.netzlast[k]) / v.teiler")),
         ("Zuruecksetzen-Knopf entfernt",
          lambda: ersetze("js", "Zurücksetzen", "Weg")),
         ("toISOString() ins Modul geschmuggelt",

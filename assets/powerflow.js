@@ -2436,83 +2436,93 @@
       x1: "-99", x2: "-99" });
     svg.appendChild(kreuz);
 
-    /* Ablesung IM Bild, senkrecht am Fadenkreuz. Sie kippt auf die andere
-       Seite, sobald sie sonst ueber den Rand liefe. */
-    var gAb = s("g", { "class": "pf-ablesung-svg" });
-    svg.appendChild(gAb);
-    huelle.appendChild(svg);
+    /* DIE ABLESUNG STEHT UNTER DEM BILD, NICHT DARIN.
+
+       Bis zum 14.09.2026 lag sie als Kasten im Diagramm, senkrecht am
+       Fadenkreuz -- und damit ueber genau den Kurven, die sie erklaeren
+       sollte. Man musste den Zeiger wegnehmen, um zu sehen, worauf er zeigte.
+       Im Bildschirmfoto sofort zu sehen, in keiner der 238 Pruefungen.
+
+       Der Abschnitt "Vorschau auf morgen" hatte die Loesung laengst:
+       ablesungAn(), ein HTML-Kasten UNTER der Grafik. Sie bedient seit dem
+       04.09.2026 Zeitprofil, Kosten und Regelzonenbalken. Der Verlauf war der
+       letzte Ausreisser mit eigener Fassung -- jetzt hat jede Grafik dieser
+       Seite dieselbe Ablesung, und keine liegt mehr auf ihren Daten. */
+    var rahmen = el("div", { "class": "pf-verlauf-rahmen" });
+    rahmen.appendChild(svg);
+    huelle.appendChild(rahmen);
+    var ablese = ablesungAn(rahmen);
+    ablese.feld.classList.add("pf-rd-info-verlauf");
 
     var stelle = Math.min(Math.floor(n / 2), n - 1);
     var texte = el("p", { "class": "pf-ablesung-text", role: "status" });
 
-    function zeige(k, band) {
+    function zeige(k, band, sichtbar) {
       stelle = k;
       hebeAn(band || null);
       kreuz.setAttribute("x1", X(k));
       kreuz.setAttribute("x2", X(k));
-      gAb.textContent = "";
 
-      var zeilen = [];
-      zeilen.push({ label: v.stuendlich
+      var kopf = v.stuendlich
         ? ausIso(v.tage[k]).toLocaleDateString("de-DE",
-            { weekday: "short", day: "2-digit", month: "2-digit" }) + ", " + v.marken[k] + ":00"
-        : datumLang(v.tage[k]), wert: "", kopf: true });
+            { weekday: "short", day: "2-digit", month: "2-digit" })
+          + ", " + v.marken[k] + ":00"
+        : datumLang(v.tage[k]);
+      var worte = [kopf], bilanz = [], preiszeile = [], traegerz = [];
+      var wert = null;
+
       if (v.netzlast[k] !== null) {
-        zeilen.push({ label: "Netzlast", wert: nf1.format(v.netzlast[k] / v.teiler),
-          farbe: "var(--last-linie)" });
+        wert = nf1.format(v.netzlast[k] / v.teiler);
+        worte.push("Netzlast " + wert);
         /* Die Rechnung Schritt fuer Schritt, damit man sie mitlesen kann:
            Erzeugung, dann die gemessene Nettoeinfuhr, dann was uebrig bleibt.
            Vorher stand hier nur "Unterdeckung -3,2" ohne jede Erklaerung. */
-        zeilen.push({ label: "Erzeugung gesamt",
-          wert: nf1.format(stapelOben[k] / v.teiler), farbe: "var(--schrift-still)" });
+        bilanz.push({ name: "Erzeugung gesamt", token: "--schrift-still",
+          wert: nf1.format(stapelOben[k] / v.teiler) });
         var q = v.netto ? v.netto[k] : null;
         if (q !== null && q !== undefined) {
-          zeilen.push({ label: q >= 0 ? "+ Einfuhr (netto)" : "− Ausfuhr (netto)",
-            wert: (q >= 0 ? "+" : "−") + nf1.format(Math.abs(q) / v.teiler),
-            farbe: "var(--teal)" });
+          bilanz.push({ name: q >= 0 ? "+ Einfuhr (netto)" : "− Ausfuhr (netto)",
+            token: "--teal",
+            wert: (q >= 0 ? "+" : "−") + nf1.format(Math.abs(q) / v.teiler) });
         }
         var deck = (einfuhrOben[k] - v.netzlast[k]) / v.teiler;
-        zeilen.push({ label: deck >= 0 ? "Überdeckung" : "Nicht erklärte Lücke",
-          wert: (deck >= 0 ? "+" : "−") + nf1.format(Math.abs(deck)),
-          farbe: deck >= 0 ? "var(--teal)" : "var(--orange)" });
+        bilanz.push({ name: deck >= 0 ? "Überdeckung" : "Nicht erklärte Lücke",
+          token: deck >= 0 ? "--teal" : "--orange",
+          wert: (deck >= 0 ? "+" : "−") + nf1.format(Math.abs(deck)) });
+        bilanz.forEach(function (z2) { worte.push(z2.name + " " + z2.wert); });
+      } else if (!belegt[k]) {
+        worte.push("keine Meldung der Quelle");
       }
       if (hatPreis && v.preis[k] !== null) {
-        zeilen.push({ label: "Preis", wert: nf2.format(v.preis[k]) + " €/MWh",
-          farbe: v.preis[k] < 0 ? "var(--orange)" : "var(--preis-linie)" });
+        preiszeile.push({ name: "Day-Ahead",
+          token: v.preis[k] < 0 ? "--orange" : "--preis-linie",
+          wert: nf2.format(v.preis[k]) + " €/MWh" });
+        worte.push("Preis " + nf2.format(v.preis[k]) + " Euro je MWh");
       }
       v.reihen.slice().reverse().forEach(function (r) {
         if (!r.werte[k]) { return; }
-        zeilen.push({ label: r.name, wert: nf1.format(r.werte[k] / v.teiler),
-          farbe: "var(" + r.token + ")",
+        traegerz.push({ name: r.name, token: r.token,
+          wert: nf1.format(r.werte[k] / v.teiler),
           aktiv: !!(band && band.reihe === r) });
+        worte.push(r.name + " " + nf1.format(r.werte[k] / v.teiler));
       });
 
-      var zh = 14, breite = 186, hoehe = zeilen.length * zh + 12;
-      var rechtsRum = X(k) < links + innenB * 0.6;
-      var bx = rechtsRum ? X(k) + 12 : X(k) - 12 - breite;
-      var by = Math.max(oben + 4, Math.min(oben + hoeheOben - hoehe - 4, oben + 12));
-      gAb.appendChild(s("rect", { x: bx, y: by, width: breite, height: hoehe,
-        rx: 8, "class": "pf-ablesung-grund" }));
-      zeilen.forEach(function (z, idx) {
-        var yy = by + 16 + idx * zh;
-        if (!z.kopf) {
-          gAb.appendChild(s("rect", { x: bx + 10, y: yy - 7, width: 7, height: 7,
-            rx: 1.5, fill: z.farbe }));
-        }
-        var tl = s("text", { x: bx + (z.kopf ? 10 : 22), y: yy,
-          "class": (z.kopf ? "pf-ablesung-kopf" : "pf-ablesung-label")
-            + (z.aktiv ? " pf-ablesung-aktiv" : "") });
-        tl.textContent = z.label;
-        gAb.appendChild(tl);
-        if (z.wert) {
-          var tw = s("text", { x: bx + breite - 10, y: yy, "text-anchor": "end",
-            "class": "pf-ablesung-wert" + (z.aktiv ? " pf-ablesung-aktiv" : "") });
-          tw.textContent = z.wert;
-          gAb.appendChild(tw);
-        }
-      });
-      texte.textContent = zeilen.map(function (z) {
-        return z.kopf ? z.label : z.label + " " + z.wert; }).join(", ");
+      /* Der Text bleibt IMMER auf dem Stand der Stelle, auch wenn der Kasten
+         zu ist: er ist die Fassung fuer Vorlesesoftware und fuer das
+         Bildschirmfoto. Nur der Kasten selbst haengt am Zeiger. */
+      texte.textContent = worte.join(", ");
+      if (!sichtbar) { ablese.verbirg(); return; }
+      ablese.zeige({
+        kopf: kopf,
+        wert: wert,
+        einheit: wert === null ? null : v.einheit + " Netzlast",
+        abschnitte: [
+          { titel: v.stuendlich ? "Bilanz dieser Stunde" : "Bilanz dieses Tages",
+            zeilen: bilanz },
+          { titel: "Großhandelspreis", zeilen: preiszeile },
+          { titel: "Erzeugung nach Energieträger", zeilen: traegerz }
+        ]
+      }, n === 1 ? 0.5 : k / (n - 1));
     }
 
     function ausPosition(punkt) {
@@ -2524,7 +2534,7 @@
       // Aus der Hoehe zurueck in Megawattstunden -- die Umkehrung von Y().
       var mwh = (oben + hoeheOben - py) / hoeheOben * achse * v.teiler;
       var imFeld = py >= oben && py <= oben + hoeheOben;
-      zeige(k, imFeld ? bandBei(k, mwh) : null);
+      zeige(k, imFeld ? bandBei(k, mwh) : null, true);
     }
     svg.addEventListener("mousemove", ausPosition);
     svg.addEventListener("touchmove", function (e) {
@@ -2533,8 +2543,8 @@
     svg.addEventListener("keydown", function (e) {
       // Ohne Zeiger gibt es keine Hoehe; das hervorgehobene Band bleibt, was
       // es war. Die Ablesung ist ohnehin vollstaendig.
-      if (e.key === "ArrowRight") { zeige(Math.min(n - 1, stelle + 1), hell); }
-      else if (e.key === "ArrowLeft") { zeige(Math.max(0, stelle - 1), hell); }
+      if (e.key === "ArrowRight") { zeige(Math.min(n - 1, stelle + 1), hell, true); }
+      else if (e.key === "ArrowLeft") { zeige(Math.max(0, stelle - 1), hell, true); }
       else { return; }
       e.preventDefault();
     });
@@ -2647,6 +2657,122 @@
           + "es gibt keine Lücke zu decken." }));
     }
 
+    /* Eine Zahl mit Vorzeichen und Farbe. Überdeckung ist teal, Lücke
+       orange -- dieselben zwei Farben wie die schraffierten Flächen im Bild. */
+    function deckzelle(x) {
+      if (x === null) { return el("td", { text: "—" }); }
+      return el("td", { "class": x >= 0 ? "pf-plus" : "pf-minus",
+        text: (x >= 0 ? "+" : "−") + nf1.format(Math.abs(x)) });
+    }
+
+    /* DIE SPALTE "EINFUHR" IST DIE FLAECHE, NICHT DER SALDO.
+
+       Das ist der Unterschied zwischen einer Tabelle, die aufgeht, und einer,
+       die es nicht tut. Das schraffierte Band im Bild ist die Nettoeinfuhr
+       JE STUNDE, und nur wenn sie positiv ist -- eine Nettoausfuhr wird nicht
+       nach unten gezeichnet, sie ist kein Deckungsbeitrag. Ein Tagessaldo
+       waere eine andere Zahl: am 07.09.2026 -1,9 GWh, waehrend die Flaeche
+       30,6 GWh misst. Nimmt man den Saldo, geht die Zeile nicht mehr auf
+       (Erzeugung + Einfuhr - Netzlast = Ueberdeckung), und die Beschriftung
+       "ist die teal schraffierte Flaeche" waere schlicht falsch.
+
+       Gefuehrt wird deshalb die Flaeche. Der Saldo steht in den Kennzahlen und
+       im Abschnitt Zufluss/Abfluss, wo er hingehoert. */
+    function einfuhrzelle(x) {
+      if (x === null) { return el("td", { text: "—" }); }
+      var z5 = el("td", { text: nf1.format(x) });
+      if (x > 0) { z5.className = "pf-plus"; }
+      return z5;
+    }
+
+    /* ÜBERSICHT DER TAGESWERTE -- nur in der stündlichen Ansicht.
+
+       168 Stundenzeilen beantworten die Frage "wie war der Dienstag?" nicht.
+       Gesummt wird über genau die Stunden, die das Bild darüber zeigt; es wird
+       nichts nachgeladen und nichts geschätzt. Ab acht Tagen ist die Kurve
+       ohnehin schon tageweise -- dort wäre diese Tabelle dieselbe Tabelle. */
+    function tagesuebersicht() {
+      var kasten = el("div", { "class": "pf-tagesuebersicht" });
+      kasten.appendChild(el("h4", { text: "Tageswerte im Zeitraum" }));
+      kasten.appendChild(el("p", { "class": "pf-bezug",
+        text: "Summen über genau die Stunden des Bildes, in GWh am Tag. "
+          + "„Einfuhr (netto)“ ist die teal schraffierte Fläche — gezählt "
+          + "werden nur Stunden mit Zufluss, eine Nettoausfuhr deckt nichts "
+          + "und wird auch im Bild nicht gezeichnet. "
+          + "„Überdeckung / Lücke“ ist Erzeugung plus Einfuhr minus Netzlast; "
+          + "negativ ist die orange Fläche. Solange die Quelle alle Stunden "
+          + "gemeldet hat, geht jede Zeile so auf. "
+          + "Der Preis ist das Mittel der Stunden, nicht nach Menge gewichtet." }));
+      var roll = el("div", { "class": "pf-tabellen-rollbereich" });
+      var tab = el("table", { "class": "pf-tabelle pf-tagestabelle" });
+      var kz = el("tr");
+      ["Tag", "Netzlast", "Erzeugung", "Einfuhr (netto)",
+       "Überdeckung (+) / Lücke (−)"].forEach(function (b) {
+        kz.appendChild(el("th", { text: b, scope: "col" }));
+      });
+      if (hatPreis) { kz.appendChild(el("th", { text: "Ø €/MWh", scope: "col" })); }
+      kz.appendChild(el("th", { text: "Stunden ohne Meldung", scope: "col" }));
+      var kp = el("thead"); kp.appendChild(kz); tab.appendChild(kp);
+      var kb = el("tbody");
+      var alle = { last: 0, erz: 0, einfuhr: 0, deck: 0, preis: 0, preisN: 0, fehlt: 0 };
+      var j = 0;
+      while (j < n) {
+        var e2 = j;
+        while (e2 + 1 < n && v.tage[e2 + 1] === v.tage[j]) { e2++; }
+        var z3 = { last: 0, erz: 0, einfuhr: 0, deck: 0, preis: 0, preisN: 0, fehlt: 0 };
+        for (var t3 = j; t3 <= e2; t3++) {
+          /* Die Netzlast wird IMMER mitgezaehlt, auch wenn die
+             Erzeugungsreihen der Stunde fehlen -- sie steht in einer anderen
+             Reihe und kann da sein, wenn die andere schweigt. Die Zeile geht
+             dann nicht mehr auf, und genau das sagt die Spalte "Stunden ohne
+             Meldung". Eine Luecke wird nicht weggerechnet. */
+          if (v.netzlast[t3] !== null) { z3.last += v.netzlast[t3]; }
+          if (!belegt[t3]) { z3.fehlt++; continue; }
+          z3.erz += stapelOben[t3];
+          z3.einfuhr += einfuhrOben[t3] - stapelOben[t3];
+          if (v.netzlast[t3] !== null) {
+            z3.deck += einfuhrOben[t3] - v.netzlast[t3];
+          }
+          if (hatPreis && v.preis[t3] !== null) { z3.preis += v.preis[t3]; z3.preisN++; }
+        }
+        Object.keys(z3).forEach(function (s3) { alle[s3] += z3[s3]; });
+        var tr2 = el("tr");
+        tr2.appendChild(el("td", { text:
+          ausIso(v.tage[j]).toLocaleDateString("de-DE",
+            { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }) }));
+        tr2.appendChild(el("td", { text: nf1.format(z3.last / 1000) }));
+        tr2.appendChild(el("td", { text: nf1.format(z3.erz / 1000) }));
+        tr2.appendChild(einfuhrzelle(z3.einfuhr / 1000));
+        tr2.appendChild(deckzelle(z3.deck / 1000));
+        if (hatPreis) {
+          tr2.appendChild(el("td", { text: z3.preisN
+            ? nf2.format(z3.preis / z3.preisN) : "—" }));
+        }
+        tr2.appendChild(el("td", { "class": z3.fehlt ? "pf-minus" : "pf-hinweis",
+          text: z3.fehlt ? nf0.format(z3.fehlt) : "—" }));
+        kb.appendChild(tr2);
+        j = e2 + 1;
+      }
+      tab.appendChild(kb);
+      var fz = el("tr");
+      fz.appendChild(el("th", { text: "Zeitraum", scope: "row" }));
+      fz.appendChild(el("td", { text: nf1.format(alle.last / 1000) }));
+      fz.appendChild(el("td", { text: nf1.format(alle.erz / 1000) }));
+      fz.appendChild(einfuhrzelle(alle.einfuhr / 1000));
+      fz.appendChild(deckzelle(alle.deck / 1000));
+      if (hatPreis) {
+        fz.appendChild(el("td", { text: alle.preisN
+          ? nf2.format(alle.preis / alle.preisN) : "—" }));
+      }
+      fz.appendChild(el("td", { "class": alle.fehlt ? "pf-minus" : "pf-hinweis",
+        text: alle.fehlt ? nf0.format(alle.fehlt) : "—" }));
+      var ff = el("tfoot"); ff.appendChild(fz); tab.appendChild(ff);
+      roll.appendChild(tab);
+      kasten.appendChild(roll);
+      return kasten;
+    }
+    if (v.stuendlich) { huelle.appendChild(tagesuebersicht()); }
+
     var schalter = el("button", { "class": "pf-tabellenschalter", type: "button",
       "aria-expanded": "false", text: "Als Tabelle anzeigen" });
     var tabHuelle = el("div", { "class": "pf-tabellen-rollbereich" });
@@ -2657,14 +2783,35 @@
       schalter.setAttribute("aria-expanded", auf ? "true" : "false");
       schalter.textContent = auf ? "Tabelle ausblenden" : "Als Tabelle anzeigen";
       if (auf && !tabHuelle.childNodes.length) {
-        var tab = el("table", { "class": "pf-tabelle" });
+        /* DIE TABELLE FUEHRT JETZT BEIDE SCHRAFFIERTEN FLAECHEN.
+
+           Bis zum 14.09.2026 fehlten sie. Es gab eine Spalte
+           "Ueber-/Unterdeckung", die Erzeugung MINUS Netzlast rechnete -- also
+           ohne die Einfuhr, und damit eine ANDERE Groesse als die orange
+           Flaeche im Bild, die gegen die Oberkante der Einfuhr misst. Wer die
+           Zahl zur Flaeche suchte, fand eine, die nicht dazu gehoerte.
+
+           Ausserdem: eine Stunde ohne Meldung ist keine Null. Sie stand hier
+           als "0,0" in jeder Traegerspalte -- derselbe Fehler, der im Bild am
+           03.09.2026 behoben wurde, an dieser Stelle aber stehen blieb. */
+        var tab = el("table", { "class": "pf-tabelle pf-verlaufstabelle" });
+        tab.appendChild(el("caption", { "class": "pf-bezug",
+          text: "Alle Werte in " + v.einheit + ". „Einfuhr (netto)“ ist die "
+            + "teal schraffierte Fläche im Bild — eine Nettoausfuhr steht hier "
+            + "als 0,0, sie deckt nichts und wird auch im Bild nicht "
+            + "gezeichnet. „Überdeckung / Lücke“ ist Erzeugung plus Einfuhr "
+            + "minus Netzlast; negativ ist die orange Fläche. "
+            + "„—“ heißt: die Quelle hat nichts gemeldet. Das ist keine Null." }));
         var kopfz = el("tr");
         kopfz.appendChild(el("th", { text: v.stuendlich ? "Stunde" : "Tag", scope: "col" }));
         v.reihen.forEach(function (r) {
           if (r.summe) { kopfz.appendChild(el("th", { text: r.name, scope: "col" })); }
         });
+        kopfz.appendChild(el("th", { text: "Erzeugung gesamt", scope: "col" }));
         kopfz.appendChild(el("th", { text: "Netzlast", scope: "col" }));
-        kopfz.appendChild(el("th", { text: "Über-/Unterdeckung", scope: "col" }));
+        kopfz.appendChild(el("th", { text: "Einfuhr (netto)", scope: "col" }));
+        kopfz.appendChild(el("th", {
+          text: "Überdeckung (+) / Lücke (−)", scope: "col" }));
         if (hatPreis) { kopfz.appendChild(el("th", { text: "€/MWh", scope: "col" })); }
         var kopf = el("thead"); kopf.appendChild(kopfz); tab.appendChild(kopf);
         var koerper = el("tbody");
@@ -2673,12 +2820,19 @@
           tr.appendChild(el("td", {
             text: v.stuendlich ? v.tage[k] + " " + mk + ":00" : v.tage[k] }));
           v.reihen.forEach(function (r) {
-            if (r.summe) { tr.appendChild(el("td", { text: nf1.format(r.werte[k] / v.teiler) })); }
+            if (!r.summe) { return; }
+            var w2 = r.werte[k];
+            tr.appendChild(el("td", { text: w2 === null || w2 === undefined
+              ? "—" : nf1.format(w2 / v.teiler) }));
           });
+          tr.appendChild(el("td", { text: belegt[k]
+            ? nf1.format(stapelOben[k] / v.teiler) : "—" }));
           tr.appendChild(el("td", { text: v.netzlast[k] === null ? "—"
             : nf1.format(v.netzlast[k] / v.teiler) }));
-          tr.appendChild(el("td", { text: v.netzlast[k] === null ? "—"
-            : nf1.format((stapelOben[k] - v.netzlast[k]) / v.teiler) }));
+          tr.appendChild(einfuhrzelle(belegt[k]
+            ? (einfuhrOben[k] - stapelOben[k]) / v.teiler : null));
+          tr.appendChild(deckzelle(v.netzlast[k] === null || !belegt[k] ? null
+            : (einfuhrOben[k] - v.netzlast[k]) / v.teiler));
           if (hatPreis) {
             tr.appendChild(el("td", { text: v.preis[k] === null ? "—"
               : nf2.format(v.preis[k]) }));
@@ -3496,13 +3650,19 @@
             dl.appendChild(el("dd", { "class": "pf-rd-info-titel" }));
           }
           a.zeilen.forEach(function (z) {
-            var dt2 = el("dt");
+            /* Eine Zeile kann MARKIERT sein -- der Traeger, ueber dem der
+               Zeiger gerade steht. Dieselbe Klasse wie frueher im SVG, damit
+               die Pruefung "die Ablesung markiert denselben Traeger" weiter
+               genau das prueft. */
+            var dt2 = el("dt", z.aktiv ? { "class": "pf-ablesung-aktiv" } : {});
             if (z.token) {
               dt2.appendChild(el("i", { style: "background:var(" + z.token + ");" }));
             }
             dt2.appendChild(document.createTextNode(z.name));
             dl.appendChild(dt2);
-            dl.appendChild(el("dd", { text: z.wert }));
+            var dd2 = el("dd", { text: z.wert });
+            if (z.aktiv) { dd2.className = "pf-ablesung-aktiv"; }
+            dl.appendChild(dd2);
           });
         });
         if (dl.childNodes.length) { feld.appendChild(dl); }
@@ -5779,7 +5939,13 @@
           + "scripts/quellen.py bricht ab, sobald eine Datei ohne Quellenangabe unter "
           + "data/ auftaucht." }));
       var qroll = el("div", { "class": "pf-tabellen-rollbereich" });
-      var qtab = el("table", { "class": "pf-tabelle" });
+      /* EIGENER NAME, obwohl sie wie jede andere Tabelle aussieht. Der
+         Browsertest hat die Quellentabelle bis zum 14.09.2026 an der Zahl
+         ihrer Spalten erkannt -- sieben. Als der Verlauf eine Uebersicht der
+         Tageswerte bekam, hatte die auch sieben, und die Pruefung zaehlte sie
+         als Quelle mit. Eine Tabelle an ihrer Form zu erkennen ist keine
+         Erkennung. */
+      var qtab = el("table", { "class": "pf-tabelle pf-quellentabelle" });
       var qth = el("thead"), qhz = el("tr");
       ["Datensatz", "Inhalt", "Zeitraum", "Quelle", "Lizenz", "Umfang", "Abzug"]
         .forEach(function (h) { qhz.appendChild(el("th", { text: h, scope: "col" })); });
