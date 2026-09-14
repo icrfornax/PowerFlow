@@ -93,8 +93,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3129609,
-   "zeitraum": "2015-01-01 bis 2026-09-11",
+   "bytes": 3130165,
+   "zeitraum": "2015-01-01 bis 2026-09-13",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/tage"
@@ -117,8 +117,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 141,
-   "bytes": 14074600,
-   "zeitraum": "2015-01-01 bis 2026-09-12",
+   "bytes": 14079774,
+   "zeitraum": "2015-01-01 bis 2026-09-13",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
@@ -297,7 +297,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-tagesreihen.md",
    "dateien": 1,
-   "bytes": 1265,
+   "bytes": 1566,
    "zeitraum": null,
    "muster": "data/luecken.json",
    "abzug": "data/luecken.json",
@@ -309,7 +309,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 1,
-   "bytes": 159328,
+   "bytes": 159331,
    "zeitraum": null,
    "muster": "data/aussenhandel-preis.json",
    "abzug": "data/aussenhandel-preis.json",
@@ -353,5 +353,5 @@
   }
  ],
  "dateien_gesamt": 195,
- "bytes_gesamt": 33157512
+ "bytes_gesamt": 33163546
 }

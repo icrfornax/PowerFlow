@@ -415,6 +415,90 @@ try {
     "und warum die Tagessumme kleiner ist als der Fehler je Viertelstunde");
   pruefe(vorschau.info === 1, "mit Info-Knopf");
   await foto("vorschau", ".pf-vorschau");
+  /* DER GESAMTLAUF UEBER ALLE JAHRE. Geprueft wird die DATEI, nicht der Knopf.
+     Der Blob wird abgefangen, ohne ihn herunterzuladen -- ein Abzug, den
+     niemand aufmacht, ist keine Pruefung.
+
+     Der Zeitraum wird dafuer auf einen Bereich ueber den 29. Februar gesetzt:
+     dort muessen Schaltjahre einen Tag mehr haben, und genau das ist der
+     Randfall, an dem eine Jahresverschiebung schiefgeht. */
+  /* DREI SCHRITTE, nicht zwei. Die Seite begrenzt von auf <= bis und
+     umgekehrt -- wer nur zwei Felder in der falschen Reihenfolge setzt,
+     bekommt einen ganz anderen Zeitraum und merkt es nicht. Deshalb: von auf
+     den Anfang der Reihe, dann bis, dann von final. Jeder Zwischenschritt ist
+     gueltig. Beim ersten Anlauf hat das gefehlt, und der Test mass 193 statt
+     6 Tage. */
+  await js(`(function () { const v = document.getElementById("pf-von");
+    v.value = v.min; v.dispatchEvent(new Event("change", { bubbles: true })); })()`);
+  await schlafen(700);
+  await js(`(function () { const b = document.getElementById("pf-bis");
+    b.value = "2026-03-02"; b.dispatchEvent(new Event("change", { bubbles: true })); })()`);
+  await schlafen(700);
+  await js(`(function () { const v = document.getElementById("pf-von");
+    v.value = "2026-02-26"; v.dispatchEvent(new Event("change", { bubbles: true })); })()`);
+  await schlafen(2500);
+  const zeitraumGesetzt = await js(`document.getElementById("pf-von").value + ".."
+    + document.getElementById("pf-bis").value`);
+  pruefe(zeitraumGesetzt === "2026-02-26..2026-03-02",
+    "der Zeitraum fuer den Schalttagstest ist gesetzt", zeitraumGesetzt);
+  const gesamt = await js(`(async function () {
+    const echt = URL.createObjectURL;
+    let blob = null;
+    URL.createObjectURL = function (b) { blob = b; return echt.call(URL, b); };
+    const knopf = [...document.querySelectorAll(".pf-abzug")]
+      .find((x) => /in allen Jahren/.test(x.textContent));
+    if (!knopf) { URL.createObjectURL = echt; return { fehlt: true }; }
+    knopf.click();
+    for (let i = 0; i < 250; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+      if (blob) { break; }
+    }
+    URL.createObjectURL = echt;
+    if (!blob) { return { leer: true }; }
+    const text = await blob.text();
+    const zeilen = text.split(String.fromCharCode(10));
+    const daten = zeilen.filter((z) => z && z[0] !== "#");
+    const netz = daten.filter((z) => z.indexOf(",kennzahl,netzlast,") >= 0);
+    // Tage je Jahr aus den Netzlastzeilen: Spalte 3 ist "tage", Spalte 0 das Jahr.
+    const tage = {};
+    for (const z of netz) { const s = z.split(","); tage[s[0]] = Number(s[3]); }
+    return {
+      zeichen: text.length,
+      kopfzeilen: zeilen.filter((z) => z[0] === "#").length,
+      spalten: daten[0],
+      jahre: netz.length,
+      streuung: daten.filter((z) => z.indexOf(",streuung,") >= 0).length,
+      tage2024: tage["2024"], tage2025: tage["2025"], tage2026: tage["2026"],
+      nenntZweck: /wie stark das Ergebnis daran haengt/.test(text),
+      nenntSchalttag: /29. Februar/.test(text),
+      nenntLizenz: /CC BY 4.0/.test(text),
+      knopftext: (document.querySelector(".pf-abzug") || {}).textContent || ""
+    };
+  })()`);
+  pruefe(!gesamt.fehlt && !gesamt.leer,
+    "der Gesamtlauf erzeugt eine Datei", JSON.stringify(gesamt).slice(0, 80));
+  if (!gesamt.fehlt && !gesamt.leer) {
+    pruefe(gesamt.jahre >= 10,
+      `eine Zeile je Jahr (${gesamt.jahre} Jahre)`);
+    pruefe(gesamt.streuung >= 20,
+      `Streuungszeilen vorhanden (${gesamt.streuung})`);
+    pruefe(gesamt.spalten === "jahr,von,bis,tage,belegt,gruppe,name,wert_mwh",
+      "die Kopfzeile nennt alle Spalten", gesamt.spalten);
+    /* DER SCHALTTAG. Der Zeitraum 26.02. bis 02.03. hat in Schaltjahren einen
+       Tag mehr. Wer die Jahre ohne diese Ruecksicht verschiebt, bekommt
+       ueberall dieselbe Tageszahl -- und vergleicht dann fuenf Tage mit
+       sechs, ohne es zu merken. */
+    pruefe(gesamt.tage2024 === 6 && gesamt.tage2025 === 5,
+      "Schaltjahr hat einen Tag mehr als das Folgejahr",
+      `2024: ${gesamt.tage2024}, 2025: ${gesamt.tage2025}`);
+    pruefe(gesamt.nenntZweck && gesamt.nenntSchalttag,
+      "der Kopf nennt den Zweck und die Schalttagsregel");
+    pruefe(gesamt.nenntLizenz, "und die Lizenz");
+  }
+  await js(`[...document.querySelectorAll(".pf-schnell")]
+    .find((b) => b.textContent === "Letzte 7 Tage").click()`);
+  await schlafen(2500);
+
   await foto("prognoseguete", ".pf-prognoseguete");
 
   await foto("prognoseguete", ".pf-prognoseguete");
@@ -1674,8 +1758,9 @@ try {
   pruefe(schieflage.satz.includes(String(schieflage.jahre) + " Jahre"),
     `und die Zahl der Jahre (${schieflage.jahre})`);
 
-  pruefe(offen && offen.anzahl === 7,
-    `sieben offene Punkte (${offen && offen.anzahl})`);
+  // Der Gesamtlauf ist am 14.09.2026 gebaut und faellt damit aus der Liste.
+  pruefe(offen && offen.anzahl === 6,
+    `sechs offene Punkte (${offen && offen.anzahl})`);
   pruefe(offen && offen.hoch === 1,
     `einer davon ist als "Als Naechstes" markiert (${offen && offen.hoch})`);
   pruefe(offen && /Als N/.test(offen.erste),

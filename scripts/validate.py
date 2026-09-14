@@ -862,6 +862,36 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("22,2 % der Arbeit in Ma" not in js,
              "die widerlegte Mitternachtsannahme steht nicht mehr auf der Seite")
 
+    # --- Der Gesamtlauf ueber alle Vergleichsjahre ---
+    # Er beantwortet die Frage hinter der einen freien Variable: wie stark
+    # haengt das Ergebnis am gewaehlten Zeitraum? Zwei Dinge duerfen dabei
+    # nicht verschwinden:
+    #   1. Die Schalttagsregel. Ein Zeitraum ueber den 29.02. ist in
+    #      Schaltjahren einen Tag laenger; wer die Jahre ohne diese Ruecksicht
+    #      verschiebt, vergleicht fuenf Tage mit sechs.
+    #   2. Der Ausschluss unvollstaendiger Jahre aus der Streuung. Ein halb
+    #      belegtes Jahr hat eine kleinere Summe -- das ist keine Aussage ueber
+    #      den Verbrauch.
+    # MIT KLAMMER. Ohne sie erfuellt "function tagImJahrX" die Suche nach
+    # "function tagImJahr" -- der Negativtest, der genau das tat, schlug
+    # deshalb nicht an. Eine Textsuche, die an einem Teilstring haengt, ist
+    # keine Pruefung; dieselbe Klasse wie die Kommentar-Falle von frueher.
+    for satz in ("function gesamtlaufCsv(", "function tagImJahr(",
+                 "function schaltjahr(", "function gesamtlaufLaden("):
+        b.pruefe(satz in js, f"das Modul enthaelt: {satz!r}")
+    b.pruefe("in allen Jahren" in js,
+             "der Gesamtlauf hat einen eigenen Abzugsknopf")
+    b.pruefe(js.count("function dateiAbziehen") == 1
+             and js.count("URL.createObjectURL") == 1,
+             "es gibt genau EINEN Abzugsweg fuer beide CSV-Dateien")
+    # Die Streuung darf nur ueber vollstaendige Jahre laufen. Geprueft wird die
+    # Bedingung im Quelltext, nicht die Stelle: es muss gefiltert werden.
+    b.pruefe("belegt === z.k.tage" in js,
+             "die Streuung laeuft nur ueber vollstaendig belegte Jahre")
+    gl = lade("docs/beleg-gesamtlauf.md")
+    for satz in ("29. Februar", "Unvollst", "0 Abweichungen", "drei Schritten"):
+        b.pruefe(satz in gl, f"beleg-gesamtlauf.md nennt: {satz!r}")
+
     # --- Die zwei ENTSO-E-Preisreihen ---
     # Wer die A44-Reihe abruft, bekommt ZWEI Preisreihen und muss waehlen.
     # Sequence 1 trifft SMARD auf 0,0000 EUR/MWh, Sequence 2 liegt bis zu
@@ -1245,10 +1275,21 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # Zeitraum komplett. Eine abgeleitete Datei, die niemand neu rechnet,
     # veraltet still -- wie eine Zahl in Prosa.
     ahp = json.loads(lade("data/aussenhandel-preis.json"))
-    letzte_stunde = max(m["stunden"][-1] for m in verlauf.values() if m["stunden"])
-    b.pruefe(ahp["tage"][-1] >= letzte_stunde[:10],
-             f"der Aussenhandelspreis reicht bis zum letzten Stundenwert "
-             f"({ahp['tage'][-1]} gegen {letzte_stunde[:10]})")
+    # Bis zum letzten Tag, an dem PREIS UND AUSSENHANDEL vorliegen -- das ist
+    # die Bedingung, die preisgewicht() selbst benutzt. Frueher stand hier
+    # "bis zum letzten Stundenwert"; das schlug an, sobald der Aussenhandel
+    # einen Tag vor dem Preis da war, und das ist der Normalfall.
+    letzter_verwertbar = ""
+    for m in verlauf.values():
+        preise = m.get("preis_eur_mwh") or []
+        ein = m.get("import_mwh") or []
+        for i, marke in enumerate(m["stunden"]):
+            if i < len(preise) and i < len(ein) \
+                    and preise[i] is not None and ein[i] is not None:
+                letzter_verwertbar = max(letzter_verwertbar, marke[:10])
+    b.pruefe(ahp["tage"][-1] >= letzter_verwertbar,
+             f"der Aussenhandelspreis reicht bis zum letzten verwertbaren Tag "
+             f"({ahp['tage'][-1]} gegen {letzter_verwertbar})")
 
     # --- Vollstaendigkeit der Monatsdateien ---
     # EIN MONAT, DER VORBEI IST, HAT ALLE SEINE STUNDEN. Am 11.09.2026 hat der
@@ -1635,6 +1676,13 @@ def negativtests() -> int:
         # Der Datenverlust vom 11.09.2026: der Nachtrag kuerzte den Juli von
         # 744 auf 120 Stunden. Keine der damaligen Pruefungen haette das
         # gemeldet -- 120 richtige Stunden passen zu fuenf richtigen Tagen.
+        # Der Gesamtlauf ohne Schalttagsregel -- er wuerde fuenf Tage mit
+        # sechs vergleichen, ohne dass es auffiele.
+        ("Schalttagsregel aus dem Gesamtlauf entfernt",
+         lambda: {"js": basis["js"].replace("function tagImJahr", "function tagImJahrX")}),
+        # Und ohne den Ausschluss unvollstaendiger Jahre.
+        ("Unvollstaendige Jahre gehen in die Streuung ein",
+         lambda: {"js": basis["js"].replace("belegt === z.k.tage", "belegt >= 0")}),
         ("Einem abgeschlossenen Monat fehlen Stunden",
          lambda: {"verlauf": _monat_gekuerzt(basis["verlauf"])}),
         ("Schwelle der Kraftwerksliste im Text verstellt",

@@ -4433,15 +4433,199 @@
     return z.join("\n") + "\n";
   }
 
-  function csvHerunterladen(von, bis) {
-    var blob = new Blob([csvBauen(von, bis)], { type: "text/csv;charset=utf-8" });
+  /* DER GESAMTLAUF ueber alle Vergleichsjahre.
+
+     Die Seite hat EINE freie Variable, den Zeitraum. Der eingebaute Vergleich
+     zeigt ein Jahr zurueck -- das beantwortet "ist es mehr oder weniger als
+     damals", aber nicht "wie gross ist die Schwankung ueberhaupt". Genau das
+     ist die Frage hinter der freien Variable: haengt das Ergebnis am gewaehlten
+     Zeitraum, und wie stark?
+
+     Der Gesamtlauf rechnet DENSELBEN KALENDERZEITRAUM in JEDEM verfuegbaren
+     Jahr durch. Aus "01.-07.09.2026: 8.360 GWh Netzlast" wird eine Reihe von
+     zwoelf Werten, und daraus Spanne, Median und Streuung.
+
+     Drei Dinge, die dabei nicht verrutschen duerfen:
+
+     1. DER 29. FEBRUAR. Er hat in elf von zwoelf Jahren kein Gegenstueck.
+        vorjahrstag() weicht auf den 28. aus; hier gilt dieselbe Regel, nur
+        ueber mehrere Jahre. Ein Zeitraum, der den 29.02. enthaelt, ist in
+        Schaltjahren einen Tag laenger -- das steht in der Datei, damit
+        niemand die Summen ohne Ruecksicht darauf vergleicht.
+     2. UNVOLLSTAENDIGE JAHRE. Das laufende Jahr endet beim letzten gemeldeten
+        Tag. Ein Zeitraum, der darueber hinausreicht, hat dort weniger belegte
+        Tage -- die Summe ist dann kleiner, ohne dass weniger verbraucht wurde.
+        Deshalb steht in JEDER Zeile, wie viele Tage belegt sind, und die
+        Streuung wird NUR ueber vollstaendige Jahre gerechnet.
+     3. DIE REIHEN BEGINNEN 2015. Frueher gibt es nichts; das ist keine Null. */
+
+  function gesamtlaufJahre() {
+    return (Z.verzeichnis.jahre || []).map(function (j) { return j.jahr; })
+      .sort(function (a, b) { return a - b; });
+  }
+
+  /* Denselben Kalendertag n Jahre frueher oder spaeter. Wie vorjahrstag(),
+     nur mit beliebigem Abstand -- und mit derselben Regel fuer den 29.02. */
+  function tagImJahr(iso, jahr) {
+    var t = iso.split("-");
+    if (t[1] === "02" && t[2] === "29" && !schaltjahr(jahr)) {
+      return jahr + "-02-28";
+    }
+    return jahr + "-" + t[1] + "-" + t[2];
+  }
+
+  function schaltjahr(j) {
+    return (j % 4 === 0 && j % 100 !== 0) || j % 400 === 0;
+  }
+
+  /* Laedt alle Jahresdateien. Der Abzug ist der einzige Ort, der sie ALLE
+     braucht -- die Seite selbst kommt mit zweien aus. Deshalb wird hier
+     nachgeladen und nicht beim Seitenaufbau. */
+  function gesamtlaufLaden() {
+    return Promise.all(gesamtlaufJahre().map(jahrLaden));
+  }
+
+  function gesamtlaufCsv(von, bis) {
+    var jahre = gesamtlaufJahre();
+    var jahrVon = Number(von.slice(0, 4));
+    var zeilen = [];
+    jahre.forEach(function (j) {
+      var a = tagImJahr(von, j);
+      var b = tagImJahr(bis, j + (Number(bis.slice(0, 4)) - jahrVon));
+      var k = kennzahlen(a, b);
+      if (!k) { return; }
+      zeilen.push({ jahr: j, von: a, bis: b, k: k,
+                    tr: traeger(a, b), zo: zonen(a, b), la: laender(a, b) });
+    });
+    if (!zeilen.length) { return null; }
+
+    /* VOLLSTAENDIG heisst: jeder Kalendertag des Zeitraums hat Daten. Nur
+       diese Jahre gehen in die Streuung ein -- ein halb belegtes Jahr hat eine
+       kleinere Summe, und das ist keine Aussage ueber den Verbrauch. */
+    var voll = zeilen.filter(function (z) { return z.k.belegt === z.k.tage; });
+
+    var z = [
+      "# PowerFlow -- derselbe Zeitraum in allen Jahren",
+      "# Zeitraum: " + von.slice(5) + " bis " + bis.slice(5)
+        + ", gerechnet in " + zeilen.length + " Jahren ("
+        + zeilen[0].jahr + " bis " + zeilen[zeilen.length - 1].jahr + ")",
+      "# Davon VOLLSTAENDIG belegt: " + voll.length
+        + (voll.length < zeilen.length
+            ? " -- die uebrigen " + (zeilen.length - voll.length)
+              + " sind unvollstaendig und gehen NICHT in die Streuung ein"
+            : ""),
+      "#",
+      "# WOZU. Die Seite hat eine freie Variable: den Zeitraum. Diese Datei",
+      "# zeigt, wie stark das Ergebnis daran haengt -- derselbe Kalenderzeitraum,",
+      "# jedes Jahr einmal gerechnet, aus realen Messwerten. Kein Mittel, keine",
+      "# geglaettete Kurve.",
+      "#",
+      "# Der 29. Februar hat in Nicht-Schaltjahren kein Gegenstueck und wird",
+      "# auf den 28. gelegt -- dieselbe Regel wie beim Vorjahresvergleich der",
+      "# Seite. Ein Zeitraum ueber den 29.02. ist in Schaltjahren einen Tag",
+      "# laenger; die Spalte 'tage' sagt es.",
+      "#",
+      "# Quelle: SMARD, Bundesnetzagentur -- https://www.smard.de/",
+      "# Lizenz: CC BY 4.0",
+      "# Namensnennung: Bundesnetzagentur | SMARD.de",
+      "# Erzeugt: " + new Date().toLocaleString("de-DE"),
+      "#",
+      "# Einheit MWh, Dezimaltrennzeichen PUNKT (maschinenlesbar). Die Anzeige",
+      "# auf der Seite ist deutsch formatiert -- derselbe Wert, zwei",
+      "# Schreibweisen.",
+      "#",
+      "# Die Zeilen der Gruppe 'streuung' fassen die VOLLSTAENDIGEN Jahre",
+      "# zusammen: kleinster und groesster Wert, Median, und die Spanne in",
+      "# Prozent des Medians. Sie sind gerechnet, nicht gemessen -- die Formel",
+      "# steht daneben.",
+      "#",
+      "jahr,von,bis,tage,belegt,gruppe,name,wert_mwh"
+    ];
+
+    function zeile(j, a, b, tage, belegt, gruppe, name, wert) {
+      z.push([j, a, b, tage, belegt, gruppe, name,
+              (wert === null || wert === undefined) ? "" : wert.toFixed(2)].join(","));
+    }
+
+    // --- Streuung zuerst: sie ist die Antwort auf die Frage ---------------
+    var GROESSEN = [
+      ["netzlast", function (x) { return x.k.netzlast; }],
+      ["erzeugung", function (x) { return x.k.erzeugung; }],
+      ["residuallast", function (x) { return x.k.residuallast; }],
+      ["import", function (x) { return x.k.imp; }],
+      ["export", function (x) { return x.k.exp; }],
+      ["aussensaldo", function (x) { return x.k.saldo; }],
+      ["bilanzrest", function (x) { return x.k.rest; }]
+    ];
+    GROESSEN.forEach(function (g) {
+      var werte = voll.map(g[1]).filter(function (w) {
+        return w !== null && w !== undefined;
+      }).sort(function (a, b) { return a - b; });
+      if (werte.length < 2) { return; }
+      var med = werte.length % 2
+        ? werte[(werte.length - 1) / 2]
+        : (werte[werte.length / 2 - 1] + werte[werte.length / 2]) / 2;
+      var spanne = werte[werte.length - 1] - werte[0];
+      z.push(["", "", "", "", werte.length, "streuung", g[0] + "_min",
+              werte[0].toFixed(2)].join(","));
+      z.push(["", "", "", "", werte.length, "streuung", g[0] + "_max",
+              werte[werte.length - 1].toFixed(2)].join(","));
+      z.push(["", "", "", "", werte.length, "streuung", g[0] + "_median",
+              med.toFixed(2)].join(","));
+      // Die Spanne in Prozent des Medians -- eine Rechnung, und sie wird
+      // benannt. Bei einem Median um null waere sie sinnlos; dann bleibt sie
+      // leer statt eine Zahl vorzutaeuschen.
+      z.push(["", "", "", "", werte.length, "streuung",
+              g[0] + "_spanne_prozent_des_medians",
+              Math.abs(med) > 1 ? (spanne / Math.abs(med) * 100).toFixed(2) : ""
+             ].join(","));
+    });
+
+    // --- Dann jedes Jahr einzeln ------------------------------------------
+    zeilen.forEach(function (x) {
+      var k = x.k;
+      function w(gruppe, name, wert) {
+        zeile(x.jahr, x.von, x.bis, k.tage, k.belegt, gruppe, name, wert);
+      }
+      w("kennzahl", "netzlast", k.netzlast);
+      w("kennzahl", "erzeugung", k.erzeugung);
+      w("kennzahl", "residuallast", k.residuallast);
+      w("kennzahl", "pumpspeicherverbrauch", k.pumpen);
+      w("kennzahl", "import", k.imp);
+      w("kennzahl", "export", k.exp);
+      w("kennzahl", "aussensaldo", k.saldo);
+      w("kennzahl", "bilanzrest", k.rest);
+      x.tr.forEach(function (e) { w("erzeugung", e.name, e.mwh); });
+      x.zo.forEach(function (e) {
+        w("regelzone_netzlast", e.zone, e.netzlast);
+        w("regelzone_erzeugung", e.zone, e.erzeugung);
+        w("regelzone_saldo", e.zone, e.saldo);
+      });
+      x.la.forEach(function (e) {
+        w("import", e.land, e.imp);
+        w("export", e.land, e.exp);
+      });
+    });
+    return z.join("\n") + "\n";
+  }
+
+  /* EIN Abzugsweg fuer beide Dateien. Vorher stand er nur in
+     csvHerunterladen; als der Gesamtlauf dazukam, waere er ein zweites Mal
+     dagestanden -- und die naechste Aenderung haette nur eine der beiden
+     Stellen getroffen. */
+  function dateiAbziehen(inhalt, name) {
+    var blob = new Blob([inhalt], { type: "text/csv;charset=utf-8" });
     var url = URL.createObjectURL(blob);
-    var a = el("a", { href: url,
-      download: "powerflow-" + (von === bis ? von : von + "_bis_" + bis) + ".csv" });
+    var a = el("a", { href: url, download: name });
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function csvHerunterladen(von, bis) {
+    dateiAbziehen(csvBauen(von, bis),
+      "powerflow-" + (von === bis ? von : von + "_bis_" + bis) + ".csv");
   }
 
   // ---- Zeichnen -----------------------------------------------------------
@@ -5466,17 +5650,11 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
-      /* Jetzt der oberste Punkt. Die untersuchbaren Fragen sind beantwortet;
-         was bleibt, braucht fremde Erhebungen. Damit ist der naechste Punkt
-         kein Befund mehr, sondern Arbeit -- und diese haengt an der einen
-         freien Variable der Seite. */
+      /* Jetzt der oberste Punkt -- und eine Entscheidung, die Immo treffen
+         muss, keine Messung: 48 statt 12 MB, die JEDER Besucher mitlaedt. */
       { hoch: true,
-        text: "Ein Gesamtlauf über alle Vergleichsjahre als CSV, damit sichtbar "
-          + "wird, wie stark das Ergebnis am gewählten Zeitraum hängt." },
-      /* Jetzt der oberste Punkt. Die Redispatch-Frage darueber ist am
-         12.09.2026 beantwortet; von den verbleibenden ist dies die einzige,
-         die eine Zahl betrifft, die diese Seite ZEIGT -- den Boersenpreis --
-         und die mit dem vorhandenen Zugang messbar ist. */
+        text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
+          + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
       { hoch: false,
         text: "Welche Auktion die zweite ENTSO-E-Preisreihe ist. Am 12.09.2026 "
           + "ist geklärt, welche die RICHTIGE ist: von den zwei Reihen, die "
@@ -5544,9 +5722,6 @@
          Markierung heisst "wird als Naechstes angefasst"; sie an etwas zu
          haengen, das bewusst liegen bleibt, macht sie wertlos. Genau EIN
          Eintrag darf sie tragen, und browsertest.mjs prueft das. */
-      { hoch: false,
-        text: "Viertelstundenwerte. SMARD hätte sie; als Datei wären sie "
-          + "viermal so groß — 48 statt 12 MB, die jeder Besucher mitlädt." },
       { hoch: false,
         text: "1.030 Windenergieanlagen in Betrieb haben im Register keine "
           + "Koordinate und fehlen auf der Karte. Das ist eine Lücke der "
@@ -5629,6 +5804,33 @@
     csvKnopf.appendChild(el("span", { text: "CSV" }));
     csvKnopf.addEventListener("click", function () { csvHerunterladen(von, bis); });
     abzuege.appendChild(csvKnopf);
+    /* DER GESAMTLAUF. Er braucht ALLE Jahresdateien; die Seite selbst kommt
+       mit zweien aus. Deshalb wird erst beim Klick nachgeladen und der Knopf
+       sagt waehrenddessen, dass er arbeitet -- ein Knopf, der eine Sekunde
+       lang nichts tut, wird ein zweites Mal gedrueckt. */
+    var gesamtKnopf = el("button", { "class": "pf-abzug", type: "button",
+      text: "Derselbe Zeitraum " + von.slice(8) + "." + von.slice(5, 7) + ". bis "
+        + bis.slice(8) + "." + bis.slice(5, 7) + ". in allen Jahren" });
+    gesamtKnopf.appendChild(el("span", { text: "CSV" }));
+    gesamtKnopf.addEventListener("click", function () {
+      if (gesamtKnopf.disabled) { return; }
+      var alt = gesamtKnopf.firstChild.nodeValue;
+      gesamtKnopf.disabled = true;
+      gesamtKnopf.firstChild.nodeValue = "lädt alle Jahre …";
+      gesamtlaufLaden().then(function () {
+        var inhalt = gesamtlaufCsv(von, bis);
+        if (inhalt) {
+          dateiAbziehen(inhalt, "powerflow-alle-jahre-" + von.slice(5) + "_bis_"
+            + bis.slice(5) + ".csv");
+        }
+        gesamtKnopf.firstChild.nodeValue = alt;
+        gesamtKnopf.disabled = false;
+      }).catch(function () {
+        gesamtKnopf.firstChild.nodeValue = "Abzug fehlgeschlagen";
+        gesamtKnopf.disabled = false;
+      });
+    });
+    abzuege.appendChild(gesamtKnopf);
     /* Das Methodikpapier. Es wird beim Bau aus denselben Dateien neu gerechnet,
        die hier zum Abzug stehen -- eine von Hand gepflegte Fassung liefe der
        Wirklichkeit hinterher. */

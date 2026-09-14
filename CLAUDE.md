@@ -930,6 +930,41 @@ die sich bewegt, wird gerechnet -- nicht geschrieben.*
 `fetch-redispatch.py --nur-verzeichnis` baut das Verzeichnis ohne Netz und ohne
 Zugangsdaten neu, wenn sich sein Zuschnitt aendert.
 
+## Gesamtlauf ueber alle Vergleichsjahre
+
+Gebaut am 14.09.2026. Beleg: `docs/beleg-gesamtlauf.md`, erzeugt von
+`gesamtlaufCsv()` in `assets/powerflow.js`.
+
+Der zweite CSV-Abzug rechnet DENSELBEN KALENDERZEITRAUM in jedem verfuegbaren
+Jahr durch. Er beantwortet die Frage hinter der einen freien Variable: wie
+stark haengt das Ergebnis am gewaehlten Zeitraum?
+
+**Das Ergebnis fuer den 1. bis 7. September, zwoelf Jahre:** Netzlast schwankt
+um 11,8 %, Erzeugung um 30,8 %, Residuallast um 76,9 %, Einfuhr um 220,1 % --
+und der Aussensaldo wechselt das Vorzeichen. Die Netzlast ist die stabilste
+Groesse; die Residuallast schwankt sechsmal so stark, weil Wind und
+Photovoltaik den steuerbaren Rest zusammendruecken.
+
+Drei Regeln, die dabei nicht verrutschen duerfen:
+
+- **Der 29. Februar.** In Nicht-Schaltjahren weicht `tagImJahr()` auf den 28.
+  aus -- dieselbe Regel wie beim Vorjahresvergleich. Ein Zeitraum UEBER den
+  29.02. ist in Schaltjahren einen Tag laenger; die Tageszahl steht deshalb in
+  JEDER Zeile. Der Browsertest prueft es am Zeitraum 26.02.-02.03.
+- **Unvollstaendige Jahre gehen NICHT in die Streuung ein.** Ein halb belegtes
+  Jahr hat eine kleinere Summe -- das ist keine Aussage ueber den Verbrauch.
+  Sie bleiben mit ihrer Tageszahl in der Datei, aber ausserhalb der Rechnung.
+- **Die Streuungszeilen sind GERECHNET, nicht gemessen.** Steht im Kopf der
+  Datei. Die Spanne in Prozent bleibt leer, wenn der Median nahe null liegt.
+
+**Nachgerechnet in Python**, ohne eine Zeile des JavaScript: 96 Kennzahlen,
+0 Abweichungen.
+
+**Beim Testbau gelernt: den Zeitraum setzt man in DREI Schritten.** Die Seite
+begrenzt `von` auf <= `bis` und umgekehrt; wer nur zwei Felder in der falschen
+Reihenfolge setzt, misst einen ganz anderen Zeitraum und merkt es nicht. Der
+erste Testlauf hat so 193 Tage statt 6 gemessen.
+
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
 Belegt in `docs/beleg-tagesreihen.md`. Diese drei Punkte duerfen weder
