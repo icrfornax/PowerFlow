@@ -50,6 +50,47 @@ function pruefe(bedingung, text, zusatz = "") {
 
 function schlafen(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
+/* DEN ZEITRAUM SETZT MAN UEBER DEN ZUSTAND, NICHT UEBER DIE UHR.
+
+   Die Seite begrenzt "von" auf <= "bis" und umgekehrt. Wer beide Felder in der
+   falschen Reihenfolge setzt, misst einen ganz anderen Zeitraum und merkt es
+   nicht -- ein Testlauf hat so einmal 193 Tage statt 6 gemessen. Die erste
+   Abhilfe war ein Dreisprung ueber den Anfang der Reihe mit festen
+   Wartezeiten. Der ist gegen die LIVE-Seite durchgefallen: "von" auf
+   2015-01-01 laesst die Seite zwoelf Jahre nachladen, und ueber das Netz
+   dauert das laenger als die 700 ms, nach denen der naechste Schritt kam.
+
+   Jetzt wird die Reihenfolge aus den AKTUELLEN Werten bestimmt -- kein
+   Zwischenschritt ueber die ganze Reihe --, und danach wird nachgesehen, ob
+   beide Felder wirklich stehen. Erst wenn sie es zweimal hintereinander tun,
+   ist die Seite fertig. */
+async function setzeZeitraum(js, von, bis) {
+  const soll = von + ".." + bis;
+  const lies = () => js(`document.getElementById("pf-von").value + ".."`
+    + ` + document.getElementById("pf-bis").value`);
+  for (let versuch = 0; versuch < 10; versuch++) {
+    await js(`(function () {
+      const v = document.getElementById("pf-von");
+      const b = document.getElementById("pf-bis");
+      const setze = function (e, w) {
+        if (e.value === w) { return; }
+        e.value = w; e.dispatchEvent(new Event("change", { bubbles: true }));
+      };
+      // Zuerst das Feld, das die Bedingung von <= bis nicht verletzt.
+      if (${JSON.stringify(von)} <= b.value) {
+        setze(v, ${JSON.stringify(von)}); setze(b, ${JSON.stringify(bis)});
+      } else {
+        setze(b, ${JSON.stringify(bis)}); setze(v, ${JSON.stringify(von)});
+      }
+    })()`);
+    await schlafen(600);
+    if (await lies() !== soll) { continue; }
+    await schlafen(1400);          // die Seite laedt nach -- haelt es danach?
+    if (await lies() === soll) { return true; }
+  }
+  return false;
+}
+
 /* ---- CCP-Verbindung ---------------------------------------------------- */
 
 class Chrome {
@@ -422,24 +463,10 @@ try {
      Der Zeitraum wird dafuer auf einen Bereich ueber den 29. Februar gesetzt:
      dort muessen Schaltjahre einen Tag mehr haben, und genau das ist der
      Randfall, an dem eine Jahresverschiebung schiefgeht. */
-  /* DREI SCHRITTE, nicht zwei. Die Seite begrenzt von auf <= bis und
-     umgekehrt -- wer nur zwei Felder in der falschen Reihenfolge setzt,
-     bekommt einen ganz anderen Zeitraum und merkt es nicht. Deshalb: von auf
-     den Anfang der Reihe, dann bis, dann von final. Jeder Zwischenschritt ist
-     gueltig. Beim ersten Anlauf hat das gefehlt, und der Test mass 193 statt
-     6 Tage. */
-  await js(`(function () { const v = document.getElementById("pf-von");
-    v.value = v.min; v.dispatchEvent(new Event("change", { bubbles: true })); })()`);
-  await schlafen(700);
-  await js(`(function () { const b = document.getElementById("pf-bis");
-    b.value = "2026-03-02"; b.dispatchEvent(new Event("change", { bubbles: true })); })()`);
-  await schlafen(700);
-  await js(`(function () { const v = document.getElementById("pf-von");
-    v.value = "2026-02-26"; v.dispatchEvent(new Event("change", { bubbles: true })); })()`);
-  await schlafen(2500);
+  const zeitraumSteht = await setzeZeitraum(js, "2026-02-26", "2026-03-02");
   const zeitraumGesetzt = await js(`document.getElementById("pf-von").value + ".."
     + document.getElementById("pf-bis").value`);
-  pruefe(zeitraumGesetzt === "2026-02-26..2026-03-02",
+  pruefe(zeitraumSteht && zeitraumGesetzt === "2026-02-26..2026-03-02",
     "der Zeitraum fuer den Schalttagstest ist gesetzt", zeitraumGesetzt);
   const gesamt = await js(`(async function () {
     const echt = URL.createObjectURL;
@@ -504,18 +531,11 @@ try {
   /* UND SIE DARF NICHT IMMER DASTEHEN. Eine Warnung, die bei jedem Abzug
      erscheint, wird ueberlesen. Geprueft an einem Zeitraum, dessen Jahre alle
      NACH dem Bruch liegen -- den gibt es, seit die Reihe bis 2026 reicht. */
+  await setzeZeitraum(js, "2026-02-26", "2026-03-02");
   const ohneBruch = await js(`(async function () {
     const echt = URL.createObjectURL;
     let blob = null;
     URL.createObjectURL = function (b) { blob = b; return echt.call(URL, b); };
-    // Zeitraum in drei Schritten, sonst begrenzt die Seite.
-    const v = document.getElementById("pf-von"), b2 = document.getElementById("pf-bis");
-    v.value = v.min; v.dispatchEvent(new Event("change", { bubbles: true }));
-    await new Promise((r) => setTimeout(r, 700));
-    b2.value = "2026-03-02"; b2.dispatchEvent(new Event("change", { bubbles: true }));
-    await new Promise((r) => setTimeout(r, 700));
-    v.value = "2026-02-26"; v.dispatchEvent(new Event("change", { bubbles: true }));
-    await new Promise((r) => setTimeout(r, 2500));
     const knopf = [...document.querySelectorAll(".pf-abzug")]
       .find((x) => /in allen Jahren/.test(x.textContent));
     knopf.click();
