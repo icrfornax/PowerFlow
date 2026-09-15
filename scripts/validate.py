@@ -889,10 +889,34 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe(js.count("function dateiAbziehen") == 1
              and js.count("URL.createObjectURL") == 1,
              "es gibt genau EINEN Abzugsweg fuer beide CSV-Dateien")
-    # Die Streuung darf nur ueber vollstaendige Jahre laufen. Geprueft wird die
-    # Bedingung im Quelltext, nicht die Stelle: es muss gefiltert werden.
-    b.pruefe("belegt === z.k.tage" in js,
+    # Die Streuung darf nur ueber vollstaendige Jahre laufen. Sie wird seit dem
+    # 15.09.2026 an EINER Stelle gerechnet (mehrjahresstreuung), die der
+    # CSV-Abzug UND der Block auf der Seite benutzen -- geprueft wird deshalb
+    # dort: "voll" heisst belegt gleich tage, und gefiltert wird darauf.
+    #
+    # Ueber einen regulaeren Ausdruck statt ueber eine feste Schreibweise. Die
+    # erste Fassung suchte woertlich nach "belegt === z.k.tage" und ist beim
+    # Auslagern der Rechnung stillschweigend wirkungslos geworden -- dieselbe
+    # Klasse Fehler, vor der CLAUDE.md seit Monaten warnt.
+    # Der Block auf der Seite -- und der Beleg dazu.
+    b.pruefe("mehrjahresBlock" in js and "Mehrjahresvergleich" in js,
+             "der Mehrjahresvergleich steht als eigener Abschnitt auf der Seite")
+    for satz in ("Jede Achse beginnt bei null", "2,99 MB",
+                 "IntersectionObserver", "29. Februar", "Erdgas-Bruch"):
+        b.pruefe(satz in lade("docs/beleg-mehrjahresvergleich.md"),
+                 f"beleg-mehrjahresvergleich.md nennt: {satz!r}")
+    b.pruefe("beleg-mehrjahresvergleich.md" in lade("CLAUDE.md"),
+             "CLAUDE.md verweist auf den Beleg des Mehrjahresvergleichs")
+    b.pruefe(re.search(r"voll:\s*k\.belegt\s*===\s*k\.tage", js) is not None,
+             "ein Jahr gilt als vollstaendig, wenn jeder Kalendertag belegt ist")
+    b.pruefe(re.search(r"function mehrjahresstreuung\([^)]*\)\s*\{[^}]*"
+                       r"filter\(function\s*\(z\)\s*\{\s*return z\.voll;",
+                       js, re.S) is not None,
              "die Streuung laeuft nur ueber vollstaendig belegte Jahre")
+    b.pruefe(js.count("function mehrjahresstreuung") == 1
+             and js.count("function mehrjahresreihen") == 1,
+             "Abzug und Seitenblock rechnen den Mehrjahresvergleich an EINER "
+             "Stelle")
     gl = lade("docs/beleg-gesamtlauf.md")
     for satz in ("29. Februar", "Unvollst", "0 Abweichungen", "drei Schritten"):
         b.pruefe(satz in gl, f"beleg-gesamtlauf.md nennt: {satz!r}")

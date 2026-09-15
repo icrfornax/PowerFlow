@@ -132,6 +132,7 @@
     klapp: {},
     blockJahre: {},        // Jahr -> Erzeugung je Kraftwerksblock
     blockVerzeichnis: null,
+    mehrjahrGeladen: false,  // sind ALLE Jahresdateien da? (Mehrjahresvergleich)
     vorschau: null,        // angekuendigte Last fuer heute und morgen
     prognoseJahre: {},     // Jahr -> Prognosegüte
     prognoseVerzeichnis: null,
@@ -4862,24 +4863,377 @@
     return Promise.all(gesamtlaufJahre().map(jahrLaden));
   }
 
-  function gesamtlaufCsv(von, bis) {
-    var jahre = gesamtlaufJahre();
+  /* DIESELBE KALENDERSPANNE IN JEDEM JAHR -- die Rechnung steht EINMAL da.
+
+     Der CSV-Abzug und der Block auf der Seite zeigen dieselben Zahlen. Sie
+     zweimal zu rechnen hiesse, dass sie irgendwann auseinanderlaufen, und
+     gemerkt haette es niemand. Genau dieses Muster hat in diesem Projekt schon
+     zweimal Schaden angerichtet -- beim Verzeichnis der Blockerzeugung und bei
+     der Redispatch-Schieflage. */
+  function mehrjahresreihen(von, bis) {
     var jahrVon = Number(von.slice(0, 4));
+    var spanne = Number(bis.slice(0, 4)) - jahrVon;
     var zeilen = [];
-    jahre.forEach(function (j) {
+    gesamtlaufJahre().forEach(function (j) {
       var a = tagImJahr(von, j);
-      var b = tagImJahr(bis, j + (Number(bis.slice(0, 4)) - jahrVon));
+      var b = tagImJahr(bis, j + spanne);
       var k = kennzahlen(a, b);
       if (!k) { return; }
-      zeilen.push({ jahr: j, von: a, bis: b, k: k,
-                    tr: traeger(a, b), zo: zonen(a, b), la: laender(a, b) });
+      /* VOLLSTAENDIG heisst: jeder Kalendertag des Zeitraums hat Daten. Nur
+         diese Jahre gehen in die Streuung ein -- ein halb belegtes Jahr hat
+         eine kleinere Summe, und das ist keine Aussage ueber den Verbrauch. */
+      zeilen.push({ jahr: j, von: a, bis: b, k: k, voll: k.belegt === k.tage });
+    });
+    return zeilen;
+  }
+
+  /* Kleinster, groesster, Median und Spanne ueber die VOLLSTAENDIGEN Jahre.
+     Gerechnet, nicht gemessen -- und an jeder Anzeigestelle so benannt. */
+  function mehrjahresstreuung(zeilen, hol) {
+    var w = zeilen.filter(function (z) { return z.voll; }).map(hol)
+      .filter(function (v) { return v !== null && v !== undefined; })
+      .sort(function (a, b) { return a - b; });
+    if (w.length < 2) { return null; }
+    var med = w.length % 2 ? w[(w.length - 1) / 2]
+      : (w[w.length / 2 - 1] + w[w.length / 2]) / 2;
+    return {
+      n: w.length, min: w[0], max: w[w.length - 1], median: med,
+      spanne: w[w.length - 1] - w[0],
+      /* Die Spanne in Prozent des Medians ist bei einem Median nahe null
+         sinnlos -- der Aussensaldo wechselt das Vorzeichen. Dann bleibt sie
+         leer, statt eine Zahl vorzutaeuschen. */
+      prozent: Math.abs(med) > 1
+        ? (w[w.length - 1] - w[0]) / Math.abs(med) * 100 : null
+    };
+  }
+
+  /* Geht der Zeitraum ueber den Erdgas-Bruch von 2018 hinweg? Die Reihe
+     springt dort um 68 %, waehrend Eurostat fuer dieselbe Groesse ein MINUS
+     von 4,9 % ausweist -- die Erfassung hat sich geaendert, nicht die
+     Wirklichkeit. Betroffen sind Erzeugung und Bilanzrest, nicht die
+     Netzlast. */
+  function ueberGasbruch(zeilen) {
+    return zeilen.length > 0 && zeilen[0].jahr < 2018
+      && zeilen[zeilen.length - 1].jahr >= 2018;
+  }
+
+
+  /* ---- MEHRJAHRESVERGLEICH ------------------------------------------------
+
+     Die Seite hat EINE freie Variable: den Zeitraum. Dieser Block beantwortet
+     die Frage, die unmittelbar daran haengt -- wie stark haengt das Ergebnis
+     am gewaehlten Ausschnitt? Gezeigt wird derselbe Kalenderausschnitt in
+     jedem verfuegbaren Jahr, aus realen Messwerten. Kein Mittel, keine
+     geglaettete Kurve.
+
+     Gerechnet wurde das schon seit dem 14.09.2026 -- aber nur im CSV-Abzug.
+     Wer wissen wollte, wie ungewoehnlich die gewaehlte Woche war, musste die
+     Datei herunterladen. Seit dem 15.09.2026 steht es auf der Seite.
+
+     VIER GROESSEN NEBENEINANDER, NICHT EINE ZUM UMSCHALTEN. Ein Umschalter
+     waere ein zweites Bedienelement, und die Seite hat genau eines. Wichtiger
+     noch: die Aussage STECKT im Nebeneinander -- die Netzlast schwankt ueber
+     zwoelf Jahre um rund 12 %, die Residuallast um das Sechsfache. Wer
+     umschalten muss, sieht das nie.
+
+     JEDE ACHSE BEGINNT BEI NULL. Ein abgeschnittener Balken macht aus 12 %
+     Unterschied optisch das Doppelte. Dass die Netzlastbalken fast gleich hoch
+     sind, IST die Aussage. */
+
+  var MJ_GROESSEN = [
+    { schluessel: "netzlast", name: "Netzlast",
+      was: "Verbrauch im Netz der allgemeinen Versorgung",
+      hol: function (z) { return z.k.netzlast; } },
+    { schluessel: "erzeugung", name: "Erzeugung",
+      was: "Summe aller Energieträger", gas: true,
+      hol: function (z) { return z.k.erzeugung; } },
+    { schluessel: "residuallast", name: "Residuallast",
+      was: "Netzlast minus Wind und Photovoltaik — der Teil, den steuerbare "
+        + "Erzeugung tragen muss",
+      hol: function (z) { return z.k.residuallast; } },
+    { schluessel: "saldo", name: "Außensaldo",
+      was: "Einfuhr minus Ausfuhr — die einzige Größe hier, die das Vorzeichen "
+        + "wechselt", signiert: true,
+      hol: function (z) { return z.k.saldo; } }
+  ];
+
+  function mjWert(v) {
+    return v === null || v === undefined ? "—" : nf1.format(v / 1000) + " GWh";
+  }
+
+  function mehrjahresBlock(von, bis) {
+    var huelle = el("div", { "class": "pf-verlauf pf-mehrjahr" });
+    var zeilen = mehrjahresreihen(von, bis);
+    if (zeilen.length < 2) {
+      huelle.appendChild(el("p", { "class": "pf-bezug",
+        text: "Für diesen Kalenderausschnitt liegt nur ein Jahr vor — es gibt "
+          + "nichts zu vergleichen." }));
+      return huelle;
+    }
+    var voll = zeilen.filter(function (z) { return z.voll; });
+    var luecken = zeilen.length - voll.length;
+    var jetzt = Number(von.slice(0, 4));
+
+    huelle.appendChild(langtext(
+      "Derselbe Kalenderausschnitt — " + datumKurz(von).slice(0, 6) + " bis "
+        + datumKurz(bis) + " — in " + nf0.format(zeilen.length)
+        + " Jahren, von " + zeilen[0].jahr + " bis "
+        + zeilen[zeilen.length - 1].jahr + ". "
+        + "Jeder Balken ist eine Summe aus realen Tageswerten; nichts ist "
+        + "gemittelt und nichts geglättet. Median und Spanne sind GERECHNET "
+        + "und stehen über jeder Reihe. "
+        + (luecken
+            ? "In die Rechnung gehen nur die " + nf0.format(voll.length)
+              + " vollständig belegten Jahre ein — "
+              + (luecken === 1 ? "ein Jahr ist" : nf0.format(luecken)
+                 + " Jahre sind")
+              + " unvollständig und " + (luecken === 1 ? "steht" : "stehen")
+              + " schraffiert daneben. Ein halb belegtes Jahr hat eine "
+              + "kleinere Summe, und das ist keine Aussage über den Verbrauch. "
+            : "Alle " + nf0.format(voll.length) + " Jahre sind vollständig "
+              + "belegt. ")
+        + "Der 29. Februar hat in Nicht-Schaltjahren kein Gegenstück und wird "
+        + "auf den 28. gelegt — dieselbe Regel wie beim Vorjahresvergleich. Ein "
+        + "Zeitraum über den 29.02. ist in Schaltjahren einen Tag länger; die "
+        + "Ablesung nennt deshalb bei jedem Jahr die Zahl der Tage.",
+      "pf-bezug"));
+
+    if (ueberGasbruch(zeilen)) {
+      /* NUR wenn der Zeitraum wirklich darüber hinweggeht. Eine Warnung, die
+         immer dasteht, wird überlesen -- dieselbe Regel wie im CSV-Kopf. */
+      huelle.appendChild(langtext(
+        "Achtung bei der Erzeugung: die Erdgasreihe hat 2018 einen Bruch. Sie "
+        + "springt von 2017 auf 2018 um 68 % (25,6 auf 42,9 TWh im Jahr), "
+        + "während Eurostat für dieselbe Größe ein MINUS von 4,9 % ausweist. "
+        + "Eine real sinkende Erzeugung kann nicht gleichzeitig um zwei Drittel "
+        + "steigen — die Erfassung hat sich geändert, nicht die Wirklichkeit. "
+        + "56 % des Anstiegs der Gesamterzeugung von 2017 auf 2018 entfallen "
+        + "auf diese eine Reihe. Erzeugungsbalken vor 2018 sind mit denen "
+        + "danach deshalb nicht vergleichbar. Netzlast und Residuallast sind "
+        + "NICHT betroffen. Beleg: docs/beleg-bilanzrest.md.",
+        "pf-bezug pf-mj-gasbruch"));
+    }
+
+    var rahmen = el("div", { "class": "pf-mj-rahmen" });
+    var spaltenJeReihe = [];
+
+    MJ_GROESSEN.forEach(function (g) {
+      var werte = zeilen.map(g.hol);
+      var vorhanden = werte.filter(function (w) {
+        return w !== null && w !== undefined;
+      });
+      if (!vorhanden.length) { return; }
+      /* DIE ACHSE BEGINNT BEI NULL -- oder beim kleinsten negativen Wert,
+         wenn die Groesse das Vorzeichen wechselt. Ein abgeschnittener Balken
+         macht aus einem kleinen Unterschied optisch einen grossen. */
+      var unten = Math.min(0, Math.min.apply(null, vorhanden));
+      var oben = Math.max(0, Math.max.apply(null, vorhanden));
+      var weite = (oben - unten) || 1;
+      var s = mehrjahresstreuung(zeilen, g.hol);
+
+      var reihe = el("div", { "class": "pf-mj-reihe" });
+      var kopf = el("h4", { text: g.name });
+      kopf.appendChild(el("span", { "class": "pf-mj-was", text: g.was }));
+      reihe.appendChild(kopf);
+      /* DER MASSSTAB STEHT UEBER DEN BALKEN, nicht darunter. Wer die Balken
+         schon gelesen hat, liest ihn zu spaet. */
+      reihe.appendChild(el("p", { "class": "pf-mj-massstab",
+        /* Auch die LINIEN gehoeren zum Massstab. Eine gestrichelte und eine
+           durchgezogene Linie in einem 110 px hohen Feld sind sonst zwei
+           graue Striche, die niemand auseinanderhaelt -- und beim Aussensaldo
+           entscheidet genau das darueber, ob man ein Vorzeichen richtig
+           liest. */
+        text: "Achse " + nf1.format(unten / 1000) + " bis "
+          + nf1.format(oben / 1000) + " GWh"
+          + (s ? " · Median " + nf1.format(s.median / 1000)
+                 + " GWh (gestrichelt) · Spanne "
+                 + (s.prozent === null
+                     ? nf1.format(s.spanne / 1000) + " GWh"
+                     : nf1.format(s.prozent) + " % des Medians")
+                 + " über " + nf0.format(s.n) + " vollständige Jahre"
+               : " · zu wenige vollständige Jahre für eine Streuung")
+          + (unten < 0 ? " · Null durchgezogen, Balken darunter sind Ausfuhr"
+                       : "") }));
+
+      var flaeche = el("div", { "class": "pf-mj-flaeche", tabindex: "0",
+        role: "img",
+        "aria-label": g.name + " im selben Kalenderausschnitt, "
+          + zeilen[0].jahr + " bis " + zeilen[zeilen.length - 1].jahr
+          + ", in GWh: " + zeilen.map(function (z, i) {
+              return z.jahr + " " + mjWert(werte[i]);
+            }).join(", ") });
+      flaeche.style.gridTemplateColumns = "repeat(" + zeilen.length + ", 1fr)";
+
+      if (unten < 0) {
+        flaeche.appendChild(el("i", { "class": "pf-mj-nulllinie",
+          style: "bottom:" + (-unten / weite * 100).toFixed(2) + "%;" }));
+      }
+      if (s) {
+        flaeche.appendChild(el("i", { "class": "pf-mj-medianlinie",
+          style: "bottom:" + ((s.median - unten) / weite * 100).toFixed(2) + "%;" }));
+      }
+
+      var spalten = [];
+      zeilen.forEach(function (z, i) {
+        var sp = el("div", { "class": "pf-mj-spalte" });
+        if (z.jahr === jetzt) { sp.setAttribute("data-gewaehlt", "ja"); }
+        var w = werte[i];
+        if (w !== null && w !== undefined) {
+          var b = Math.min(0, w), h = Math.abs(w);
+          var saeule = el("i", { "class": "pf-mj-saeule",
+            style: "bottom:" + ((b - unten) / weite * 100).toFixed(2) + "%;"
+              + "height:" + Math.max(0.4, h / weite * 100).toFixed(2) + "%;" });
+          /* Ein unvollstaendiges Jahr wird schraffiert -- dieselbe Bedeutung
+             wie im Verlauf: was schraffiert ist, ist keine gewoehnliche
+             Messgroesse, sondern traegt einen Vorbehalt. */
+          if (!z.voll) { saeule.classList.add("pf-mj-unvoll"); }
+          sp.appendChild(saeule);
+        }
+        flaeche.appendChild(sp);
+        spalten.push(sp);
+      });
+      spaltenJeReihe.push(spalten);
+      reihe.appendChild(flaeche);
+      rahmen.appendChild(reihe);
+    });
+
+    // Eine Jahresachse, unter allen Reihen -- sie teilen dasselbe Raster.
+    var achse = el("div", { "class": "pf-mj-achse" });
+    achse.style.gridTemplateColumns = "repeat(" + zeilen.length + ", 1fr)";
+    zeilen.forEach(function (z) {
+      var b = el("span", { text: String(z.jahr) });
+      if (z.jahr === jetzt) { b.setAttribute("data-gewaehlt", "ja"); }
+      if (!z.voll) { b.setAttribute("data-unvoll", "ja"); }
+      achse.appendChild(b);
+    });
+    rahmen.appendChild(achse);
+    huelle.appendChild(rahmen);
+
+    /* DIESELBE ABLESUNG WIE UEBERALL -- ein HTML-Kasten UNTER der Grafik,
+       nicht darauf. */
+    var ablese = ablesungAn(rahmen);
+    var aktiv = -1;
+
+    function zeigen(i) {
+      if (i < 0 || i >= zeilen.length) { return; }
+      if (aktiv >= 0) {
+        spaltenJeReihe.forEach(function (sp) {
+          if (sp[aktiv]) { sp[aktiv].removeAttribute("data-aktiv"); }
+        });
+      }
+      aktiv = i;
+      spaltenJeReihe.forEach(function (sp) {
+        if (sp[i]) { sp[i].setAttribute("data-aktiv", "ja"); }
+      });
+      var z = zeilen[i];
+      var reihenText = MJ_GROESSEN.map(function (g) {
+        var w = g.hol(z);
+        var s = mehrjahresstreuung(zeilen, g.hol);
+        var ab = (s && w !== null && w !== undefined && Math.abs(s.median) > 1)
+          ? (w - s.median) / Math.abs(s.median) * 100 : null;
+        return { name: g.name, token: g.schluessel === "saldo"
+                   ? "--teal" : "--violett",
+                 wert: mjWert(w)
+                   + (ab === null ? ""
+                      : " · " + (ab >= 0 ? "+" : "−") + nf1.format(Math.abs(ab))
+                        + " % zum Median") };
+      });
+      ablese.zeige({
+        kopf: datumKurz(z.von) + " bis " + datumKurz(z.bis),
+        wert: nf1.format(z.k.netzlast / 1000),
+        einheit: "GWh Netzlast",
+        bezug: z.voll ? null
+          : "Unvollständig — nur " + nf0.format(z.k.belegt) + " von "
+            + nf0.format(z.k.tage) + " Tagen belegt. Geht NICHT in Median und "
+            + "Spanne ein.",
+        abschnitte: [
+          { titel: "Gemessen in diesem Jahr", zeilen: reihenText },
+          { titel: "Zeitraum", zeilen: [
+            { name: "Kalendertage", wert: nf0.format(z.k.tage) },
+            { name: "davon belegt", wert: nf0.format(z.k.belegt) }
+          ] }
+        ]
+      }, zeilen.length === 1 ? 0.5 : i / (zeilen.length - 1));
+    }
+
+    spaltenJeReihe.forEach(function (spalten) {
+      spalten.forEach(function (sp, i) {
+        sp.addEventListener("mouseenter", function () { zeigen(i); });
+      });
+    });
+    rahmen.addEventListener("mouseleave", function () {
+      if (aktiv >= 0) {
+        spaltenJeReihe.forEach(function (sp) {
+          if (sp[aktiv]) { sp[aktiv].removeAttribute("data-aktiv"); }
+        });
+      }
+      aktiv = -1;
+      ablese.verbirg();
+    });
+    rahmen.querySelectorAll(".pf-mj-flaeche").forEach(function (f) {
+      f.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowRight") { zeigen(Math.min(zeilen.length - 1, aktiv + 1)); }
+        else if (e.key === "ArrowLeft") { zeigen(Math.max(0, aktiv <= 0 ? 0 : aktiv - 1)); }
+        else if (e.key === "Escape") { ablese.verbirg(); return; }
+        else { return; }
+        e.preventDefault();
+      });
+    });
+
+    return huelle;
+  }
+
+  /* DER BLOCK LAEDT ERST, WENN MAN IHN SIEHT.
+
+     Er braucht ALLE Jahresdateien -- rund 3 MB. Die Seite selbst kommt mit
+     zweien aus (laufendes Jahr und Vorjahr). Sie beim Aufruf mitzuladen waere
+     genau der Fehler, den der alte offene Punkt faelschlich den
+     Viertelstunden unterstellt hat: eine Last, die jeder traegt, auch wer sie
+     nie braucht.
+
+     Also: ein Platzhalter, der SAGT, was er laedt, und ein Beobachter, der es
+     holt, sobald der Block ins Bild kommt. Ohne IntersectionObserver wird
+     sofort geladen -- lieber einmal zu viel als ein leerer Kasten. */
+  function mehrjahresLader(von, bis) {
+    if (Z.mehrjahrGeladen) { return mehrjahresBlock(von, bis); }
+    var huelle = el("div", { "class": "pf-verlauf pf-mehrjahr" });
+    var platz = el("p", { "class": "pf-laden",
+      text: "Der Vergleich über alle Jahre lädt die Jahresdateien nach — rund "
+        + "3 MB. Das geschieht, sobald dieser Abschnitt ins Bild kommt." });
+    huelle.appendChild(platz);
+    var geholt = false;
+    function holen() {
+      if (geholt) { return; }
+      geholt = true;
+      gesamtlaufLaden().then(function () {
+        Z.mehrjahrGeladen = true;
+        if (!huelle.parentNode) { return; }
+        var neu = mehrjahresBlock(Z.von || von, Z.bis || bis);
+        huelle.parentNode.replaceChild(neu, huelle);
+      });
+    }
+    if (typeof IntersectionObserver === "function") {
+      var beobachter = new IntersectionObserver(function (eintraege) {
+        eintraege.forEach(function (e) {
+          if (e.isIntersecting) { beobachter.disconnect(); holen(); }
+        });
+      }, { rootMargin: "200px" });
+      beobachter.observe(huelle);
+    } else {
+      holen();
+    }
+    return huelle;
+  }
+
+  function gesamtlaufCsv(von, bis) {
+    var zeilen = mehrjahresreihen(von, bis).map(function (z) {
+      z.tr = traeger(z.von, z.bis);
+      z.zo = zonen(z.von, z.bis);
+      z.la = laender(z.von, z.bis);
+      return z;
     });
     if (!zeilen.length) { return null; }
-
-    /* VOLLSTAENDIG heisst: jeder Kalendertag des Zeitraums hat Daten. Nur
-       diese Jahre gehen in die Streuung ein -- ein halb belegtes Jahr hat eine
-       kleinere Summe, und das ist keine Aussage ueber den Verbrauch. */
-    var voll = zeilen.filter(function (z) { return z.k.belegt === z.k.tage; });
+    var voll = zeilen.filter(function (z) { return z.voll; });
 
     var z = [
       "# PowerFlow -- derselbe Zeitraum in allen Jahren",
@@ -4927,7 +5281,7 @@
 
        Die Warnung erscheint NUR, wenn der Zeitraum ueber 2018 hinweggeht.
        Eine Warnung, die immer dasteht, wird ueberlesen. */
-    if (zeilen[0].jahr < 2018 && zeilen[zeilen.length - 1].jahr >= 2018) {
+    if (ueberGasbruch(zeilen)) {
       z.push("# ACHTUNG, ERDGAS: die Reihe hat 2018 einen Bruch. Von 2017 auf");
       z.push("# 2018 steigt sie um 68 Prozent (25,6 auf 42,9 TWh im Jahr),");
       z.push("# waehrend Eurostat fuer dieselbe Groesse ein MINUS von 4,9");
@@ -4965,27 +5319,19 @@
       ["bilanzrest", function (x) { return x.k.rest; }]
     ];
     GROESSEN.forEach(function (g) {
-      var werte = voll.map(g[1]).filter(function (w) {
-        return w !== null && w !== undefined;
-      }).sort(function (a, b) { return a - b; });
-      if (werte.length < 2) { return; }
-      var med = werte.length % 2
-        ? werte[(werte.length - 1) / 2]
-        : (werte[werte.length / 2 - 1] + werte[werte.length / 2]) / 2;
-      var spanne = werte[werte.length - 1] - werte[0];
-      z.push(["", "", "", "", werte.length, "streuung", g[0] + "_min",
-              werte[0].toFixed(2)].join(","));
-      z.push(["", "", "", "", werte.length, "streuung", g[0] + "_max",
-              werte[werte.length - 1].toFixed(2)].join(","));
-      z.push(["", "", "", "", werte.length, "streuung", g[0] + "_median",
-              med.toFixed(2)].join(","));
+      var s = mehrjahresstreuung(zeilen, g[1]);
+      if (!s) { return; }
+      z.push(["", "", "", "", s.n, "streuung", g[0] + "_min",
+              s.min.toFixed(2)].join(","));
+      z.push(["", "", "", "", s.n, "streuung", g[0] + "_max",
+              s.max.toFixed(2)].join(","));
+      z.push(["", "", "", "", s.n, "streuung", g[0] + "_median",
+              s.median.toFixed(2)].join(","));
       // Die Spanne in Prozent des Medians -- eine Rechnung, und sie wird
-      // benannt. Bei einem Median um null waere sie sinnlos; dann bleibt sie
-      // leer statt eine Zahl vorzutaeuschen.
-      z.push(["", "", "", "", werte.length, "streuung",
+      // benannt.
+      z.push(["", "", "", "", s.n, "streuung",
               g[0] + "_spanne_prozent_des_medians",
-              Math.abs(med) > 1 ? (spanne / Math.abs(med) * 100).toFixed(2) : ""
-             ].join(","));
+              s.prozent === null ? "" : s.prozent.toFixed(2)].join(","));
     });
 
     // --- Dann jedes Jahr einzeln ------------------------------------------
@@ -5449,6 +5795,11 @@
         + (takt === "viertelstunde" ? " · Viertelstundenwerte"
            : takt === "stunde" ? " · Stundenwerte" : " · Tageswerte"),
       zeitreihenDiagramm(von, bis)));
+
+    // --- Derselbe Kalenderausschnitt in jedem Jahr ---
+    neu.appendChild(abschnitt(
+      "Mehrjahresvergleich · derselbe Kalenderausschnitt in jedem Jahr",
+      mehrjahresLader(von, bis)));
 
     // --- Vorschau und Prognosegüte ---
     neu.appendChild(abschnitt("Vorschau · angekündigte Last und Prognosegüte",
@@ -6120,29 +6471,16 @@
        Aufgabe. */
     var ul2 = el("ul");
     [
-      /* ERLEDIGT am 15.09.2026: die Viertelstundenwerte liegen jetzt
-         vollstaendig ab 01.01.2015 vor -- 4.275 Tage, 57 MB, ein Lauf ueber
-         612 Wochenbloecke. Was erledigt ist, gehoert nicht in eine Liste
-         offener Punkte.
+      /* AM 15.09.2026 WURDE DER LETZTE EINTRAG ERLEDIGT.
 
-         Die falsch gerechnete Begruendung von damals ("48 statt 12 MB, die
-         jeder Besucher mitlaedt") ist in docs/beleg-viertelstunden.md
-         ausdruecklich zurueckgenommen und dort nachzulesen. Auf der Seite
-         steht sie nicht mehr, weil auch der Punkt nicht mehr dasteht.
+         Zuerst die Viertelstundenwerte -- vollstaendig ab 01.01.2015 --, und
+         dann der Vergleich derselben Kalenderspanne ueber alle Jahre, der bis
+         dahin nur als CSV-Abzug gerechnet wurde und jetzt als eigener
+         Abschnitt auf der Seite steht.
 
-         NEU an dieser Stelle: der Vergleich ueber alle Jahre ist rechnerisch
-         fertig und wird als CSV ausgegeben -- aber nicht gezeigt. Das ist
-         Arbeit und keine Grenze, also steht es hier. */
-      { hoch: true,
-        text: "Denselben Kalenderausschnitt über alle Jahre auf der SEITE "
-          + "zeigen, nicht nur als Abzug. Gerechnet wird er längst: der "
-          + "CSV-Abzug „Derselbe Zeitraum in allen Jahren“ liefert für jedes "
-          + "verfügbare Jahr dieselbe Kalenderspanne mit Netzlast, Erzeugung, "
-          + "Residuallast und Außensaldo, dazu die Streuung über die "
-          + "vollständigen Jahre. Auf der Seite steht davon nichts — sichtbar "
-          + "ist nur der Vergleich mit dem Vorjahr. Wer wissen will, wie "
-          + "ungewöhnlich die gewählte Woche war, muss die Datei "
-          + "herunterladen und selbst hineinsehen." },
+         Die Liste ist damit LEER. Sie bleibt trotzdem stehen, mit einem Satz
+         statt mit nichts: eine Seite, die den Abschnitt einfach weglaesst,
+         behauptet stillschweigend, es gaebe nichts mehr zu tun. */
       /* AM 14.09.2026 SIND FUENF PUNKTE NACH "GRENZEN" GEWANDERT: die zweite
          ENTSO-E-Preisreihe, die Tagesstreuung des Redispatch, der Anteil der
          industriellen Eigenerzeugung, die Aussenhandelsdifferenz bei Eurostat

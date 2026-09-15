@@ -1319,3 +1319,83 @@ details.pf-mehr { margin: 0; padding: 0; border: 0; background: none; }
   .pf-gp-zeile { grid-template-columns: 6rem 1fr 3.2rem; gap: 0.4rem; }
   .pf-gp-name { font-size: 0.72rem; }
 }
+
+/* ---- Mehrjahresvergleich -------------------------------------------------
+   Derselbe Kalenderausschnitt in jedem Jahr. Vier Groessen untereinander,
+   ein gemeinsames Spaltenraster, eine gemeinsame Jahresachse darunter.
+
+   KEINE Traegerfarben hier. Das sind weder Energietraeger noch Regelzonen,
+   sondern Kennzahlen -- sie tragen den Bestandston (Violett), der Aussensaldo
+   als einzige vorzeichenbehaftete Groesse das Teal des Zuflusses. Die zwei
+   Farbfamilien der Seite bleiben unberuehrt. */
+/* Der Kasten selbst erbt .pf-verlauf; dieser Name ist der Griff fuer den
+   Abschnitt und traegt den Abstand nach oben. */
+.pf-mehrjahr { margin-top: 0; }
+.pf-mj-rahmen { position: relative; margin-top: 6px; }
+.pf-mj-reihe { margin: 0 0 14px; }
+.pf-mj-reihe h4 {
+  margin: 0; font-size: 0.95rem; display: flex; flex-wrap: wrap;
+  align-items: baseline; gap: 8px;
+}
+.pf-mj-was { font-size: 0.78rem; font-weight: 400; color: var(--schrift-still); }
+/* Der Massstab steht UEBER den Balken. Wer sie schon gelesen hat, liest ihn
+   zu spaet. */
+.pf-mj-massstab {
+  margin: 2px 0 5px; font-size: 0.76rem; color: var(--schrift-leise);
+  font-variant-numeric: tabular-nums;
+}
+.pf-mj-flaeche {
+  position: relative; display: grid; gap: 3px; align-items: end;
+  height: 110px; border-bottom: 1px solid var(--linie);
+  border-left: 1px solid var(--linie); padding: 0 2px;
+}
+.pf-mj-flaeche:focus-visible { outline: 2px solid var(--fokus); outline-offset: 3px; }
+.pf-mj-spalte { position: relative; height: 100%; }
+.pf-mj-saeule {
+  position: absolute; left: 0; right: 0; display: block;
+  background: var(--violett); border-radius: 3px 3px 0 0; opacity: 0.85;
+}
+/* Ein unvollstaendiges Jahr traegt einen Vorbehalt und sieht auch so aus --
+   dieselbe Bedeutung wie die Schraffur im Verlauf: keine gewoehnliche
+   Messgroesse. Es geht nicht in Median und Spanne ein. */
+.pf-mj-unvoll {
+  opacity: 0.55;
+  background: repeating-linear-gradient(45deg,
+    var(--violett) 0 3px, transparent 3px 6px);
+  outline: 1px solid var(--violett); outline-offset: -1px;
+}
+/* Das GEWAEHLTE Jahr wird auch dann sichtbar, wenn sein Balken ein Strich
+   ist. Der Aussensaldo kann nahe null liegen -- dann waere die Teal-Saeule
+   unsichtbar, und man saehe nicht mehr, wo man steht. */
+.pf-mj-spalte[data-gewaehlt] { background: color-mix(in srgb, var(--teal) 9%, transparent); }
+.pf-mj-spalte[data-gewaehlt] .pf-mj-saeule {
+  background: var(--teal); opacity: 1;
+}
+.pf-mj-spalte[data-gewaehlt] .pf-mj-unvoll {
+  background: repeating-linear-gradient(45deg,
+    var(--teal) 0 3px, transparent 3px 6px);
+  outline-color: var(--teal);
+}
+.pf-mj-spalte[data-aktiv] .pf-mj-saeule {
+  outline: 1px solid var(--schrift); outline-offset: 1px;
+}
+.pf-mj-medianlinie, .pf-mj-nulllinie {
+  position: absolute; left: 0; right: 0; height: 0; pointer-events: none;
+}
+.pf-mj-medianlinie { border-top: 1px dashed var(--schrift-still); }
+/* Die Nulllinie muss man SEHEN -- beim Aussensaldo haengt das Vorzeichen
+   daran. Sie ist deutlicher als die gestrichelte Medianlinie, und der
+   Massstab ueber den Balken sagt, welche welche ist. */
+.pf-mj-nulllinie { border-top: 1px solid var(--schrift-leise); }
+.pf-mj-achse {
+  display: grid; gap: 3px; padding: 4px 2px 0; font-size: 0.7rem;
+  color: var(--schrift-still); font-variant-numeric: tabular-nums;
+}
+.pf-mj-achse span { text-align: center; }
+.pf-mj-achse span[data-gewaehlt] { color: var(--teal); font-weight: 600; }
+.pf-mj-achse span[data-unvoll] { font-style: italic; }
+.pf-mj-gasbruch { color: var(--orange); }
+@media (max-width: 560px) {
+  .pf-mj-achse { font-size: 0.6rem; }
+  .pf-mj-flaeche { height: 88px; }
+}

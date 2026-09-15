@@ -433,16 +433,13 @@ ENTSO-E-Zugang (Punkt 2 -- der Schluessel wirkt, HTTP 200) und das Methodik-PDF
 der Seite, obwohl zwei davon laengst lagen. Was erledigt ist, gehoert nicht in
 eine Liste offener Punkte -- sonst glaubt sie irgendwann niemand mehr.
 
-**Es steht noch GENAU EIN offener Punkt auf der Seite:** denselben
-Kalenderausschnitt ueber alle Jahre AUF DER SEITE zeigen, nicht nur als
-CSV-Abzug. Gerechnet wird er laengst -- `gesamtlaufCsv()` liefert fuer jedes
-verfuegbare Jahr dieselbe Kalenderspanne samt Streuung --, sichtbar ist davon
-nichts; auf der Seite steht nur der Vergleich mit dem Vorjahr.
-
-Die Viertelstundenwerte sind am 15.09.2026 vollstaendig nachgeholt und damit
-erledigt. Faellt auch dieser Punkt weg, bleibt der Abschnitt trotzdem stehen --
-mit dem Satz "Zurzeit keiner". Eine Seite, die ihn dann weglaesst, behauptet
-stillschweigend, es gaebe nichts mehr zu tun.
+**Die Liste der offenen Punkte ist am 15.09.2026 LEER.** Zuletzt sind zwei
+Eintraege gefallen: die Viertelstundenwerte (vollstaendig ab 01.01.2015) und
+der Mehrjahresvergleich (steht jetzt als eigener Abschnitt auf der Seite, siehe
+unten). Der Abschnitt bleibt trotzdem stehen, mit dem Satz "Zurzeit keiner" --
+eine Seite, die ihn weglaesst, behauptet stillschweigend, es gaebe nichts mehr
+zu tun. Was sich mit diesen Quellen nicht klaeren laesst, steht unter
+"Grenzen", nicht hier.
 
 **Am 14.09.2026 sind fuenf Punkte nach "Grenzen" gewandert** -- die zweite
 ENTSO-E-Preisreihe, die Tagesstreuung des Redispatch, der Anteil der
@@ -1112,6 +1109,50 @@ Lesbarkeitsgrenze.
   Textsuche nach der zurueckgenommenen Begruendung stolperte ueber die eigenen
   Kommentare; sie laeuft jetzt ueber `ohne_kommentare(js)`. Beides sind
   Wiederholungen bekannter Muster aus diesem Projekt.
+
+## Mehrjahresvergleich auf der Seite
+
+Gebaut am 15.09.2026. Beleg: `docs/beleg-mehrjahresvergleich.md`.
+
+Derselbe Kalenderausschnitt in jedem verfuegbaren Jahr, als eigener Abschnitt
+unter dem Verlauf. Er beantwortet die Frage, die unmittelbar an der einen
+freien Variable haengt: wie stark haengt das Ergebnis am gewaehlten Zeitraum?
+
+- **EINE Rechnung, zwei Ausgaben.** `mehrjahresreihen()` und
+  `mehrjahresstreuung()` bedienen den CSV-Abzug UND den Block. Zwei Rechnungen
+  fuer dieselbe Zahl laufen auseinander, und gemerkt haette es niemand -- genau
+  das ist am 06.09.2026 zweimal passiert. `validate.py` prueft, dass es jede
+  Funktion genau einmal gibt.
+  **Dabei ist eine Pruefung aufgefallen, die beim Auslagern still wirkungslos
+  geworden waere:** sie suchte woertlich nach `belegt === z.k.tage`. Sie laeuft
+  jetzt ueber einen regulaeren Ausdruck und ueber die BEDINGUNG.
+- **Vier Groessen nebeneinander, nicht eine zum Umschalten.** Ein Umschalter
+  waere ein zweites Bedienelement -- die Seite hat genau eines. Und die Aussage
+  steckt im Nebeneinander: ueber zwoelf Jahre schwankt die Netzlast um 11,7 %,
+  die Erzeugung um 27,1 %, die Residuallast um 52,0 %, der Aussensaldo um
+  764,7 % mit Vorzeichenwechsel. Wer umschalten muss, sieht das nie.
+- **JEDE ACHSE BEGINNT BEI NULL.** Ein abgeschnittener Balken macht aus 11,7 %
+  optisch das Doppelte. Dass die Netzlastbalken fast gleich hoch sind, IST die
+  Aussage.
+- **Auch die Linien gehoeren zum Massstab.** Median gestrichelt, Null
+  durchgezogen -- und beides steht als Text UEBER den Balken. Zwei graue
+  Striche in einem 110 px hohen Feld haelt sonst niemand auseinander, und beim
+  Aussensaldo haengt daran ein Vorzeichen.
+- **Unvollstaendige Jahre gehen nicht in Median und Spanne ein**, verschwinden
+  aber nicht: schraffierter Balken, kursive Jahreszahl, und die Ablesung nennt
+  Kalendertage und belegte Tage einzeln.
+- **Der Block laedt erst beim Hinsehen.** Er braucht alle zwoelf Jahresdateien
+  (gemessen 2,99 MB); die Seite selbst kommt mit zweien aus. Ein Platzhalter
+  sagt, was er nachlaedt, ein `IntersectionObserver` holt es, sobald der
+  Abschnitt ins Bild kommt. Die Pruefung dazu steht GANZ VORN im Browsertest --
+  sobald eine spaetere Pruefung durch die Seite scrollt, ist der Block geladen
+  und der Platzhalter fuer immer weg.
+- **Keine Traegerfarben.** Kennzahlen tragen den Bestandston Violett, das
+  gewaehlte Jahr Teal -- und seine Spalte zusaetzlich schwach getoent, damit
+  man es auch dann findet, wenn sein Balken ein Strich ist.
+- **Der Erdgas-Bruch von 2018 steht als gefalteter Vorbehalt dabei** und nennt
+  ausdruecklich, was NICHT betroffen ist: Netzlast und Residuallast laufen
+  glatt durch.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 

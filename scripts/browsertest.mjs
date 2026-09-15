@@ -239,6 +239,22 @@ try {
   await c.senden("Page.navigate", { url: BASIS }, sessionId);
   const geladen = await wartenAuf(".pf-kacheln");
   pruefe(geladen, "Seite laedt und baut ihre Kennzahlen auf");
+
+  /* DER MEHRJAHRESVERGLEICH LAEDT ERST BEIM HINSEHEN -- rund 3 MB
+     Jahresdateien, die niemand tragen soll, der sie nicht ansieht. Das MUSS
+     hier ganz vorn geprueft werden: sobald eine spaetere Pruefung durch die
+     Seite scrollt, ist er geladen, und der Platzhalter ist fuer immer weg. */
+  const mjPlatz = await js(`(function () {
+    const k = document.querySelector(".pf-mehrjahr");
+    return { da: !!k,
+             platzhalter: !!(k && k.querySelector(".pf-laden")),
+             reihen: k ? k.querySelectorAll(".pf-mj-reihe").length : -1,
+             text: k ? k.textContent.slice(0, 120) : "" };
+  })()`);
+  pruefe(mjPlatz.da && mjPlatz.platzhalter && mjPlatz.reihen === 0,
+    "der Mehrjahresvergleich laedt erst beim Hinsehen", mjPlatz.text);
+  pruefe(/3 MB/.test(mjPlatz.text),
+    "und der Platzhalter sagt, was er nachlaedt", mjPlatz.text);
   if (!geladen) { throw new Error("Seite ist nicht fertig geworden."); }
   await schlafen(1500);
 
@@ -1222,6 +1238,88 @@ try {
     "und die Tabelle sagt, welche Spalte zu welcher Flaeche gehoert",
     spalten.erklaert.slice(0, 70));
 
+  /* --- MEHRJAHRESVERGLEICH ---
+
+     Derselbe Kalenderausschnitt in jedem Jahr. Er laedt ERST, wenn er ins Bild
+     kommt -- rund 3 MB Jahresdateien, die niemand tragen soll, der sie nicht
+     ansieht. Also: erst nachsehen, dass der Platzhalter dasteht, dann
+     hinscrollen, dann pruefen. */
+  pruefe(await js(`!!document.querySelector(".pf-mehrjahr")`),
+    "der Mehrjahresvergleich ist da");
+
+  await js(`document.querySelector(".pf-mehrjahr")`
+    + `.scrollIntoView({ block: "center", behavior: "instant" })`);
+  for (let i = 0; i < 60; i++) {
+    await schlafen(250);
+    if (await js(`!!document.querySelector(".pf-mj-reihe")`)) { break; }
+  }
+  const mj = await js(`(function () {
+    const k = document.querySelector(".pf-mehrjahr");
+    const reihen = [...k.querySelectorAll(".pf-mj-reihe")];
+    const achse = [...k.querySelectorAll(".pf-mj-achse span")];
+    return {
+      reihen: reihen.length,
+      namen: reihen.map((r) => r.querySelector("h4").childNodes[0].textContent.trim()),
+      massstaebe: reihen.map((r) => r.querySelector(".pf-mj-massstab").textContent),
+      spalten: reihen.map((r) => r.querySelectorAll(".pf-mj-spalte").length),
+      saeulen: reihen.map((r) => r.querySelectorAll(".pf-mj-saeule").length),
+      median: k.querySelectorAll(".pf-mj-medianlinie").length,
+      jahre: achse.map((s) => s.textContent),
+      gewaehlt: achse.filter((s) => s.hasAttribute("data-gewaehlt")).map((s) => s.textContent),
+      gasbruch: !!k.querySelector(".pf-mj-gasbruch"),
+      gasbruchtext: (k.querySelector(".pf-mj-gasbruch") || {}).textContent || "",
+      einleitung: (k.querySelector(".pf-bezug") || {}).textContent || ""
+    };
+  })()`);
+  pruefe(mj.reihen === 4, `vier Groessen nebeneinander (${mj.reihen})`);
+  pruefe(mj.namen.join("|") === "Netzlast|Erzeugung|Residuallast|Außensaldo",
+    "Netzlast, Erzeugung, Residuallast, Aussensaldo", mj.namen.join("|"));
+  /* KEIN BALKEN OHNE GENANNTEN MASSSTAB -- und er steht UEBER den Balken. */
+  pruefe(mj.massstaebe.every((m) => /Achse .* bis .* GWh/.test(m)),
+    "jede Reihe nennt ihre Achse", mj.massstaebe[0]);
+  pruefe(mj.massstaebe.every((m) => /Median/.test(m) && /Spanne/.test(m)),
+    "und Median und Spanne", mj.massstaebe[0]);
+  /* DIE ACHSE BEGINNT BEI NULL. Ein abgeschnittener Balken macht aus 12 %
+     Unterschied optisch das Doppelte -- und dass die Netzlastbalken fast
+     gleich hoch sind, IST hier die Aussage. */
+  pruefe(/^Achse 0,0 bis/.test(mj.massstaebe[0]),
+    "die Netzlastachse beginnt bei null", mj.massstaebe[0]);
+  pruefe(mj.jahre.length >= 10 && mj.spalten.every((n) => n === mj.jahre.length),
+    `${mj.jahre.length} Jahre, und jede Reihe hat so viele Spalten`,
+    JSON.stringify(mj.spalten));
+  pruefe(mj.median === 4, `vier Medianlinien (${mj.median})`);
+  pruefe(mj.gewaehlt.length === 1,
+    `genau ein Jahr ist als das gewaehlte markiert (${mj.gewaehlt.join()})`);
+  pruefe(mj.gasbruch && /2018/.test(mj.gasbruchtext),
+    "der Erdgas-Bruch von 2018 steht als Vorbehalt dabei",
+    (mj.gasbruchtext || "").slice(0, 80));
+
+  /* DIE ABLESUNG STEHT UNTER DEM BLOCK, nicht darauf -- wie ueberall. */
+  const mjAblese = await js(`(function () {
+    const k = document.querySelector(".pf-mehrjahr");
+    const rahmen = k.querySelector(".pf-mj-rahmen");
+    const sp = k.querySelectorAll(".pf-mj-spalte")[3];
+    sp.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const feld = k.querySelector(".pf-rd-info");
+    const f = feld.getBoundingClientRect(), r = rahmen.getBoundingClientRect();
+    return { offen: !feld.hasAttribute("hidden"),
+             zeilen: feld.querySelectorAll(".pf-rd-info-liste dt").length,
+             text: feld.textContent,
+             abstand: Math.round(f.top - r.bottom),
+             markiert: k.querySelectorAll(".pf-mj-spalte[data-aktiv]").length };
+  })()`);
+  pruefe(mjAblese.offen && mjAblese.zeilen >= 6,
+    `die Ablesung nennt alle vier Groessen und den Zeitraum (${mjAblese.zeilen} Zeilen)`);
+  pruefe(mjAblese.abstand >= 0,
+    `sie steht unter dem Block (${mjAblese.abstand} px darunter)`);
+  pruefe(mjAblese.markiert === 4,
+    `ein Jahr wird in allen vier Reihen zugleich markiert (${mjAblese.markiert})`);
+  pruefe(/zum Median/.test(mjAblese.text),
+    "und nennt den Abstand zum Median", mjAblese.text.slice(0, 90));
+  await foto("mehrjahresvergleich", ".pf-mehrjahr");
+  await js(`document.querySelector(".pf-mj-rahmen")`
+    + `.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }))`);
+
   /* --- DIE DRITTE AUFLOESUNGSSTUFE: VIERTELSTUNDEN ---
 
      Sieben Tage stuendlich sind 168 Punkte, zwei Tage viertelstuendlich 192 --
@@ -2088,6 +2186,7 @@ try {
       hoch: li.filter((x) => x.querySelector("b")).length,
       erste: li[0] ? li[0].textContent.slice(0, 60) : "",
       texte: li.map((x) => x.textContent).join(" "),
+      kasten: kasten.textContent,
       grenzen: grenzen ? grenzen.textContent : ""
     };
   })()`);
@@ -2118,8 +2217,15 @@ try {
      fuenf enden mit demselben Satz, mit diesen Quellen nicht aufzuloesen. Das
      sind Grenzen der Quellenlage und keine Arbeit; der Kasten sagt von sich
      selbst, dass dort nur Arbeit steht. Uebrig bleibt genau einer. */
-  pruefe(offen && offen.anzahl === 1,
-    `genau ein offener Punkt (${offen && offen.anzahl})`);
+  /* AM 15.09.2026 IST DIE LISTE LEER. Beide letzten Eintraege sind erledigt:
+     die Viertelstundenwerte und der Mehrjahresvergleich. Der Abschnitt bleibt
+     trotzdem stehen -- mit einem Satz statt mit nichts. Eine Seite, die ihn
+     weglaesst, behauptet stillschweigend, es gaebe nichts mehr zu tun. */
+  pruefe(offen && offen.anzahl === 0,
+    `zurzeit kein offener Punkt (${offen && offen.anzahl})`);
+  pruefe(offen && /Zurzeit keiner/.test(offen.texte + offen.kasten),
+    "der Abschnitt bleibt stehen und sagt es",
+    (offen && offen.kasten || "").slice(0, 70));
   pruefe(offen && !/zweite ENTSO-E-Preisreihe|Warum die Redispatch-Zahlen/
     .test(offen.texte)
     && !/industriellen Eigenerzeugung|Woraus die Differenz|1\.030 Wind/
@@ -2131,18 +2237,22 @@ try {
     && /Woraus die Differenz/.test(offen.grenzen)
     && /1\.030 Windenergieanlagen/.test(offen.grenzen),
     "sondern alle fuenf unter Grenzen");
-  /* "1 Punkte" waere schlampig. Geprueft wird die Zusammenfassung selbst. */
+  /* "1 Punkte" waere schlampig, "0 Punkte" nichtssagend. Geprueft wird die
+     Zusammenfassung selbst -- sie sagt, wie viel drinsteht. */
   const zaehlwort = await js(`(function () {
     const s = [...document.querySelectorAll("summary")].find(
       (e) => /Offene Punkte/.test(e.textContent));
     return s ? s.textContent : "";
   })()`);
-  pruefe(/1 Punkt(?!e)/.test(zaehlwort),
-    "die Zusammenfassung sagt \"1 Punkt\", nicht \"1 Punkte\"", zaehlwort);
-  pruefe(offen && offen.hoch === 1,
-    `einer davon ist als "Als Naechstes" markiert (${offen && offen.hoch})`);
-  pruefe(offen && /Als N/.test(offen.erste),
-    "die Liste beginnt mit einem Punkt hoher Prioritaet", offen && offen.erste);
+  pruefe(offen.anzahl === 0 ? /keiner offen/.test(zaehlwort)
+         : offen.anzahl === 1 ? /1 Punkt(?!e)/.test(zaehlwort)
+         : new RegExp(offen.anzahl + " Punkte").test(zaehlwort),
+    "die Zusammenfassung nennt die richtige Zahl", zaehlwort);
+  /* Die Markierung "Als Naechstes" darf hoechstens EINMAL vorkommen -- und bei
+     leerer Liste gar nicht. Sie an etwas zu haengen, das es nicht gibt, oder
+     an mehrere Punkte zugleich, macht sie wertlos. */
+  pruefe(offen && offen.hoch === Math.min(1, offen.anzahl),
+    `"Als Naechstes" ist genau so oft vergeben, wie es sein darf (${offen && offen.hoch})`);
   pruefe(offen && !/Solaranlagen|Kleine Windparks/.test(offen.texte),
     "die zwei gestrichenen Punkte stehen nicht mehr in der Liste");
   /* ERLEDIGTES DARF NICHT IN DER LISTE STEHEN. Drei Punkte standen dort noch
