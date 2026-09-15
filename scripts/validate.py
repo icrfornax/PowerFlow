@@ -321,7 +321,8 @@ def tagesbefunde(jahr: int, d: dict) -> list[str]:
 def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  kraftwerke: dict, grundkarte: dict, netz: dict,
                  css: str, verlauf: dict, workflows: dict,
-                 engpasskosten: dict, rdv: dict, viertel: dict) -> Befund:
+                 engpasskosten: dict, rdv: dict, viertel: dict,
+                 vergleich: dict) -> Befund:
     b = Befund()
 
     for name in PFLICHTDATEIEN:
@@ -1029,6 +1030,47 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("Tageswerte im Zeitraum" in js,
              "unter der stuendlichen Kurve steht eine Uebersicht der Tageswerte")
 
+    # --- Die Medianzeile der Netzlast-Kachel, 15.09.2026 ---
+    # Sie ist der Rest eines verworfenen Entwurfs: eine Zahl dort, wo die
+    # Kennzahl ohnehin steht. Beleg: docs/beleg-medianzeile.md.
+    vr = vergleich
+    tage_soll = (dt.date.fromisoformat(vr["bis"])
+                 - dt.date.fromisoformat(vr["von"])).days + 1
+    b.pruefe(len(vr["netzlast_mwh"]) == tage_soll == vr["tage"],
+             f"Vergleichsreihe: ein Eintrag je Kalendertag "
+             f"({len(vr['netzlast_mwh'])} von {tage_soll})")
+    b.pruefe(vr["von"] == "2015-01-01",
+             f"Vergleichsreihe beginnt am 01.01.2015 ({vr['von']})")
+    # UND SIE MUSS DIE RICHTIGEN ZAHLEN FUEHREN. Eine Reihe, die niemand gegen
+    # ihre Quelle haelt, ist eine zweite Wahrheit. Stichprobe ueber alle Jahre;
+    # gerundet wird auf ganze MWh, also ist 1 MWh die Toleranz.
+    schief = []
+    for jahr, d in sorted(jahre.items()):
+        for i in range(0, len(d["tage"]), 53):
+            tag, soll = d["tage"][i], d["netzlast"][i]
+            stelle = (dt.date.fromisoformat(tag)
+                      - dt.date.fromisoformat(vr["von"])).days
+            ist = vr["netzlast_mwh"][stelle] if 0 <= stelle < tage_soll else None
+            if soll is None:
+                if ist is not None:
+                    schief.append(f"{tag}: Quelle leer, Reihe {ist}")
+            elif ist is None or abs(ist - soll) > 1.0:
+                schief.append(f"{tag}: {soll} gegen {ist}")
+    b.pruefe(not schief,
+             "Vergleichsreihe trifft die Jahresdateien"
+             + (f" -- schief: {schief[:3]}" if schief else ""))
+    # MIT KLAMMER gesucht. "medianSatz" steckt auch in "medianSatzX" -- und
+    # genau so hat der Negativtest dazu beim ersten Lauf gegruent, ohne etwas
+    # zu pruefen. Derselbe Teilstring-Fehler wie frueher bei tagImJahr.
+    b.pruefe("function medianSatz(" in js and "vergleichsreihe.json" in js
+             and "pf-medianzeile" in css,
+             "die Medianzeile ist im Modul und im Stylesheet verdrahtet")
+    b.pruefe("vollständige Jahre, " in js,
+             "die Zeile nennt, ueber wie viele vollstaendige Jahre sie rechnet")
+    for satz in ("35 kB", "2,99 MB", "29. Februar", "Rundungsfehler"):
+        b.pruefe(satz in lade("docs/beleg-medianzeile.md"),
+                 f"beleg-medianzeile.md nennt: {satz!r}")
+
     # --- Viertelstundenwerte, erschlossen am 14.09.2026 ---
     vv = viertel["verzeichnis"]
     vtage = viertel["tage"]
@@ -1730,7 +1772,8 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
 # Reihenfolge der Eingaben von eingaben(). Die Negativtests arbeiten ueber
 # diese Namen statt ueber Stellungsargumente.
 FELDER = ("jahre", "index_html", "js", "kraftwerke", "grundkarte", "netz",
-          "css", "verlauf", "workflows", "engpasskosten", "rdv", "viertel")
+          "css", "verlauf", "workflows", "engpasskosten", "rdv", "viertel",
+          "vergleich")
 
 
 def _kosten_doppelt(doc: dict) -> dict:
@@ -1790,6 +1833,10 @@ def _viertel_kurz(d: dict) -> dict:
     }
 
 
+def vergleichsreihe() -> dict:
+    return json.loads(lade("data/vergleichsreihe.json"))
+
+
 def viertelstundendateien() -> dict:
     """Verzeichnis UND Ordner -- beides, damit die Pruefung sie vergleichen kann.
 
@@ -1818,7 +1865,22 @@ def eingaben() -> tuple:
             netzdateien(), lade("assets/powerflow.css"), verlaufdateien(),
             workflowdateien(), json.loads(lade("data/engpasskosten.json")),
             json.loads(lade("data/redispatch-verzeichnis.json")),
-            viertelstundendateien())
+            viertelstundendateien(), vergleichsreihe())
+
+
+def _vergleich_verstellt(vr: dict) -> dict:
+    """Verstellt einen belegten Wert der schlanken Reihe.
+
+    Sie ist eine ZWEITE Ablage derselben Zahl. Laeuft sie von den
+    Jahresdateien weg, zeigt die Kachel einen Median, den es nicht gibt.
+    """
+    import copy
+    k = copy.deepcopy(vr)
+    for i, w in enumerate(k["netzlast_mwh"]):
+        if w is not None:
+            k["netzlast_mwh"][i] = w + 500_000
+            break
+    return k
 
 
 def _viertel_ohne_tag(v: dict) -> dict:
@@ -1966,6 +2028,10 @@ def negativtests() -> int:
          lambda: {"viertel": _viertel_auffaellig(basis["viertel"])}),
         ("Der bekannte Fehlwert vom 09.02.2015 wird nicht mehr gefangen",
          lambda: {"viertel": _viertel_fehlwert_weg(basis["viertel"])}),
+        ("Ein Wert der Vergleichsreihe verstellt",
+         lambda: {"vergleich": _vergleich_verstellt(basis["vergleich"])}),
+        ("Medianzeile aus dem Modul entfernt",
+         lambda: ersetze("js", "function medianSatz(", "function medianWeg(")),
         ("Viertelstundenstufe aus dem Modul entfernt",
          lambda: ersetze("js", "VIERTEL_BIS_TAGE", "EGAL_BIS_TAGE")),
         ("Tabelle rechnet die Deckung wieder ohne die Einfuhr",

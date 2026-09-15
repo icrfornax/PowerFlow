@@ -120,6 +120,14 @@ jobs:
           # und merkt es nie.
           python scripts/fetch-redispatch.py --lizenz-geklaert "$(date -u +%Y)" "$(( $(date -u +%Y) - 1 ))"
 
+      - name: Schlanke Vergleichsreihe neu rechnen
+        # Reine Rechnung aus data/tage/, kein Netzzugriff. Muss NACH dem
+        # Tagesabruf laufen: sie liest genau die Dateien, die er gerade
+        # geaendert hat. Sie traegt die Medianzeile der Netzlast-Kachel --
+        # ohne sie muesste die Seite alle zwoelf Jahresdateien laden (2,99 MB
+        # statt 35 kB).
+        run: python scripts/vergleichsreihe.py
+
       - name: Quellenverzeichnis neu bauen
         # Muss VOR dem Tuersteher laufen: er prueft, dass das Verzeichnis alle
         # Dateien zaehlt. Und quellen.py bricht selbst ab, wenn eine Datei

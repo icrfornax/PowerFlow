@@ -148,6 +148,18 @@
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/viertelstunden"
   },
   {
+   "titel": "Taegliche Netzlast, schlanke Reihe",
+   "inhalt": "Ein Wert je Kalendertag in MWh, gerundet, aus data/tage/ gerechnet. Traegt die Medianzeile der Netzlast-Kachel; die Alternative waere, alle zwoelf Jahresdateien bei jedem Seitenaufruf zu laden.",
+   "quelle": "smard",
+   "beleg": "docs/beleg-medianzeile.md",
+   "dateien": 1,
+   "bytes": 35397,
+   "zeitraum": null,
+   "muster": "data/vergleichsreihe.json",
+   "abzug": "data/vergleichsreihe.json",
+   "alle": null
+  },
+  {
    "titel": "Kraftwerksstandorte",
    "inhalt": "Stammdaten mit Koordinaten, Betreiber, Energietraeger, Nettoleistung und Bloecken. Aus einem UNDOKUMENTIERTEN Endpunkt.",
    "quelle": "smard",
@@ -369,13 +381,13 @@
    "quelle": "powerflow",
    "beleg": null,
    "dateien": 1,
-   "bytes": 15689,
+   "bytes": 16177,
    "zeitraum": null,
    "muster": "data/quellen.json",
    "abzug": "data/quellen.json",
    "alle": null
   }
  ],
- "dateien_gesamt": 4471,
- "bytes_gesamt": 93741751
+ "dateien_gesamt": 4472,
+ "bytes_gesamt": 93777636
 }

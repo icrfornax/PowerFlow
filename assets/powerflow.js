@@ -132,6 +132,7 @@
     klapp: {},
     blockJahre: {},        // Jahr -> Erzeugung je Kraftwerksblock
     blockVerzeichnis: null,
+    vergleich: null,       // schlanke Tagesreihe der Netzlast, alle Jahre
     vorschau: null,        // angekuendigte Last fuer heute und morgen
     prognoseJahre: {},     // Jahr -> Prognosegüte
     prognoseVerzeichnis: null,
@@ -625,10 +626,111 @@
     if (o.einheit) { w.appendChild(el("span", { "class": "pf-einheit", text: o.einheit })); }
     k.appendChild(w);
     if (o.bezug) { k.appendChild(el("p", { "class": "pf-bezug", text: o.bezug })); }
+    /* Eine EIGENE Zeile, nicht angehaengt. Die Bezugszeile traegt schon den
+       Vorjahresvergleich; ein dritter Halbsatz daran waere nicht mehr zu
+       lesen. */
+    if (o.median) {
+      k.appendChild(el("p", { "class": "pf-bezug pf-medianzeile", text: o.median }));
+    }
     k.appendChild(el("p", { "class": "pf-marke",
       text: o.marke || "kein Regler — gemessener Wert" }));
     if (o.info) { infoKnopf(k, o.info, o.titel); }
     return k;
+  }
+
+  /* ---- DER MEDIAN DERSELBEN KALENDERTAGE -------------------------------
+
+     Die Frage "wie ungewoehnlich ist dieser Zeitraum?" hatte am 15.09.2026
+     schon einmal eine Antwort: einen eigenen Abschnitt mit vier Balkenreihen.
+     Er ist gebaut, angesehen und verworfen worden -- 48 Saeulen fuer zwei
+     Zahlen (docs/beleg-mehrjahresvergleich.md). Was bleibt, ist die Zahl
+     selbst, und die gehoert dorthin, wo die Kennzahl ohnehin steht.
+
+     NUR DIE NETZLAST. Sie ist die einzige grosse Kennzahl dieser Seite, die
+     ueber zwoelf Jahre ohne Vorbehalt vergleichbar ist. Die Erzeugung ist es
+     nicht -- die Erdgasreihe hat 2018 einen Erfassungsbruch, und 56 % des
+     Anstiegs von 2017 auf 2018 entfallen auf sie allein. Ein Median ueber den
+     Bruch hinweg waere eine Zahl, die nichts misst. Ein- und Ausfuhr schwanken
+     zu stark, als dass eine Prozentangabe zum Median hielte, was sie
+     verspricht.
+
+     EINE SCHLANKE EIGENE DATEI, nicht alle Jahresdateien. data/tage/ sind
+     2,99 MB in zwoelf Dateien; die Seite laedt sonst nur zwei davon.
+     data/vergleichsreihe.json ist 35 kB, weil sie genau eine Groesse fuehrt.
+     Erzeugt von scripts/vergleichsreihe.py, reine Rechnung ohne Netzzugriff. */
+
+  function vergleichLaden() {
+    if (Z.vergleich) { return Promise.resolve(Z.vergleich); }
+    return fetch("data/vergleichsreihe.json?v=" + VERSION)
+      .then(function (r) {
+        if (!r.ok) { throw new Error("keine Vergleichsreihe"); }
+        return r.json();
+      })
+      .then(function (d) { Z.vergleich = d; return d; })
+      /* Faellt die Datei aus, faellt die ZEILE aus -- nicht die Kachel. */
+      .catch(function () { Z.vergleich = null; return null; });
+  }
+
+  /* Stelle eines Kalendertages in der flachen Reihe. Ueber UTC gerechnet:
+     eine Differenz in Ortszeit verliert an den Umstellungstagen eine Stunde
+     und rundet dann auf den falschen Tag. */
+  function vergleichStelle(iso) {
+    var v = Z.vergleich;
+    if (!v) { return -1; }
+    var a = Date.UTC(Number(v.von.slice(0, 4)), Number(v.von.slice(5, 7)) - 1,
+                     Number(v.von.slice(8, 10)));
+    var b = Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1,
+                     Number(iso.slice(8, 10)));
+    return Math.round((b - a) / 86400000);
+  }
+
+  function medianNetzlast(von, bis) {
+    var v = Z.vergleich;
+    if (!v || !v.netzlast_mwh) { return null; }
+    var jahrVon = Number(von.slice(0, 4));
+    var spanne = Number(bis.slice(0, 4)) - jahrVon;
+    var erstes = Number(v.von.slice(0, 4)), letztes = Number(v.bis.slice(0, 4));
+    var werte = [];
+    for (var j = erstes; j <= letztes; j++) {
+      /* Der 29. Februar hat in Nicht-Schaltjahren kein Gegenstueck und wird
+         auf den 28. gelegt -- dieselbe Regel wie beim Vorjahresvergleich. */
+      var a = vergleichStelle(tagImJahr(von, j));
+      var b = vergleichStelle(tagImJahr(bis, j + spanne));
+      if (a < 0 || b < a || b >= v.netzlast_mwh.length) { continue; }
+      var summe = 0, vollstaendig = true;
+      for (var i = a; i <= b; i++) {
+        var w = v.netzlast_mwh[i];
+        if (w === null || w === undefined) { vollstaendig = false; break; }
+        summe += w;
+      }
+      /* NUR VOLLSTAENDIGE JAHRE. Ein halb belegtes Jahr hat eine kleinere
+         Summe, und das ist keine Aussage ueber den Verbrauch -- dieselbe
+         Regel wie im CSV-Abzug. */
+      if (vollstaendig) { werte.push(summe); }
+    }
+    if (werte.length < 3) { return null; }
+    werte.sort(function (p, q) { return p - q; });
+    return {
+      median: werte.length % 2 ? werte[(werte.length - 1) / 2]
+        : (werte[werte.length / 2 - 1] + werte[werte.length / 2]) / 2,
+      n: werte.length
+    };
+  }
+
+  /* Der Satz fuer die Kachel. Er nennt die Zahl der Jahre mit -- eine
+     Abweichung vom Median aus drei Jahren ist etwas anderes als eine aus
+     zwoelf, und wer das nicht sieht, kann es nicht beurteilen. */
+  function medianSatz(von, bis, wert) {
+    if (wert === null || wert === undefined) { return ""; }
+    var m = medianNetzlast(von, bis);
+    if (!m || !m.median) { return ""; }
+    var ab = (wert - m.median) / m.median * 100;
+    /* Die Kennzeichnung steht VORN. Wer den Satz liest, soll wissen, was er
+       liest, bevor er die Zahl aufnimmt -- nicht erst danach. Die Zeile
+       darueber ist eine Messung, diese ist eine Rechnung. */
+    return "Gerechnet: " + nf1.format(Math.abs(ab)) + " % "
+      + (ab >= 0 ? "über" : "unter") + " dem Median derselben Kalendertage — "
+      + nf0.format(m.n) + " vollständige Jahre, " + gwh(m.median, 1) + " GWh";
   }
 
   /* Bezugszeile: derselbe Zeitraum ein Jahr frueher, reale Messwerte. */
@@ -5255,6 +5357,7 @@
     kacheln.appendChild(kachel({
       titel: "Netzlast", wert: gwh(k.netzlast, 1), einheit: "GWh", akzent: "violett",
       bezug: bezugstext(k.netzlast, v.netzlast, vv, vb, k.belegt, v.belegt) + proTag,
+      median: medianSatz(von, bis, k.netzlast),
       info: {
         wert: "SMARD-Filter 410 „Realisierter Stromverbrauch, Gesamt (Netzlast)“, Region DE, "
           + "summiert über " + k.belegt + " Tage. Gegen die eigene Viertelstundenreihe "
@@ -5265,7 +5368,15 @@
           + "enthalten ist Strom, den Industriebetriebe selbst erzeugen und selbst verbrauchen.",
         quellen: QUELLE_SMARD,
         messung: "Messung. Der Vergleichswert ist derselbe Zeitraum ein Jahr früher, "
-          + "reale Messwerte, keine Annahme."
+          + "reale Messwerte, keine Annahme. Die zweite Zeile ist eine RECHNUNG: "
+          + "derselbe Kalenderausschnitt in jedem Jahr seit 2015, davon der "
+          + "Median — nur über vollständig belegte Jahre, weil ein halb "
+          + "belegtes Jahr eine kleinere Summe hat und das keine Aussage über "
+          + "den Verbrauch ist. Der 29. Februar wird in Nicht-Schaltjahren auf "
+          + "den 28. gelegt. Die Netzlast ist die einzige Kennzahl dieser Seite "
+          + "mit dieser Zeile: sie ist die einzige, die über zwölf Jahre ohne "
+          + "Vorbehalt vergleichbar ist — die Erzeugungsreihe hat 2018 einen "
+          + "Erfassungsbruch beim Erdgas."
       }
     }));
 
@@ -6470,6 +6581,8 @@
         jahreImZeitraum(vorjahrstag(Z.startVon), vorjahrstag(Z.startBis)));
       return Promise.all(noetig.map(jahrLaden).concat([
         verlaufLadenZeitraum(Z.startVon, Z.startBis),
+        // 35 kB fuer die Medianzeile der Netzlast-Kachel.
+        vergleichLaden(),
         /* Beim Start wird das Verzeichnis geholt, damit die Seite weiss, ab
            wann es Viertelstunden gibt -- der Anfangszeitraum ist sieben Tage
            und zeigt sie nicht. Es sind ein paar Kilobyte. */

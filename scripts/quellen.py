@@ -134,6 +134,11 @@ GRUPPEN = [
      "Euro je MWh. TAGESdateien: die Seite zeigt hoechstens zwei Tage "
      "viertelstuendlich, und wer zwei Tage ansieht, soll zwei Dateien laden.",
      "docs/beleg-viertelstunden.md", "viertelstunden-verzeichnis.json"),
+    ("vergleichsreihe.json", "smard", "Taegliche Netzlast, schlanke Reihe",
+     "Ein Wert je Kalendertag in MWh, gerundet, aus data/tage/ gerechnet. "
+     "Traegt die Medianzeile der Netzlast-Kachel; die Alternative waere, alle "
+     "zwoelf Jahresdateien bei jedem Seitenaufruf zu laden.",
+     "docs/beleg-medianzeile.md", None),
     ("kraftwerke.json", "smard", "Kraftwerksstandorte",
      "Stammdaten mit Koordinaten, Betreiber, Energietraeger, Nettoleistung und "
      "Bloecken. Aus einem UNDOKUMENTIERTEN Endpunkt.",

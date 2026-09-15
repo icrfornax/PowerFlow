@@ -1135,14 +1135,52 @@ Immos Urteil nach dem Blick auf die Live-Seite: "sieht extrem haesslich aus",
 zweien und bedient den CSV-Abzug. Und die Wirkungsprobe der Negativtests (siehe
 unten), die beim Herausloesen aufgefallen ist.
 
-**Merksatz:** wenn die Frage je wieder aufkommt, dann als EINE Zahl in der
-Kachel -- "diese Woche liegt 6,3 % unter dem Median der letzten zwoelf
-Jahre" --, nicht als eigener Abschnitt.
+**Genau so ist es dann gebaut worden**, noch am selben Tag: die Kachel
+"Netzlast" traegt seitdem eine zweite Bezugszeile. Siehe den eigenen Abschnitt
+unten und `docs/beleg-medianzeile.md`. Ein Abschnitt wurde zu einer Zeile, und
+die Zeile sagt mehr.
 
 **Und eine Regel fuer solche Auftraege:** dass alle Pruefungen gruen sind, sagt
 nichts darueber, ob eine Darstellung TRAEGT. Das entscheidet Immo am Bild. Bei
 einem Entwurf, der viel Flaeche kostet, lohnt es sich, ihn zuerst zu zeigen und
 erst dann festzuschreiben.
+
+## Die Medianzeile der Netzlast-Kachel
+
+Gebaut am 15.09.2026. Beleg: `docs/beleg-medianzeile.md`, Reihe
+`data/vergleichsreihe.json` aus `scripts/vergleichsreihe.py`.
+
+Der Rest des verworfenen Mehrjahresvergleichs -- eine Zahl dort, wo die
+Kennzahl ohnehin steht:
+
+> Gerechnet: 5,0 % unter dem Median derselben Kalendertage -- 12 vollstaendige
+> Jahre, 9.031,8 GWh
+
+- **NUR DIE NETZLAST.** Sie ist die einzige grosse Kennzahl dieser Seite, die
+  ueber zwoelf Jahre ohne Vorbehalt vergleichbar ist. Die Erzeugung ist es
+  nicht -- Erdgas hat 2018 einen Erfassungsbruch. Ein- und Ausfuhr schwanken zu
+  stark (220 % ueber dieselbe Kalenderwoche, beim Saldo mit Vorzeichenwechsel).
+  **Eine Groesse, die man vergleichen darf, ist besser als vier, die man
+  erklaeren muss.**
+- **Eine schlanke eigene Datei, nicht alle Jahresdateien.** `data/tage/` sind
+  2,99 MB in zwoelf Dateien; `data/vergleichsreihe.json` ist 35 kB, weil sie
+  genau eine Groesse fuehrt. Der Rundungsfehler auf ganze MWh ist ausgerechnet:
+  hoechstens 0,5 von 1.200.000 MWh am Tag, fuenf Groessenordnungen unter der
+  angezeigten Stelle.
+- **Die Reihe wird ueber den KALENDER gebaut**, nicht ueber die vorhandenen
+  Schluessel -- ein fehlender Tag steht als `null` darin. Verkuerzt verschoebe
+  sich alles dahinter um einen Tag, und der Vergleich traefe stillschweigend
+  den falschen Kalendertag. Die Stelle eines Tages wird ueber UTC gerechnet.
+- **Nur vollstaendig belegte Jahre**, und die Zahl der Jahre steht IN der
+  Zeile. Unter drei Jahren erscheint sie gar nicht.
+- **Die Kennzeichnung steht VORN** ("Gerechnet: ..."). Wer den Satz liest, soll
+  wissen, was er liest, bevor er die Zahl aufnimmt. Die Zeile darueber ist eine
+  Messung, diese ist eine Rechnung, und sie ist leiser gesetzt.
+- **Zwei alte Fallen sind dabei wieder aufgetreten und gefangen worden:** die
+  Pruefung suchte `"medianSatz"` statt `"function medianSatz("` -- und der
+  Negativtest benannte in `medianSatzX` um, was den Teilstring enthaelt, also
+  gruente die Pruefung, ohne etwas zu pruefen. Genau derselbe Fehler wie
+  frueher bei `tagImJahr`. Gefangen hat ihn der Negativtest-Lauf.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 

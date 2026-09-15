@@ -256,6 +256,35 @@ try {
   })()`);
   pruefe(bausteine.kacheln >= 6, `${bausteine.kacheln} Kennzahlen-Kacheln`);
 
+  /* DIE MEDIANZEILE -- eine Zahl statt eines Abschnitts.
+
+     Am 15.09.2026 stand dieselbe Frage schon einmal als eigener Block mit vier
+     Balkenreihen auf der Seite und ist verworfen worden. Geblieben ist die
+     Zahl dort, wo die Kennzahl ohnehin steht. Geprueft wird, dass sie in der
+     NETZLAST-Kachel steht und NUR dort: die Erzeugung darf sie nicht bekommen,
+     ihre Reihe hat 2018 einen Erfassungsbruch. */
+  const median = await js(`(function () {
+    const k = [...document.querySelectorAll(".pf-kachel")];
+    const finde = (t) => k.find((x) =>
+      (x.querySelector(".pf-titel") || {}).textContent === t);
+    const zeile = (x) => x && x.querySelector(".pf-medianzeile")
+      ? x.querySelector(".pf-medianzeile").textContent : "";
+    return { netzlast: zeile(finde("Netzlast")),
+             erzeugung: zeile(finde("Erzeugung")),
+             anzahl: document.querySelectorAll(".pf-medianzeile").length };
+  })()`);
+  pruefe(/Median derselben Kalendertage/.test(median.netzlast),
+    "die Netzlast-Kachel nennt den Median derselben Kalendertage",
+    median.netzlast);
+  pruefe(/\d+,\d %\s(über|unter)/.test(median.netzlast)
+    && /vollständige Jahre/.test(median.netzlast)
+    && /GWh/.test(median.netzlast),
+    "mit Abweichung, Zahl der Jahre und Medianwert", median.netzlast);
+  pruefe(/^Gerechnet:/.test(median.netzlast.trim()),
+    "und sie sagt VORN, dass sie gerechnet ist", median.netzlast);
+  pruefe(median.anzahl === 1 && median.erzeugung === "",
+    `nur diese eine Kachel hat sie (${median.anzahl})`);
+
   /* Der Anteil der Erneuerbaren. Geprueft wird nicht nur, DASS die Kachel da
      ist, sondern dass sie mit der Legende des Verlaufs zusammenpasst -- beide
      rechnen dieselben Reihen, nur gegen verschiedene Nenner. */

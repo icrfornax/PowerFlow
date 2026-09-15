@@ -1320,6 +1320,12 @@ details.pf-mehr { margin: 0; padding: 0; border: 0; background: none; }
   .pf-gp-name { font-size: 0.72rem; }
 }
 
+/* Die zweite Bezugszeile der Netzlast-Kachel: der Abstand zum Median derselben
+   Kalendertage in allen Jahren. Eigene Zeile, nicht angehaengt -- die erste
+   traegt schon den Vorjahresvergleich. Etwas leiser als diese, weil sie eine
+   RECHNUNG ist und keine Messung. */
+.pf-medianzeile { margin-top: 3px; color: var(--schrift-still); }
+
 /* ZURUECKGENOMMEN am 15.09.2026: die Regeln des Mehrjahresvergleichs
    (.pf-mehrjahr, .pf-mj-*). Der Block ist gebaut und verworfen worden; tote
    Regeln bleiben nicht stehen. Was daran nicht getragen hat, steht in
