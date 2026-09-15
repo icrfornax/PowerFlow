@@ -684,30 +684,40 @@
     return Math.round((b - a) / 86400000);
   }
 
-  function medianNetzlast(von, bis) {
+  /* Dasselbe Kalenderfenster in jedem Jahr, aufsummiert -- EINE Funktion fuer
+     beide Kacheln. Sie gibt je Jahr die Summen BEIDER Reihen zurueck; wer nur
+     eine braucht, nimmt eine. Zwei Fensterschleifen nebeneinander liefen
+     irgendwann auseinander. */
+  function fenstersummen(von, bis) {
     var v = Z.vergleich;
-    if (!v || !v.netzlast_mwh) { return null; }
-    var jahrVon = Number(von.slice(0, 4));
-    var spanne = Number(bis.slice(0, 4)) - jahrVon;
+    if (!v || !v.netzlast_mwh) { return []; }
+    var spanne = Number(bis.slice(0, 4)) - Number(von.slice(0, 4));
     var erstes = Number(v.von.slice(0, 4)), letztes = Number(v.bis.slice(0, 4));
-    var werte = [];
+    var raus = [];
     for (var j = erstes; j <= letztes; j++) {
       /* Der 29. Februar hat in Nicht-Schaltjahren kein Gegenstueck und wird
          auf den 28. gelegt -- dieselbe Regel wie beim Vorjahresvergleich. */
       var a = vergleichStelle(tagImJahr(von, j));
       var b = vergleichStelle(tagImJahr(bis, j + spanne));
       if (a < 0 || b < a || b >= v.netzlast_mwh.length) { continue; }
-      var summe = 0, vollstaendig = true;
+      var last = 0, ee = 0, vollstaendig = true;
       for (var i = a; i <= b; i++) {
-        var w = v.netzlast_mwh[i];
-        if (w === null || w === undefined) { vollstaendig = false; break; }
-        summe += w;
+        var w = v.netzlast_mwh[i], e = v.ee_mwh ? v.ee_mwh[i] : null;
+        if (w === null || w === undefined || e === null || e === undefined) {
+          vollstaendig = false; break;
+        }
+        last += w; ee += e;
       }
       /* NUR VOLLSTAENDIGE JAHRE. Ein halb belegtes Jahr hat eine kleinere
          Summe, und das ist keine Aussage ueber den Verbrauch -- dieselbe
          Regel wie im CSV-Abzug. */
-      if (vollstaendig) { werte.push(summe); }
+      if (vollstaendig) { raus.push({ jahr: j, netzlast: last, ee: ee }); }
     }
+    return raus;
+  }
+
+  function medianNetzlast(von, bis) {
+    var werte = fenstersummen(von, bis).map(function (z) { return z.netzlast; });
     if (werte.length < 3) { return null; }
     werte.sort(function (p, q) { return p - q; });
     return {
@@ -715,6 +725,61 @@
         : (werte[werte.length / 2 - 1] + werte[werte.length / 2]) / 2,
       n: werte.length
     };
+  }
+
+  /* ---- DER RANG DER ERNEUERBAREN ----------------------------------------
+
+     WARUM HIER KEIN MEDIAN STEHT. Der Anteil der Erneuerbaren traegt einen
+     starken Trend: im Fenster 08.-14.09. steigt er von 30,7 % (2015) auf
+     53,4 % (2026). Ein Median ueber zwoelf Jahre misst dort ueberwiegend den
+     ZUBAU und nicht das Wetter -- er laege bei 39,5 %, und "+13,9
+     Prozentpunkte" laese sich wie ein Wetterbefund. Der Beweis steht in den
+     Daten selbst: 2017 liegt mit 55,9 % UEBER 2026. Eine windige Woche vor
+     neun Jahren schlaegt eine normale heute.
+
+     Ein RANG kommt ohne jede Annahme ueber den Trend aus, und die SPANNE gibt
+     den Rahmen. Beides ist gemessen, nichts ist gerechnet ausser dem Anteil
+     selbst. Die Netzlast hat diesen Trend nicht -- dort bleibt der Median. */
+  var ORDNUNGSZAHL = ["", "", "zweit", "dritt", "viert", "fünft", "sechst",
+                      "siebt", "acht", "neunt", "zehnt", "elft", "zwölft"];
+
+  function eeRangSatz(von, bis, anteil) {
+    if (anteil === null || anteil === undefined) { return ""; }
+    var zeilen = fenstersummen(von, bis);
+    if (zeilen.length < 3) { return ""; }
+    /* DAS EIGENE JAHR GEHOERT NICHT IN DIE VERGLEICHSLISTE.
+
+       Der angezeigte Anteil kommt aus der Jahresdatei in voller Genauigkeit,
+       die Vergleichsreihe ist auf ganze MWh gerundet. Beide Wege enden bei
+       derselben Zahl -- aber nicht bei demselben Gleitkommawert. Stand das
+       eigene Jahr mit in der Liste, zaehlte es sich um ein Haar selbst als
+       "groesser" und der Rang war um eins zu schlecht: die Kachel meldete
+       fuenfthoechster, wo Python vierthoechster rechnet.
+
+       Verglichen wird deshalb gegen die ANDEREN Jahre. Das ist ohnehin die
+       richtige Frage -- ein Wert ist nicht groesser als er selbst. */
+    var eigenes = Number(von.slice(0, 4));
+    var anteile = zeilen.filter(function (z) { return z.jahr !== eigenes; })
+      .map(function (z) { return z.netzlast ? z.ee / z.netzlast * 100 : null; })
+      .filter(function (a) { return a !== null; });
+    if (anteile.length < 2) { return ""; }
+    anteile.sort(function (p, q) { return q - p; });      // absteigend
+    var rang = 1;
+    for (var i = 0; i < anteile.length; i++) {
+      if (anteile[i] > anteil) { rang++; }
+    }
+    /* Die Spanne schliesst den angezeigten Wert EIN. Sonst laege eine
+       Rekordwoche ausserhalb ihrer eigenen genannten Spanne. */
+    var hoch = Math.max(anteile[0], anteil);
+    var tief = Math.min(anteile[anteile.length - 1], anteil);
+    var n = anteile.length + 1;
+    var wie = rang === 1 ? "der höchste Wert"
+      : rang > n ? "der niedrigste Wert"
+      : (ORDNUNGSZAHL[rang] || ("Rang " + nf0.format(rang) + ", "))
+        + (ORDNUNGSZAHL[rang] ? "höchster Wert" : "");
+    return "Gerechnet: " + wie + " dieser Kalendertage in " + nf0.format(n)
+      + " Jahren — Spanne " + nf1.format(tief) + " % bis "
+      + nf1.format(hoch) + " %";
   }
 
   /* Der Satz fuer die Kachel. Er nennt die Zahl der Jahre mit -- eine
@@ -5403,6 +5468,7 @@
     kacheln.appendChild(kachel({
       titel: "Erneuerbare", akzent: "gruen",
       wert: eeAnteil === null ? "—" : nf1.format(eeAnteil), einheit: "% der Netzlast",
+      median: eeRangSatz(von, bis, eeAnteil),
       bezug: (k.ee === null ? "—" : gwh(k.ee, 1) + " GWh") + " · "
         + (eeVorher === null
             ? "kein Vergleichswert für " + zeitraumKurz(vv, vb) + " vorhanden"
@@ -5427,7 +5493,17 @@
           + "Größenordnungsprobe: dieselbe Formel über ganze Kalenderjahre "
           + "gerechnet ergibt 54,9 % (2023), 55,0 % (2024) und 55,3 % (2025). Ein Abgleich "
           + "gegen die amtliche Quote von AGEE-Stat steht aus — sie rechnet gegen den "
-          + "Bruttostromverbrauch und ist deshalb keine Gegenprobe, sondern eine andere Frage."
+          + "Bruttostromverbrauch und ist deshalb keine Gegenprobe, sondern eine andere Frage. "
+          + "Die zweite Zeile nennt einen RANG und keinen Median — anders als bei "
+          + "der Netzlast. Grund: der Anteil trägt einen starken Trend. Im "
+          + "Fenster 8. bis 14. September steigt er von 30,7 % (2015) auf "
+          + "53,4 % (2026); ein Median über zwölf Jahre läge bei 39,5 %, und "
+          + "„+13,9 Prozentpunkte“ läse sich wie ein Wetterbefund, obwohl es "
+          + "überwiegend Zubau ist. Der Beweis steht in den Daten selbst: 2017 "
+          + "liegt mit 55,9 % über 2026 — eine windige Woche vor neun Jahren "
+          + "schlägt eine normale heute. Ein Rang kommt ohne jede Annahme über "
+          + "den Trend aus. Verglichen wird gegen die anderen vollständig "
+          + "belegten Jahre; das eigene zählt sich nicht selbst."
       }
     }));
 

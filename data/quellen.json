@@ -153,7 +153,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-medianzeile.md",
    "dateien": 1,
-   "bytes": 35400,
+   "bytes": 66373,
    "zeitraum": null,
    "muster": "data/vergleichsreihe.json",
    "abzug": "data/vergleichsreihe.json",
@@ -389,5 +389,5 @@
   }
  ],
  "dateien_gesamt": 4473,
- "bytes_gesamt": 93792450
+ "bytes_gesamt": 93823423
 }

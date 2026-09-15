@@ -1145,7 +1145,7 @@ nichts darueber, ob eine Darstellung TRAEGT. Das entscheidet Immo am Bild. Bei
 einem Entwurf, der viel Flaeche kostet, lohnt es sich, ihn zuerst zu zeigen und
 erst dann festzuschreiben.
 
-## Die Medianzeile der Netzlast-Kachel
+## Die Einordnungszeilen der Kacheln
 
 Gebaut am 15.09.2026. Beleg: `docs/beleg-medianzeile.md`, Reihe
 `data/vergleichsreihe.json` aus `scripts/vergleichsreihe.py`.
@@ -1181,6 +1181,42 @@ Kennzahl ohnehin steht:
   Negativtest benannte in `medianSatzX` um, was den Teilstring enthaelt, also
   gruente die Pruefung, ohne etwas zu pruefen. Genau derselbe Fehler wie
   frueher bei `tagImJahr`. Gefangen hat ihn der Negativtest-Lauf.
+
+### Die Erneuerbaren bekommen einen RANG, keinen Median
+
+Nachgefragt am 15.09.2026, gemessen, und die Antwort war eine andere als die
+Frage. Der Anteil der Erneuerbaren traegt einen starken TREND: im Fenster
+08.-14.09. steigt er von 30,7 % (2015) auf 53,4 % (2026). Ein Median ueber
+zwoelf Jahre laege bei 39,5 %, und "+13,9 Prozentpunkte" laese sich wie ein
+Wetterbefund, obwohl es ueberwiegend Zubau ist.
+
+**Der Beweis steht in den Daten selbst: 2017 liegt mit 55,9 % ueber 2026.**
+Eine windige Woche vor neun Jahren schlaegt eine normale heute.
+
+Ein RANG kommt ohne jede Annahme ueber den Trend aus, die SPANNE gibt den
+Rahmen: "vierthoechster Wert dieser Kalendertage in 12 Jahren -- Spanne 30,7 %
+bis 57,3 %". Die Spanne schliesst den angezeigten Wert EIN; sonst laege eine
+Rekordwoche ausserhalb ihrer eigenen genannten Spanne. Ein Median der letzten
+fuenf Jahre war die dritte Moeglichkeit und ist verworfen: die Fuenf ist
+gesetzt und nicht gemessen.
+
+- **Das eigene Jahr zaehlt sich nicht selbst.** Die erste Fassung sortierte den
+  angezeigten Wert in die Liste ALLER vollstaendigen Jahre ein und meldete
+  "fuenfthoechster", wo vier richtig ist. Der Grund ist ein Haar: der
+  angezeigte Anteil kommt aus der Jahresdatei in voller Genauigkeit, die
+  Vergleichsreihe ist auf ganze MWh gerundet -- dieselbe ANGEZEIGTE Zahl, ein
+  anderer Gleitkommawert. Verglichen wird gegen die ANDEREN Jahre; ein Wert ist
+  nicht groesser als er selbst.
+- **Der Browsertest rechnet den Rang unabhaengig nach**, aus der rohen Reihe
+  mit eigener Arithmetik. Genau das haette den Fehler gemeldet.
+- **Und dabei ist die Template-Literal-Falle wieder zugeschnappt:** `\.` zerfaellt
+  dort zu `.`, aus `/\./g` wird `/./g`, das loescht die ganze Zeichenkette,
+  `parseFloat` liefert `NaN` -- und der nachgerechnete Rang war stumm eins.
+  `split`/`join` kommt ohne Backslash aus. Die Regel steht seit Monaten in
+  diesem Dokument; sie gilt auch fuer Pruefcode.
+- **Die Dateigroesse im Beleg wird GERECHNET, nicht geschrieben.** Die Pruefung
+  suchte woertlich nach "35 kB", waehrend die Datei durch die zweite Reihe auf
+  65 kB gewachsen war. Sie liest die Groesse jetzt von der Platte.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 

@@ -1065,11 +1065,62 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("function medianSatz(" in js and "vergleichsreihe.json" in js
              and "pf-medianzeile" in css,
              "die Medianzeile ist im Modul und im Stylesheet verdrahtet")
+    # --- Der Rang der Erneuerbaren, 15.09.2026 ---
+    # Dort steht bewusst KEIN Median: der Anteil traegt einen starken Trend,
+    # und ein Median ueber zwoelf Jahre maesse ueberwiegend den Zubau. Der
+    # Beweis steht in den Daten -- 2017 liegt mit 55,9 % ueber 2026.
+    b.pruefe("function eeRangSatz(" in js,
+             "die Erneuerbare-Kachel bekommt einen Rang, keinen Median")
+    b.pruefe(js.count("function fenstersummen(") == 1
+             and "fenstersummen(von, bis)" in js,
+             "beide Kacheln rechnen ihr Kalenderfenster an EINER Stelle")
+    # DIE EE-REIHEN MUESSEN IN BEIDEN SPRACHEN DIESELBEN SEIN. Laufen sie
+    # auseinander, zeigt die Kachel einen anderen Anteil als die Kennzahl
+    # darueber -- und es faellt niemandem auf.
+    js_ee = re.search(r"var EE_REIHEN = \[(.*?)\];", js, re.S)
+    b.pruefe(js_ee is not None, "EE_REIHEN steht im Modul")
+    if js_ee:
+        namen = re.findall(r'"([^"]+)"', js_ee.group(1))
+        b.pruefe(namen == vr.get("ee_reihen"),
+                 "die sechs erneuerbaren Reihen sind in Modul und "
+                 f"Vergleichsreihe dieselben ({len(namen)})"
+                 + ("" if namen == vr.get("ee_reihen")
+                    else f" -- {namen} gegen {vr.get('ee_reihen')}"))
+    # Und die EE-Reihe muss die Jahresdateien treffen, wie die Netzlast auch.
+    ee_schief = []
+    for jahr, d in sorted(jahre.items()):
+        for i in range(0, len(d["tage"]), 53):
+            tag = d["tage"][i]
+            summe, gefunden = 0.0, False
+            for name in (vr.get("ee_reihen") or []):
+                r = d["erzeugung"].get(name)
+                if r and r[i] is not None:
+                    summe += r[i]
+                    gefunden = True
+            stelle = (dt.date.fromisoformat(tag)
+                      - dt.date.fromisoformat(vr["von"])).days
+            ist = vr["ee_mwh"][stelle] if 0 <= stelle < tage_soll else None
+            if not gefunden:
+                if ist is not None:
+                    ee_schief.append(f"{tag}: Quelle leer, Reihe {ist}")
+            elif ist is None or abs(ist - summe) > 1.0:
+                ee_schief.append(f"{tag}: {summe} gegen {ist}")
+    b.pruefe(not ee_schief,
+             "die EE-Reihe trifft die Jahresdateien"
+             + (f" -- schief: {ee_schief[:3]}" if ee_schief else ""))
     b.pruefe("vollständige Jahre, " in js,
              "die Zeile nennt, ueber wie viele vollstaendige Jahre sie rechnet")
-    for satz in ("35 kB", "2,99 MB", "29. Februar", "Rundungsfehler"):
-        b.pruefe(satz in lade("docs/beleg-medianzeile.md"),
-                 f"beleg-medianzeile.md nennt: {satz!r}")
+    beleg_mz = lade("docs/beleg-medianzeile.md")
+    for satz in ("2,99 MB", "29. Februar", "Rundungsfehler", "Rang", "Trend"):
+        b.pruefe(satz in beleg_mz, f"beleg-medianzeile.md nennt: {satz!r}")
+    # DIE GROESSE WIRD GERECHNET, NICHT GESCHRIEBEN. Der Beleg nennt sie als
+    # Begruendung fuer die eigene Datei -- und sie waechst, sobald eine Reihe
+    # dazukommt. Genau daran ist diese Pruefung beim ersten Mal rot geworden:
+    # sie suchte woertlich nach "35 kB", waehrend die Datei auf 65 kB
+    # gewachsen war. Eine Zahl in Prosa veraltet still.
+    kb = round((WURZEL / "data" / "vergleichsreihe.json").stat().st_size / 1024)
+    b.pruefe(f"{kb} kB" in beleg_mz,
+             f"beleg-medianzeile.md nennt die gemessene Dateigroesse ({kb} kB)")
 
     # --- Viertelstundenwerte, erschlossen am 14.09.2026 ---
     vv = viertel["verzeichnis"]
@@ -1883,6 +1934,14 @@ def _vergleich_verstellt(vr: dict) -> dict:
     return k
 
 
+def _vergleich_ee_reihen(vr: dict) -> dict:
+    """Nimmt eine der sechs erneuerbaren Reihen aus der Liste."""
+    import copy
+    k = copy.deepcopy(vr)
+    k["ee_reihen"] = k["ee_reihen"][1:]
+    return k
+
+
 def _viertel_ohne_tag(v: dict) -> dict:
     """Nimmt einen Tag aus dem Ordner -- das Verzeichnis kennt ihn noch."""
     import copy
@@ -2030,6 +2089,10 @@ def negativtests() -> int:
          lambda: {"viertel": _viertel_fehlwert_weg(basis["viertel"])}),
         ("Ein Wert der Vergleichsreihe verstellt",
          lambda: {"vergleich": _vergleich_verstellt(basis["vergleich"])}),
+        ("EE-Reihen laufen zwischen Modul und Datei auseinander",
+         lambda: {"vergleich": _vergleich_ee_reihen(basis["vergleich"])}),
+        ("Rangzeile aus dem Modul entfernt",
+         lambda: ersetze("js", "function eeRangSatz(", "function eeRangWeg(")),
         ("Medianzeile aus dem Modul entfernt",
          lambda: ersetze("js", "function medianSatz(", "function medianWeg(")),
         ("Viertelstundenstufe aus dem Modul entfernt",

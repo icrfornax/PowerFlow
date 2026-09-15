@@ -282,8 +282,88 @@ try {
     "mit Abweichung, Zahl der Jahre und Medianwert", median.netzlast);
   pruefe(/^Gerechnet:/.test(median.netzlast.trim()),
     "und sie sagt VORN, dass sie gerechnet ist", median.netzlast);
-  pruefe(median.anzahl === 1 && median.erzeugung === "",
-    `nur diese eine Kachel hat sie (${median.anzahl})`);
+  /* DIE ERNEUERBAREN BEKOMMEN EINEN RANG, KEINEN MEDIAN. Ihr Anteil traegt
+     einen starken Trend -- ein Median ueber zwoelf Jahre maesse ueberwiegend
+     den Zubau. Geprueft wird deshalb ausdruecklich, dass dort KEIN Median
+     steht und die Erzeugung gar keine Zeile hat. */
+  const rang = await js(`(function () {
+    const k = [...document.querySelectorAll(".pf-kachel")];
+    const finde = (t) => k.find((x) =>
+      (x.querySelector(".pf-titel") || {}).textContent === t);
+    const zeile = (x) => x && x.querySelector(".pf-medianzeile")
+      ? x.querySelector(".pf-medianzeile").textContent : "";
+    return { ee: zeile(finde("Erneuerbare")), anzahl: k.length };
+  })()`);
+  pruefe(/Kalendertage in \d+ Jahren/.test(rang.ee) && /Spanne/.test(rang.ee),
+    "die Erneuerbare-Kachel nennt Rang und Spanne", rang.ee);
+  pruefe(/(höchste|niedrigste|höchster) Wert/.test(rang.ee),
+    "als Rang ausgedrueckt, nicht als Prozentabstand", rang.ee);
+  pruefe(!/Median/.test(rang.ee),
+    "und ausdruecklich NICHT als Median -- der Anteil traegt einen Trend",
+    rang.ee);
+  pruefe(/^Gerechnet:/.test(rang.ee.trim()),
+    "auch sie sagt vorn, dass sie gerechnet ist");
+  pruefe(median.anzahl === 2 && median.erzeugung === "",
+    `genau zwei Kacheln tragen eine Einordnungszeile (${median.anzahl})`);
+
+  /* DER RANG WIRD UNABHAENGIG NACHGERECHNET -- aus der rohen Reihe, mit einer
+     hier eigens geschriebenen Arithmetik. Das ist kein Luxus: die erste
+     Fassung zaehlte das eigene Jahr in der Vergleichsliste mit und meldete
+     "fuenfthoechster", wo vier richtig ist. Der Unterschied war ein Haar --
+     der angezeigte Anteil kommt aus der Jahresdatei in voller Genauigkeit,
+     die Reihe ist auf ganze MWh gerundet. So etwas faellt nur auf, wenn
+     jemand nachrechnet. */
+  const nachRang = await js(`(async function () {
+    const v = await fetch("data/vergleichsreihe.json").then((r) => r.json());
+    const von = document.getElementById("pf-von").value;
+    const bis = document.getElementById("pf-bis").value;
+    const stelle = (iso) => Math.round((Date.UTC(+iso.slice(0,4), +iso.slice(5,7)-1,
+      +iso.slice(8,10)) - Date.UTC(+v.von.slice(0,4), +v.von.slice(5,7)-1,
+      +v.von.slice(8,10))) / 86400000);
+    const schalt = (j) => (j % 4 === 0 && j % 100 !== 0) || j % 400 === 0;
+    const imJahr = (iso, j) => (iso.slice(5) === "02-29" && !schalt(j))
+      ? j + "-02-28" : j + iso.slice(4);
+    const eigenes = +von.slice(0, 4);
+    const sp = +bis.slice(0, 4) - eigenes;
+    const andere = [];
+    let selbst = null;
+    for (let j = +v.von.slice(0, 4); j <= +v.bis.slice(0, 4); j++) {
+      const a = stelle(imJahr(von, j)), b = stelle(imJahr(bis, j + sp));
+      if (a < 0 || b < a || b >= v.netzlast_mwh.length) { continue; }
+      let last = 0, ee = 0, voll = true;
+      for (let i = a; i <= b; i++) {
+        if (v.netzlast_mwh[i] == null || v.ee_mwh[i] == null) { voll = false; break; }
+        last += v.netzlast_mwh[i]; ee += v.ee_mwh[i];
+      }
+      if (!voll || !last) { continue; }
+      if (j === eigenes) { selbst = ee / last * 100; } else { andere.push(ee / last * 100); }
+    }
+    // Der ANGEZEIGTE Anteil, nicht der nachgerechnete -- geprueft wird, was
+    // dasteht.
+    const kachel = [...document.querySelectorAll(".pf-kachel")].find(
+      (x) => (x.querySelector(".pf-titel") || {}).textContent === "Erneuerbare");
+    /* KEIN REGULAERER AUSDRUCK MIT BACKSLASH IN EINEM TEMPLATE-LITERAL.
+       Dort zerfaellt "\." zu "." -- aus /\./g wird /./g, das loescht die
+       ganze Zeichenkette, parseFloat liefert NaN, und der Rang ist stumm
+       eins. Genau so ist diese Pruefung beim ersten Lauf danebengegangen.
+       split/join kommt ohne Backslash aus. */
+    const gezeigt = parseFloat(kachel.querySelector(".pf-wert").textContent
+      .split(".").join("").split(",").join("."));
+    const rang = 1 + andere.filter((a) => a > gezeigt).length;
+    return { rang: rang, n: andere.length + 1, gezeigt: gezeigt,
+             selbst: selbst, zeile: (kachel.querySelector(".pf-medianzeile")
+               || {}).textContent || "" };
+  })()`);
+  const WORT = ["", "der höchste Wert", "zweithöchster Wert", "dritthöchster Wert",
+    "vierthöchster Wert", "fünfthöchster Wert", "sechsthöchster Wert",
+    "siebthöchster Wert", "achthöchster Wert", "neunthöchster Wert",
+    "zehnthöchster Wert", "elfthöchster Wert", "zwölfthöchster Wert"];
+  const erwartet = nachRang.rang >= nachRang.n
+    ? "der niedrigste Wert" : WORT[nachRang.rang];
+  pruefe(nachRang.zeile.indexOf(erwartet + " dieser Kalendertage in "
+    + nachRang.n + " Jahren") >= 0,
+    `der Rang ist nachgerechnet: ${erwartet}, ${nachRang.n} Jahre`,
+    nachRang.zeile);
 
   /* Der Anteil der Erneuerbaren. Geprueft wird nicht nur, DASS die Kachel da
      ist, sondern dass sie mit der Legende des Verlaufs zusammenpasst -- beide
