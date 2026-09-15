@@ -240,21 +240,6 @@ try {
   const geladen = await wartenAuf(".pf-kacheln");
   pruefe(geladen, "Seite laedt und baut ihre Kennzahlen auf");
 
-  /* DER MEHRJAHRESVERGLEICH LAEDT ERST BEIM HINSEHEN -- rund 3 MB
-     Jahresdateien, die niemand tragen soll, der sie nicht ansieht. Das MUSS
-     hier ganz vorn geprueft werden: sobald eine spaetere Pruefung durch die
-     Seite scrollt, ist er geladen, und der Platzhalter ist fuer immer weg. */
-  const mjPlatz = await js(`(function () {
-    const k = document.querySelector(".pf-mehrjahr");
-    return { da: !!k,
-             platzhalter: !!(k && k.querySelector(".pf-laden")),
-             reihen: k ? k.querySelectorAll(".pf-mj-reihe").length : -1,
-             text: k ? k.textContent.slice(0, 120) : "" };
-  })()`);
-  pruefe(mjPlatz.da && mjPlatz.platzhalter && mjPlatz.reihen === 0,
-    "der Mehrjahresvergleich laedt erst beim Hinsehen", mjPlatz.text);
-  pruefe(/3 MB/.test(mjPlatz.text),
-    "und der Platzhalter sagt, was er nachlaedt", mjPlatz.text);
   if (!geladen) { throw new Error("Seite ist nicht fertig geworden."); }
   await schlafen(1500);
 
@@ -1237,88 +1222,6 @@ try {
   pruefe(/schraffierte/.test(spalten.erklaert),
     "und die Tabelle sagt, welche Spalte zu welcher Flaeche gehoert",
     spalten.erklaert.slice(0, 70));
-
-  /* --- MEHRJAHRESVERGLEICH ---
-
-     Derselbe Kalenderausschnitt in jedem Jahr. Er laedt ERST, wenn er ins Bild
-     kommt -- rund 3 MB Jahresdateien, die niemand tragen soll, der sie nicht
-     ansieht. Also: erst nachsehen, dass der Platzhalter dasteht, dann
-     hinscrollen, dann pruefen. */
-  pruefe(await js(`!!document.querySelector(".pf-mehrjahr")`),
-    "der Mehrjahresvergleich ist da");
-
-  await js(`document.querySelector(".pf-mehrjahr")`
-    + `.scrollIntoView({ block: "center", behavior: "instant" })`);
-  for (let i = 0; i < 60; i++) {
-    await schlafen(250);
-    if (await js(`!!document.querySelector(".pf-mj-reihe")`)) { break; }
-  }
-  const mj = await js(`(function () {
-    const k = document.querySelector(".pf-mehrjahr");
-    const reihen = [...k.querySelectorAll(".pf-mj-reihe")];
-    const achse = [...k.querySelectorAll(".pf-mj-achse span")];
-    return {
-      reihen: reihen.length,
-      namen: reihen.map((r) => r.querySelector("h4").childNodes[0].textContent.trim()),
-      massstaebe: reihen.map((r) => r.querySelector(".pf-mj-massstab").textContent),
-      spalten: reihen.map((r) => r.querySelectorAll(".pf-mj-spalte").length),
-      saeulen: reihen.map((r) => r.querySelectorAll(".pf-mj-saeule").length),
-      median: k.querySelectorAll(".pf-mj-medianlinie").length,
-      jahre: achse.map((s) => s.textContent),
-      gewaehlt: achse.filter((s) => s.hasAttribute("data-gewaehlt")).map((s) => s.textContent),
-      gasbruch: !!k.querySelector(".pf-mj-gasbruch"),
-      gasbruchtext: (k.querySelector(".pf-mj-gasbruch") || {}).textContent || "",
-      einleitung: (k.querySelector(".pf-bezug") || {}).textContent || ""
-    };
-  })()`);
-  pruefe(mj.reihen === 4, `vier Groessen nebeneinander (${mj.reihen})`);
-  pruefe(mj.namen.join("|") === "Netzlast|Erzeugung|Residuallast|Außensaldo",
-    "Netzlast, Erzeugung, Residuallast, Aussensaldo", mj.namen.join("|"));
-  /* KEIN BALKEN OHNE GENANNTEN MASSSTAB -- und er steht UEBER den Balken. */
-  pruefe(mj.massstaebe.every((m) => /Achse .* bis .* GWh/.test(m)),
-    "jede Reihe nennt ihre Achse", mj.massstaebe[0]);
-  pruefe(mj.massstaebe.every((m) => /Median/.test(m) && /Spanne/.test(m)),
-    "und Median und Spanne", mj.massstaebe[0]);
-  /* DIE ACHSE BEGINNT BEI NULL. Ein abgeschnittener Balken macht aus 12 %
-     Unterschied optisch das Doppelte -- und dass die Netzlastbalken fast
-     gleich hoch sind, IST hier die Aussage. */
-  pruefe(/^Achse 0,0 bis/.test(mj.massstaebe[0]),
-    "die Netzlastachse beginnt bei null", mj.massstaebe[0]);
-  pruefe(mj.jahre.length >= 10 && mj.spalten.every((n) => n === mj.jahre.length),
-    `${mj.jahre.length} Jahre, und jede Reihe hat so viele Spalten`,
-    JSON.stringify(mj.spalten));
-  pruefe(mj.median === 4, `vier Medianlinien (${mj.median})`);
-  pruefe(mj.gewaehlt.length === 1,
-    `genau ein Jahr ist als das gewaehlte markiert (${mj.gewaehlt.join()})`);
-  pruefe(mj.gasbruch && /2018/.test(mj.gasbruchtext),
-    "der Erdgas-Bruch von 2018 steht als Vorbehalt dabei",
-    (mj.gasbruchtext || "").slice(0, 80));
-
-  /* DIE ABLESUNG STEHT UNTER DEM BLOCK, nicht darauf -- wie ueberall. */
-  const mjAblese = await js(`(function () {
-    const k = document.querySelector(".pf-mehrjahr");
-    const rahmen = k.querySelector(".pf-mj-rahmen");
-    const sp = k.querySelectorAll(".pf-mj-spalte")[3];
-    sp.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-    const feld = k.querySelector(".pf-rd-info");
-    const f = feld.getBoundingClientRect(), r = rahmen.getBoundingClientRect();
-    return { offen: !feld.hasAttribute("hidden"),
-             zeilen: feld.querySelectorAll(".pf-rd-info-liste dt").length,
-             text: feld.textContent,
-             abstand: Math.round(f.top - r.bottom),
-             markiert: k.querySelectorAll(".pf-mj-spalte[data-aktiv]").length };
-  })()`);
-  pruefe(mjAblese.offen && mjAblese.zeilen >= 6,
-    `die Ablesung nennt alle vier Groessen und den Zeitraum (${mjAblese.zeilen} Zeilen)`);
-  pruefe(mjAblese.abstand >= 0,
-    `sie steht unter dem Block (${mjAblese.abstand} px darunter)`);
-  pruefe(mjAblese.markiert === 4,
-    `ein Jahr wird in allen vier Reihen zugleich markiert (${mjAblese.markiert})`);
-  pruefe(/zum Median/.test(mjAblese.text),
-    "und nennt den Abstand zum Median", mjAblese.text.slice(0, 90));
-  await foto("mehrjahresvergleich", ".pf-mehrjahr");
-  await js(`document.querySelector(".pf-mj-rahmen")`
-    + `.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }))`);
 
   /* --- DIE DRITTE AUFLOESUNGSSTUFE: VIERTELSTUNDEN ---
 

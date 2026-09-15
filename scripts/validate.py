@@ -898,15 +898,22 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     # erste Fassung suchte woertlich nach "belegt === z.k.tage" und ist beim
     # Auslagern der Rechnung stillschweigend wirkungslos geworden -- dieselbe
     # Klasse Fehler, vor der CLAUDE.md seit Monaten warnt.
-    # Der Block auf der Seite -- und der Beleg dazu.
-    b.pruefe("mehrjahresBlock" in js and "Mehrjahresvergleich" in js,
-             "der Mehrjahresvergleich steht als eigener Abschnitt auf der Seite")
-    for satz in ("Jede Achse beginnt bei null", "2,99 MB",
-                 "IntersectionObserver", "29. Februar", "Erdgas-Bruch"):
+    # ZURUECKGENOMMEN am 15.09.2026: der Mehrjahresvergleich als Block auf der
+    # Seite. Gebaut, angesehen, verworfen. Geprueft wird jetzt das Gegenteil --
+    # dass er WEG ist und dass der Grund nachlesbar bleibt. Ein verworfener
+    # Entwurf, den niemand festhaelt, wird ein zweites Mal gebaut.
+    # OHNE KOMMENTARE gesucht -- die Ruecknahme selbst nennt die Klassennamen,
+    # und die Pruefung stolperte prompt darueber. Dritter Fall derselben Art in
+    # dieser Woche; deshalb steht die Regel jetzt an jeder solchen Stelle.
+    b.pruefe("mehrjahresBlock" not in ohne_kommentare(js)
+             and "pf-mj-" not in ohne_kommentare(js)
+             and "pf-mj-" not in re.sub(r"/\*.*?\*/", " ", css, flags=re.S),
+             "der verworfene Mehrjahresvergleich ist restlos entfernt")
+    for satz in ("ZURÜCKGENOMMEN", "nicht getragen", "CSV-Abzug"):
         b.pruefe(satz in lade("docs/beleg-mehrjahresvergleich.md"),
                  f"beleg-mehrjahresvergleich.md nennt: {satz!r}")
     b.pruefe("beleg-mehrjahresvergleich.md" in lade("CLAUDE.md"),
-             "CLAUDE.md verweist auf den Beleg des Mehrjahresvergleichs")
+             "CLAUDE.md verweist auf den verworfenen Entwurf")
     b.pruefe(re.search(r"voll:\s*k\.belegt\s*===\s*k\.tage", js) is not None,
              "ein Jahr gilt als vollstaendig, wenn jeder Kalendertag belegt ist")
     b.pruefe(re.search(r"function mehrjahresstreuung\([^)]*\)\s*\{[^}]*"

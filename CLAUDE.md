@@ -1110,49 +1110,39 @@ Lesbarkeitsgrenze.
   Kommentare; sie laeuft jetzt ueber `ohne_kommentare(js)`. Beides sind
   Wiederholungen bekannter Muster aus diesem Projekt.
 
-## Mehrjahresvergleich auf der Seite
+## Mehrjahresvergleich als Block -- GEBAUT UND ZURUECKGENOMMEN
 
-Gebaut am 15.09.2026. Beleg: `docs/beleg-mehrjahresvergleich.md`.
+Gebaut am 15.09.2026, angesehen, noch am selben Tag verworfen. Beleg:
+`docs/beleg-mehrjahresvergleich.md`. **Nicht wieder bauen, ohne das vorher zu
+lesen.**
 
-Derselbe Kalenderausschnitt in jedem verfuegbaren Jahr, als eigener Abschnitt
-unter dem Verlauf. Er beantwortet die Frage, die unmittelbar an der einen
-freien Variable haengt: wie stark haengt das Ergebnis am gewaehlten Zeitraum?
+Immos Urteil nach dem Blick auf die Live-Seite: "sieht extrem haesslich aus",
+"gibt keinerlei Mehrwert". Nachvollziehbar ist daran:
 
-- **EINE Rechnung, zwei Ausgaben.** `mehrjahresreihen()` und
-  `mehrjahresstreuung()` bedienen den CSV-Abzug UND den Block. Zwei Rechnungen
-  fuer dieselbe Zahl laufen auseinander, und gemerkt haette es niemand -- genau
-  das ist am 06.09.2026 zweimal passiert. `validate.py` prueft, dass es jede
-  Funktion genau einmal gibt.
-  **Dabei ist eine Pruefung aufgefallen, die beim Auslagern still wirkungslos
-  geworden waere:** sie suchte woertlich nach `belegt === z.k.tage`. Sie laeuft
-  jetzt ueber einen regulaeren Ausdruck und ueber die BEDINGUNG.
-- **Vier Groessen nebeneinander, nicht eine zum Umschalten.** Ein Umschalter
-  waere ein zweites Bedienelement -- die Seite hat genau eines. Und die Aussage
-  steckt im Nebeneinander: ueber zwoelf Jahre schwankt die Netzlast um 11,7 %,
-  die Erzeugung um 27,1 %, die Residuallast um 52,0 %, der Aussensaldo um
-  764,7 % mit Vorzeichenwechsel. Wer umschalten muss, sieht das nie.
-- **JEDE ACHSE BEGINNT BEI NULL.** Ein abgeschnittener Balken macht aus 11,7 %
-  optisch das Doppelte. Dass die Netzlastbalken fast gleich hoch sind, IST die
-  Aussage.
-- **Auch die Linien gehoeren zum Massstab.** Median gestrichelt, Null
-  durchgezogen -- und beides steht als Text UEBER den Balken. Zwei graue
-  Striche in einem 110 px hohen Feld haelt sonst niemand auseinander, und beim
-  Aussensaldo haengt daran ein Vorzeichen.
-- **Unvollstaendige Jahre gehen nicht in Median und Spanne ein**, verschwinden
-  aber nicht: schraffierter Balken, kursive Jahreszahl, und die Ablesung nennt
-  Kalendertage und belegte Tage einzeln.
-- **Der Block laedt erst beim Hinsehen.** Er braucht alle zwoelf Jahresdateien
-  (gemessen 2,99 MB); die Seite selbst kommt mit zweien aus. Ein Platzhalter
-  sagt, was er nachlaedt, ein `IntersectionObserver` holt es, sobald der
-  Abschnitt ins Bild kommt. Die Pruefung dazu steht GANZ VORN im Browsertest --
-  sobald eine spaetere Pruefung durch die Seite scrollt, ist der Block geladen
-  und der Platzhalter fuer immer weg.
-- **Keine Traegerfarben.** Kennzahlen tragen den Bestandston Violett, das
-  gewaehlte Jahr Teal -- und seine Spalte zusaetzlich schwach getoent, damit
-  man es auch dann findet, wenn sein Balken ein Strich ist.
-- **Der Erdgas-Bruch von 2018 steht als gefalteter Vorbehalt dabei** und nennt
-  ausdruecklich, was NICHT betroffen ist: Netzlast und Residuallast laufen
-  glatt durch.
+- **48 Saeulen sind viel Flaeche fuer zwei Zahlen.** Die ganze Aussage war:
+  Netzlast schwankt ueber zwoelf Jahre um 11,7 %, Residuallast um 52,0 %. Das
+  sind zwei Saetze, kein halber Bildschirm.
+- **Ein Bild, dessen Inhalt "hier passiert nichts" ist, verdient kein Bild.**
+  Dass die Netzlastbalken fast gleich hoch sind, war ausdruecklich die
+  Aussage -- aber eine, die man nicht SEHEN muss.
+- **Es gab schon eine Antwort auf dieselbe Frage.** Der CSV-Abzug "Derselbe
+  Zeitraum in allen Jahren" liefert dieselben Zahlen, vollstaendiger und ohne
+  Bildschirmflaeche. Derselbe Fehler wie bei der Jahressummen-Grafik im
+  Kostenblock: dasselbe noch einmal, nur groeber.
+
+**Was geblieben ist, und zwar zu Recht:** `mehrjahresreihen()` und
+`mehrjahresstreuung()` -- die Rechnung steht seitdem an EINER Stelle statt an
+zweien und bedient den CSV-Abzug. Und die Wirkungsprobe der Negativtests (siehe
+unten), die beim Herausloesen aufgefallen ist.
+
+**Merksatz:** wenn die Frage je wieder aufkommt, dann als EINE Zahl in der
+Kachel -- "diese Woche liegt 6,3 % unter dem Median der letzten zwoelf
+Jahre" --, nicht als eigener Abschnitt.
+
+**Und eine Regel fuer solche Auftraege:** dass alle Pruefungen gruen sind, sagt
+nichts darueber, ob eine Darstellung TRAEGT. Das entscheidet Immo am Bild. Bei
+einem Entwurf, der viel Flaeche kostet, lohnt es sich, ihn zuerst zu zeigen und
+erst dann festzuschreiben.
 
 ## Bekannte Maengel der Daten — nicht wegglaetten
 
