@@ -29924,12 +29924,19 @@
   },
   {
    "tag": "2026-09-14",
-   "marken": 88,
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-09-15",
+   "marken": 45,
    "erzeugungsreihen": 11,
    "preis_viertelstuendlich": true,
    "auffaellig": 0
   }
  ],
  "von": "2015-01-01",
- "bis": "2026-09-14"
+ "bis": "2026-09-15"
 }

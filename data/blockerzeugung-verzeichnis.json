@@ -70,8 +70,8 @@
    "jahr": 2026,
    "datei": "data/blockerzeugung/2026.json",
    "bloecke": 128,
-   "abdeckung_prozent": 64.9,
-   "bytes": 262972
+   "abdeckung_prozent": 65.9,
+   "bytes": 263312
   }
  ]
 }
