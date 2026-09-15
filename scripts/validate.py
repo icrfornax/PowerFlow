@@ -225,7 +225,8 @@ def ohne_yaml_kommentare(y: str) -> str:
 
 def workflowdateien() -> dict[str, str]:
     return {n: lade(f".github/workflows/{n}")
-            for n in ("daten-smard.yml", "daten-stammdaten.yml", "pruefen.yml")}
+            for n in ("daten-smard.yml", "daten-stammdaten.yml", "pruefen.yml",
+                      "daten-entsoe.yml", "alarm.yml")}
 
 
 def jahresdateien() -> dict[int, dict]:
@@ -630,6 +631,32 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     b.pruefe("browsertest.mjs" in pruefwf, "Pruef-Workflow fuehrt den Browsertest aus")
     b.pruefe("quellen.py --negativtest" in pruefwf,
              "Pruef-Workflow weist den Quellen-Waechter nach")
+
+    # --- Alarm bei rotem Lauf ---
+    # Ein roter Lauf meldet sich von selbst nirgends. Seit dem 15.09.2026 macht
+    # alarm.yml daraus ein Issue. Geprueft wird, dass er JEDEN der vier
+    # Workflows beobachtet -- eine Liste ist nur so vollstaendig wie ihr
+    # laengster Eintrag, und genau daran ist die Verzeichnispruefung neun Tage
+    # lang vorbeigelaufen.
+    alarm = ohne_yaml_kommentare(workflows["alarm.yml"])
+    for wfname in ("Daten SMARD", "Daten Stammdaten", "Daten ENTSO-E", "Pruefen"):
+        b.pruefe(f'"{wfname}"' in alarm,
+                 f"Alarm beobachtet den Workflow: {wfname}")
+    b.pruefe("workflow_run" in alarm and "types: [completed]" in alarm,
+             "Alarm haengt am Abschluss der beobachteten Laeufe")
+    b.pruefe("issues: write" in alarm,
+             "Alarm darf Issues schreiben -- und sonst nichts")
+    for erlaubnis in ("contents: write", "pages: write"):
+        b.pruefe(erlaubnis not in alarm,
+                 f"Alarm bekommt KEINE Erlaubnis '{erlaubnis}'")
+    # Ein Alarm, den niemand zurueckzieht, wird nach dem zweiten Mal
+    # uebersehen. Und sieben gleiche Issues in einer Woche auch.
+    b.pruefe("gh issue close" in alarm,
+             "eine Meldung schliesst sich, wenn der Workflow wieder gruen ist")
+    b.pruefe("gh issue comment" in alarm,
+             "ein zweiter Fehlschlag haengt an, statt ein neues Issue zu oeffnen")
+    b.pruefe("'cancelled'" not in alarm and "cancelled" in workflows["alarm.yml"],
+             "abgebrochene Laeufe loesen keinen Alarm aus (und es steht dabei, warum)")
 
     # --- Geheimnisse ---
     # Ein einmal gepushtes Geheimnis steht auch nach dem Loeschen noch in der
@@ -2078,6 +2105,14 @@ def negativtests() -> int:
          lambda: ersetze("js", "keinen Lastfluss", "den Lastfluss")),
         ("Hinweis auf die schematische Pfeillage entfernt",
          lambda: ersetze("js", "schematisch", "genau")),
+        ("Alarm beobachtet einen Workflow nicht mehr",
+         lambda: {"workflows": dict(basis["workflows"],
+                                    **{"alarm.yml": basis["workflows"]["alarm.yml"]
+                                       .replace('"Daten ENTSO-E", ', "")})}),
+        ("Alarm zieht eine Meldung nicht mehr zurueck",
+         lambda: {"workflows": dict(basis["workflows"],
+                                    **{"alarm.yml": basis["workflows"]["alarm.yml"]
+                                       .replace("gh issue close", "echo nichts")})}),
         ("Tabellenansicht des Diagramms entfernt",
          lambda: ersetze("js", "Als Tabelle anzeigen", "Nichts")),
         ("Ablesung wieder ins Bild gelegt",

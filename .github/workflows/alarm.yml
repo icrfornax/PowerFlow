@@ -1,0 +1,97 @@
+name: Alarm bei rotem Lauf
+
+# Ein roter Lauf meldet sich von selbst nirgends. Wer die Seite laufen laesst
+# und ein paar Wochen nicht hinsieht, merkt erst am veralteten Datenstand, dass
+# der taegliche Abruf seit dem 3. des Monats abbricht.
+#
+# Dieser Workflow macht daraus eine SICHTBARE Meldung: bei einem Fehlschlag
+# wird ein Issue geoeffnet, bei jedem weiteren Fehlschlag desselben Workflows
+# nur ein Kommentar angehaengt -- sonst stuenden nach einer Woche sieben
+# gleiche Issues da. Laeuft derselbe Workflow wieder gruen, wird das Issue mit
+# einem Kommentar geschlossen.
+#
+# Ein Issue und keine E-Mail: es bleibt stehen, bis jemand hinsieht, es steht
+# auf der Startseite des Repositorys, und es braucht kein Geheimnis. GitHub
+# benachrichtigt den Eigentuemer ueber neue Issues seines eigenen Repositorys.
+#
+# WAS DIESER WORKFLOW NICHT KANN: sich selbst ueberwachen. Faellt er aus,
+# bleibt es still. Und er sieht nur, was UEBERHAUPT LAEUFT -- ein geplanter
+# Workflow, den GitHub nach 60 Tagen ohne Repository-Aktivitaet abschaltet,
+# schlaegt nicht fehl, er findet einfach nicht mehr statt. Dagegen hilft nur
+# ein Blick auf die Lauf-Liste.
+
+on:
+  workflow_run:
+    workflows: ["Daten SMARD", "Daten Stammdaten", "Daten ENTSO-E", "Pruefen"]
+    types: [completed]
+
+permissions:
+  issues: write
+
+concurrency:
+  # Je Workflow eine Kette, damit zwei Ergebnisse kurz nacheinander nicht
+  # gleichzeitig dasselbe Issue anlegen.
+  group: alarm-${{ github.event.workflow_run.name }}
+  cancel-in-progress: false
+
+jobs:
+  melden:
+    # "cancelled" und "skipped" sind kein Alarm. "success" wird gebraucht, um
+    # eine offene Meldung wieder zu schliessen -- ein Alarm, den niemand
+    # zurueckzieht, wird nach dem zweiten Mal uebersehen.
+    if: >
+      github.event.workflow_run.conclusion == 'failure' ||
+      github.event.workflow_run.conclusion == 'timed_out' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Melden oder Entwarnung geben
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TITEL: "Roter Lauf: ${{ github.event.workflow_run.name }}"
+          WF: ${{ github.event.workflow_run.name }}
+          SCHLUSS: ${{ github.event.workflow_run.conclusion }}
+          LAUF: ${{ github.event.workflow_run.html_url }}
+          ANLASS: ${{ github.event.workflow_run.event }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          ZEIT: ${{ github.event.workflow_run.updated_at }}
+        run: |
+          set -euo pipefail
+          # Das offene Issue zu genau diesem Workflow suchen. Verglichen wird
+          # der VOLLE Titel, nicht ein Teilstring -- "Daten SMARD" steckt sonst
+          # in nichts, aber der naechste Workflowname vielleicht doch.
+          offen=$(gh issue list --state open --limit 100 --json number,title \
+            --jq '[.[] | select(.title == env.TITEL)] | .[0].number // empty')
+
+          if [ "$SCHLUSS" = "success" ]; then
+            if [ -n "$offen" ]; then
+              gh issue comment "$offen" --body \
+                "Wieder gruen: [$WF]($LAUF) ist am $ZEIT durchgelaufen ($ANLASS, \`$SHA\`). Meldung geschlossen."
+              gh issue close "$offen"
+              echo "Entwarnung gegeben, Issue #$offen geschlossen."
+            else
+              echo "Gruen, und es war nichts offen."
+            fi
+            exit 0
+          fi
+
+          text=$(printf '%s\n' \
+            "**$WF** ist mit \`$SCHLUSS\` beendet worden." \
+            "" \
+            "| | |" \
+            "|---|---|" \
+            "| Lauf | $LAUF |" \
+            "| Ausgeloest durch | $ANLASS |" \
+            "| Stand | \`$SHA\` |" \
+            "| Zeitpunkt | $ZEIT |" \
+            "" \
+            "Diese Meldung schliesst sich selbst, sobald derselbe Workflow wieder gruen durchlaeuft." )
+
+          if [ -n "$offen" ]; then
+            gh issue comment "$offen" --body "$text"
+            echo "An Issue #$offen angehaengt."
+          else
+            gh issue create --title "$TITEL" --body "$text"
+            echo "Neues Issue angelegt."
+          fi

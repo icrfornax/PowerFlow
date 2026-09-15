@@ -1323,6 +1323,38 @@ stillschweigend korrigiert noch aus dem Seitentext entfernt werden:
 6. Methodik-PDF und Exporte liefern.
 7. Live-Seite pruefen, Workflow-Laeufe pruefen, offene Punkte auflisten.
 
+## Alarm bei rotem Lauf
+
+Eingerichtet am 15.09.2026, `.github/workflows/alarm.yml`.
+
+Ein roter Lauf meldet sich von selbst nirgends. Wer die Seite laufen laesst und
+ein paar Wochen nicht hinsieht, merkt erst am veralteten Datenstand, dass der
+taegliche Abruf abbricht.
+
+- **Ein ISSUE, keine E-Mail.** Es bleibt stehen, bis jemand hinsieht, es steht
+  auf der Startseite des Repositorys, und es braucht kein Geheimnis. Der
+  Workflow bekommt `issues: write` und sonst nichts -- kein `contents`, kein
+  `pages`.
+- **Ein Issue je Workflow, nicht je Fehlschlag.** Weitere Fehlschlaege desselben
+  Workflows haengen sich als Kommentar an; sonst staenden nach einer Woche
+  sieben gleiche Issues da.
+- **Die Meldung zieht sich selbst zurueck.** Laeuft derselbe Workflow wieder
+  gruen, wird das Issue kommentiert und geschlossen. Ein Alarm, den niemand
+  zurueckzieht, wird nach dem zweiten Mal uebersehen.
+- **`cancelled` und `skipped` sind kein Alarm.** Nur `failure` und `timed_out`.
+
+**ZWEI DINGE KANN ER NICHT**, und beide stehen im Kopf der Datei:
+1. **Sich selbst ueberwachen.** Faellt er aus, bleibt es still.
+2. **Einen Workflow bemerken, der GAR NICHT MEHR LAEUFT.** GitHub schaltet
+   geplante Workflows in oeffentlichen Repositories nach 60 Tagen ohne
+   Repository-Aktivitaet ab -- ein solcher Workflow schlaegt nicht fehl, er
+   findet nicht mehr statt. Dagegen hilft nur ein Blick auf die Lauf-Liste.
+   Bei laengeren Pausen also trotzdem gelegentlich `gh run list`.
+
+`validate.py` prueft, dass alle vier Workflows beobachtet werden -- eine Liste
+ist nur so vollstaendig wie ihr laengster Eintrag, und genau daran ist die
+Verzeichnispruefung am 15.09.2026 neun Tage lang vorbeigelaufen.
+
 ## Browsertest
 
 Er braucht **keine** zusaetzliche Software. Chrome spricht das
