@@ -2034,7 +2034,12 @@ def negativtests() -> int:
          lambda: {"js": basis["js"].replace("function tagImJahr", "function tagImJahrX")}),
         # Und ohne den Ausschluss unvollstaendiger Jahre.
         ("Unvollstaendige Jahre gehen in die Streuung ein",
-         lambda: {"js": basis["js"].replace("belegt === z.k.tage", "belegt >= 0")}),
+         # Die Bedingung steht seit dem 15.09.2026 in mehrjahresreihen(), nicht
+         # mehr im CSV-Abzug. Die alte Verfaelschung traf ins Leere und der
+         # Negativtest gruente, ohne etwas zu pruefen -- gefangen hat es die
+         # Wirkungsprobe unten.
+         lambda: {"js": basis["js"].replace("voll: k.belegt === k.tage",
+                                            "voll: k.belegt >= 0")}),
         ("Einem abgeschlossenen Monat fehlen Stunden",
          lambda: {"verlauf": _monat_gekuerzt(basis["verlauf"])}),
         ("Schwelle der Kraftwerksliste im Text verstellt",
@@ -2102,7 +2107,21 @@ def negativtests() -> int:
     misslungen = 0
     for name, mach in faelle:
         eingabe = dict(basis)
-        eingabe.update(mach())
+        aenderung = mach()
+        eingabe.update(aenderung)
+        # EIN NEGATIVTEST, DER NICHTS VERAENDERT, IST KEIN NEGATIVTEST.
+        # Die meisten Faelle ersetzen eine Zeichenkette im Quelltext. Wird die
+        # Stelle spaeter umbenannt oder ausgelagert, trifft die Ersetzung ins
+        # Leere -- der Fall laeuft weiter, schlaegt nicht an, und man haelt ihn
+        # fuer eine Luecke in der PRUEFUNG statt fuer einen kaputten TEST.
+        # Genau das ist am 15.09.2026 passiert, als die Streuungsrechnung in
+        # eine eigene Funktion gewandert ist.
+        unveraendert = [f for f in aenderung if aenderung[f] == basis[f]]
+        if unveraendert:
+            print(f"  [KAPUT] {name}  <-- die Verfaelschung aendert nichts "
+                  f"an {unveraendert} -- der TEST ist kaputt, nicht die Pruefung")
+            misslungen += 1
+            continue
         befund = pruefe_alles(**eingabe)
         schlug_an = bool(befund.fehler)
         print(f"  [{'ok   ' if schlug_an else 'PROBL'}] {name}"
