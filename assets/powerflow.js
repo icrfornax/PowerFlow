@@ -5131,8 +5131,11 @@
         var s = mehrjahresstreuung(zeilen, g.hol);
         var ab = (s && w !== null && w !== undefined && Math.abs(s.median) > 1)
           ? (w - s.median) / Math.abs(s.median) * 100 : null;
-        return { name: g.name, token: g.schluessel === "saldo"
-                   ? "--teal" : "--violett",
+        /* ALLE VIER Marken tragen denselben Ton wie die Balken. Der
+           Aussensaldo hatte hier zuerst Teal -- eine Farbe, die es in seiner
+           Reihe gar nicht gibt. Teal heisst in diesem Block genau eines: das
+           GEWAEHLTE Jahr. Zwei Bedeutungen fuer eine Farbe sind eine zu viel. */
+        return { name: g.name, token: "--violett",
                  wert: mjWert(w)
                    + (ab === null ? ""
                       : " · " + (ab >= 0 ? "+" : "−") + nf1.format(Math.abs(ab))
