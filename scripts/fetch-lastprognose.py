@@ -185,16 +185,54 @@ TZ = None       # wird in main gesetzt, damit smard.TZ nicht doppelt geladen wir
 # mehr als die Last allein; sie kommt aus SMARD. Dieses Skript liefert nur
 # noch die PROGNOSEGUETE der Vergangenheit -- das ist eine andere Frage.
 
+def verzeichnis_bauen() -> list[dict]:
+    """AUS DEM ORDNER, nie aus dem Lauf.
+
+    Bis zum 15.09.2026 stand im Verzeichnis die Liste der Jahre, die GERADE
+    geholt worden waren. Der taegliche Workflow holt genau eines -- also
+    kuerzte er das Verzeichnis jeden Tag auf ein Jahr, waehrend acht
+    Jahresdateien danebenlagen. Die Seite fand die uebrigen sieben nicht mehr.
+
+    Derselbe Fehler wie am 06.09.2026 bei der Blockerzeugung. Dort behoben,
+    hier uebersehen -- weil die Pruefung "Verzeichnis gleich Ordner" nur zwei
+    der drei Verzeichnisse kannte. Jetzt kennt sie alle drei.
+    """
+    raus = []
+    for pfad in sorted(ZIEL.glob("*.json")):
+        if not pfad.stem.isdigit():
+            continue
+        d = json.loads(pfad.read_text(encoding="utf-8"))
+        raus.append({"jahr": int(pfad.stem),
+                     "datei": f"data/lastprognose/{pfad.stem}.json",
+                     "tage": len(d.get("tage") or [])})
+    return raus
+
+
+def verzeichnis_schreiben() -> int:
+    eintraege = verzeichnis_bauen()
+    VERZEICHNIS.write_text(json.dumps({
+        "_quelle": "ENTSO-E Transparency Platform",
+        "_hinweis": "Welche Jahresdatei welchen Zeitraum abdeckt. Aus dem "
+                    "ORDNER gebaut, nicht aus dem letzten Lauf.",
+        "jahre": eintraege,
+    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    return len(eintraege)
+
+
 def main(argv: list[str]) -> int:
     global TZ
     import smard
     TZ = smard.TZ
     nur_lesen = "--pruefen" in argv
+    if "--nur-verzeichnis" in argv:
+        # Ohne Netz und ohne Zugangsdaten -- zum Wiederherstellen, falls das
+        # Verzeichnis einmal schiefsteht.
+        print(f"  {VERZEICHNIS.name}: {verzeichnis_schreiben()} Jahre aus dem Ordner")
+        return 0
     jahre = [int(a) for a in argv if a.isdigit()]
     if not jahre:
         jahre = list(range(ERSTES_JAHR, dt.date.today().year + 1))
     ZIEL.mkdir(parents=True, exist_ok=True)
-    verzeichnis = []
     for jahr in jahre:
         doc = jahr_bauen(jahr)
         mit = [x for x in doc["mape_prozent"] if x is not None]
@@ -206,18 +244,13 @@ def main(argv: list[str]) -> int:
         pfad = ZIEL / f"{jahr}.json"
         pfad.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
                         encoding="utf-8", newline="\n")
-        verzeichnis.append({"jahr": jahr, "datei": f"data/lastprognose/{jahr}.json",
-                            "tage": len(doc["tage"])})
         print(f"      geschrieben: {pfad.name} ({pfad.stat().st_size:,} Bytes)")
     if nur_lesen:
         print("\nNur gelesen. Es wurde nichts nach data/ geschrieben.")
         return 0
-    VERZEICHNIS.write_text(json.dumps({
-        "_quelle": "ENTSO-E Transparency Platform",
-        "_hinweis": "Welche Jahresdatei welchen Zeitraum abdeckt.",
-        "jahre": verzeichnis,
-    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
-    print(f"  geschrieben: {VERZEICHNIS.name}")
+    # AUS DEM ORDNER. Ein Verzeichnis, das nur nennt, was DIESER Lauf geholt
+    # hat, loescht alles Uebrige aus der Sicht der Seite.
+    print(f"  geschrieben: {VERZEICHNIS.name} ({verzeichnis_schreiben()} Jahre)")
     return 0
 
 

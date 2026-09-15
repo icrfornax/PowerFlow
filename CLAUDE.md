@@ -956,6 +956,21 @@ die sich bewegt, wird gerechnet -- nicht geschrieben.*
 `fetch-redispatch.py --nur-verzeichnis` baut das Verzeichnis ohne Netz und ohne
 Zugangsdaten neu, wenn sich sein Zuschnitt aendert.
 
+**DERSELBE FEHLER LIEF AM 15.09.2026 EIN DRITTES MAL** -- neun Tage lang
+unbemerkt, in `fetch-lastprognose.py`. Im Ordner lagen acht Jahresdateien
+(2019-2026), im Verzeichnis stand EINE: der taegliche SMARD-Workflow ruft das
+Skript mit dem laufenden Jahr auf, und das Verzeichnis wurde aus dem LAUF
+gebaut. Die Seite fand sieben Jahre Prognosegueten nicht mehr.
+
+**Warum es niemand gemerkt hat:** die Pruefung "Verzeichnis gleich Ordner" gab
+es seit dem 06.09.2026 -- aber nur fuer ZWEI der drei Verzeichnisse. Eine
+Pruefung, die eine Liste von Faellen abgeht, ist nur so vollstaendig wie die
+Liste. Sie kennt jetzt alle drei, und `--nur-verzeichnis` gibt es auch hier.
+
+Gefunden hat es die Frage "Prueft mal die Live-Seite" -- nicht der Tuersteher.
+Beim naechsten neuen Ordner unter `data/` mit einem Verzeichnis daneben: in
+diese Liste eintragen, sonst ist er der vierte.
+
 ## Gesamtlauf ueber alle Vergleichsjahre
 
 Gebaut am 14.09.2026. Beleg: `docs/beleg-gesamtlauf.md`, erzeugt von

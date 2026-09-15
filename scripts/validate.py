@@ -1416,7 +1416,15 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     for name, verz, ordner in (
             ("Blockerzeugung", "data/blockerzeugung-verzeichnis.json",
              "data/blockerzeugung"),
-            ("Redispatch", "data/redispatch-verzeichnis.json", "data/redispatch")):
+            ("Redispatch", "data/redispatch-verzeichnis.json", "data/redispatch"),
+            # Am 15.09.2026 dazugekommen -- und zwar, weil genau hier derselbe
+            # Fehler seit Tagen lief: im Ordner acht Jahresdateien, im
+            # Verzeichnis eine. Der taegliche Workflow ruft das Skript mit dem
+            # laufenden Jahr auf, und das Verzeichnis wurde aus dem LAUF
+            # gebaut. Die Pruefung kannte nur die beiden Verzeichnisse
+            # darueber; deshalb ist sie neun Tage lang gruen geblieben.
+            ("Lastprognose", "data/lastprognose-verzeichnis.json",
+             "data/lastprognose")):
         d = json.loads(lade(verz))
         genannt = sorted(str(j["jahr"]) for j in d["jahre"])
         vorhanden = sorted(pf.stem for pf in (WURZEL / ordner).glob("*.json")
