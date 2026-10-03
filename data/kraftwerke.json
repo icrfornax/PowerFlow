@@ -1,7 +1,7 @@
 {
  "_hinweis": "Quelle: SMARD, Bundesnetzagentur. Lizenz CC BY 4.0, Namensnennung 'Bundesnetzagentur | SMARD.de'. Endpunkt undokumentiert, aus dem SMARD-Frontend rekonstruiert -- siehe docs/beleg-kraftwerksdaten.md. Dies sind STAMMDATEN (Standort, Leistung, Traeger), keine Messung. Die tatsaechliche Erzeugung eines Blocks liegt nur fuer Bloecke mit production_id vor und wird ueber chart_data mit der REGELZONE der Anlage als region abgerufen -- mit region=DE liefert SMARD 404.",
- "abgerufen": "2026-09-03T11:08:22+02:00",
- "quelle_created": 1782312843043,
+ "abgerufen": "2026-10-03T12:00:51+02:00",
+ "quelle_created": 1790920434475,
  "anzahl": 596,
  "anlagen": [
   {
@@ -777,6 +777,29 @@
    ]
   },
   {
+   "code": "11WD7HERN2S--KWU",
+   "betreiber": "GuD Herne",
+   "ort": "Herne",
+   "plz": "44653",
+   "land": "Nordrhein-Westfalen",
+   "staat": "Deutschland",
+   "regelzone": "Amprion",
+   "energietraeger": "Erdgas",
+   "leistung_mw": 1107.0,
+   "lat": 51.5489,
+   "lon": 7.18335,
+   "bloecke": [
+    {
+     "production_id": 5996,
+     "leistung_mw": 657.0,
+     "energietraeger": "Erdgas",
+     "status": "In Betrieb",
+     "inbetriebnahme": 2022,
+     "kwk": true
+    }
+   ]
+  },
+  {
    "code": "11W0-0000-0708-1",
    "betreiber": "STEAG Power GmbH",
    "ort": "Herne",
@@ -804,14 +827,6 @@
      "status": "In Betrieb",
      "inbetriebnahme": 2016,
      "kwk": false
-    },
-    {
-     "production_id": 5996,
-     "leistung_mw": 657.0,
-     "energietraeger": "Erdgas",
-     "status": "In Betrieb",
-     "inbetriebnahme": 2022,
-     "kwk": true
     }
    ]
   },
@@ -1248,6 +1263,29 @@
    ]
   },
   {
+   "code": "11WD4WEHR1HS---G",
+   "betreiber": "Schluchseewerk AG",
+   "ort": "Wehr",
+   "plz": "79664",
+   "land": "Baden-Württemberg",
+   "staat": "Deutschland",
+   "regelzone": "TransnetBW",
+   "energietraeger": "Pumpspeicher",
+   "leistung_mw": 910.0,
+   "lat": 47.65226,
+   "lon": 7.9258,
+   "bloecke": [
+    {
+     "production_id": 5864,
+     "leistung_mw": 227.5,
+     "energietraeger": "Pumpspeicher",
+     "status": "In Betrieb",
+     "inbetriebnahme": 1976,
+     "kwk": false
+    }
+   ]
+  },
+  {
    "code": "11WD4SWSW5HD7--F",
    "betreiber": "Schluchseewerk AG",
    "ort": "Wehr",
@@ -1274,14 +1312,6 @@
      "energietraeger": "Pumpspeicher",
      "status": "In Betrieb",
      "inbetriebnahme": 1975,
-     "kwk": false
-    },
-    {
-     "production_id": 5864,
-     "leistung_mw": 227.5,
-     "energietraeger": "Pumpspeicher",
-     "status": "In Betrieb",
-     "inbetriebnahme": 1976,
      "kwk": false
     },
     {
@@ -1498,7 +1528,7 @@
    "plz": "68199",
    "land": "Baden-Württemberg",
    "staat": "Deutschland",
-   "regelzone": "Amprion",
+   "regelzone": "TransnetBW",
    "energietraeger": "Steinkohle",
    "leistung_mw": 868.0,
    "lat": 49.44698,
@@ -1844,7 +1874,7 @@
    ]
   },
   {
-   "code": "11XGSKW-WHV----V",
+   "code": "11WD2WILK000286V",
    "betreiber": "Onyx Kraftwerk Wilhelmshaven GmbH & Co. KG",
    "ort": "Wilhelmshaven",
    "plz": "26386",
@@ -2087,45 +2117,6 @@
      "energietraeger": "Mineralölprodukte",
      "status": "In Betrieb",
      "inbetriebnahme": 1986,
-     "kwk": false
-    }
-   ]
-  },
-  {
-   "code": "11WD43VIWXHOILLM",
-   "betreiber": "EnBW Energie Baden-Württemberg AG",
-   "ort": "Gaschurn",
-   "plz": "A-6793",
-   "land": "Vorarlberg",
-   "staat": "Österreich",
-   "regelzone": "TransnetBW",
-   "energietraeger": "Pumpspeicher",
-   "leistung_mw": 525.0,
-   "lat": 46.97749,
-   "lon": 10.04383,
-   "bloecke": [
-    {
-     "production_id": 806,
-     "leistung_mw": 175.0,
-     "energietraeger": "Pumpspeicher",
-     "status": "In Betrieb",
-     "inbetriebnahme": 2008,
-     "kwk": false
-    },
-    {
-     "production_id": 756,
-     "leistung_mw": 175.0,
-     "energietraeger": "Pumpspeicher",
-     "status": "In Betrieb",
-     "inbetriebnahme": 2008,
-     "kwk": false
-    },
-    {
-     "production_id": 6121,
-     "leistung_mw": 175.0,
-     "energietraeger": "Pumpspeicher",
-     "status": "In Betrieb",
-     "inbetriebnahme": 2008,
      "kwk": false
     }
    ]
@@ -2398,7 +2389,7 @@
    ]
   },
   {
-   "code": "11WD2GKBK000335V",
+   "code": "11WD2GKBB000334V",
    "betreiber": "Gemeinschaftskraftwerk Bremen GmbH & Co. KG",
    "ort": "Bremen",
    "plz": "28237",
@@ -2741,7 +2732,7 @@
    ]
   },
   {
-   "code": "11WDUMMY0599",
+   "code": "11WD43VIWXHOILLM",
    "betreiber": "EnBW Energie Baden-Württemberg AG",
    "ort": "Partenen",
    "plz": "A-6794",
@@ -2753,6 +2744,38 @@
    "lat": 46.93529,
    "lon": 10.05995,
    "bloecke": [
+    {
+     "production_id": 806,
+     "leistung_mw": 175.0,
+     "energietraeger": "Pumpspeicher",
+     "status": "In Betrieb",
+     "inbetriebnahme": 2008,
+     "kwk": false
+    },
+    {
+     "production_id": 756,
+     "leistung_mw": 175.0,
+     "energietraeger": "Pumpspeicher",
+     "status": "In Betrieb",
+     "inbetriebnahme": 2008,
+     "kwk": false
+    },
+    {
+     "production_id": 6121,
+     "leistung_mw": 175.0,
+     "energietraeger": "Pumpspeicher",
+     "status": "In Betrieb",
+     "inbetriebnahme": 2008,
+     "kwk": false
+    },
+    {
+     "production_id": 6079,
+     "leistung_mw": 295.0,
+     "energietraeger": "Pumpspeicher",
+     "status": "In Betrieb",
+     "inbetriebnahme": 2011,
+     "kwk": false
+    },
     {
      "production_id": 5829,
      "leistung_mw": 190.0,
@@ -3448,29 +3471,6 @@
    ]
   },
   {
-   "code": "11WDUMMY0598",
-   "betreiber": "EnBW Energie Baden-Württemberg AG",
-   "ort": "Vandans",
-   "plz": "A-6773",
-   "land": "Vorarlberg",
-   "staat": "Österreich",
-   "regelzone": "TransnetBW",
-   "energietraeger": "Pumpspeicher",
-   "leistung_mw": 295.0,
-   "lat": 47.0846,
-   "lon": 9.87458,
-   "bloecke": [
-    {
-     "production_id": 6079,
-     "leistung_mw": 295.0,
-     "energietraeger": "Pumpspeicher",
-     "status": "In Betrieb",
-     "inbetriebnahme": 2011,
-     "kwk": false
-    }
-   ]
-  },
-  {
    "code": "11WD2KUET000160J",
    "betreiber": "TIWAG-Tiroler Wasserkraft AG",
    "ort": "Kühtai",
@@ -4050,7 +4050,7 @@
      "kwk": true
     },
     {
-     "production_id": null,
+     "production_id": 6163,
      "leistung_mw": 189.5,
      "energietraeger": "Erdgas",
      "status": "In Betrieb",
