@@ -62,16 +62,16 @@
   {
    "jahr": 2025,
    "datei": "data/blockerzeugung/2025.json",
-   "bloecke": 129,
+   "bloecke": 132,
    "abdeckung_prozent": 97.1,
-   "bytes": 276971
+   "bytes": 284040
   },
   {
    "jahr": 2026,
    "datei": "data/blockerzeugung/2026.json",
-   "bloecke": 128,
-   "abdeckung_prozent": 72.9,
-   "bytes": 265847
+   "bloecke": 131,
+   "abdeckung_prozent": 74.2,
+   "bytes": 272919
   }
  ]
 }
