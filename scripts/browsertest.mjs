@@ -1551,7 +1551,7 @@ try {
   await schlafen(500);
   /* ERZEUGUNG JE KRAFTWERK. Die Stammdaten sagen, was eine Anlage KANN. Seit
      dem 05.09.2026 steht daneben, was sie im Zeitraum GETAN hat -- fuer die
-     211 Bloecke, zu denen SMARD eine Reihe fuehrt. Geprueft wird, dass die
+     212 Bloecke, zu denen SMARD eine Reihe fuehrt. Geprueft wird, dass die
      Zahl kommt, dass die Rechnung dabeisteht und dass die Grenze der Quelle
      benannt wird. */
   const kraftwerk = await js(`(async function () {

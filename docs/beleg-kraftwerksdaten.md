@@ -115,6 +115,13 @@ filter=1042 region=Amprion  → 96 Punkte |      0,0 MWh | Block stand still
 Die 211 Blöcke decken **53,3 %** der in den Stammdaten geführten Leistung ab
 (53.443 von 100.348 MW über alle Blöcke).
 
+Nachtrag 06.10.2026: seit dem Stammdatenabruf vom 03.10.2026 sind es **212**
+Einträge mit `production_id`. Neu ist Block 6163 (Berlin, Erdgas, 189,5 MW,
+BEW Berliner Energie und Wärme GmbH, in Betrieb seit 2020). Die geführte
+Leistung dieser Blöcke ist jetzt 53.633 von 100.348 MW, weiter 53 %. Der
+Türsteher erwartet seitdem 212. Die Zahlen darüber bleiben der Messstand vom
+05.09.2026.
+
 Verteilung: Amprion 86, 50Hertz 60, TenneT 41, TransnetBW 24.
 
 ## Fallen, die das Abrufskript kennen muss

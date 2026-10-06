@@ -62,7 +62,7 @@ Gemessen oder als Stammdatum bereitgestellt und damit im Umfang:
   Deutschland — **belegt**
 - Grenzueberschreitende Fluesse **je Kuppelstelle**, Import und Export getrennt
   je Nachbarland — **belegt**, `docs/beleg-aussenhandel.md`
-- **596 Kraftwerksstandorte mit Koordinaten**, davon 211 Bloecke mit
+- **596 Kraftwerksstandorte mit Koordinaten**, davon 212 Bloecke mit
   viertelstuendlicher Erzeugung — **belegt**, `docs/beleg-kraftwerksdaten.md`
 - Redispatch als eigene Kachel (netztransparenz.de) — noch nicht erschlossen,
   braucht ein Zugangstoken
