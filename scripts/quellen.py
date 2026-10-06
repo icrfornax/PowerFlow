@@ -164,7 +164,7 @@ GRUPPEN = [
      "Welche Jahresdatei welche Kraftwerksbloecke enthaelt, mit der Abdeckung "
      "je Jahr.", "docs/beleg-kraftwerksdaten.md", None),
     ("blockerzeugung/*.json", "smard", "Erzeugung je Kraftwerksblock",
-     "Tageswerte in MWh je production_id. Nur 211 der 1.956 Bloecke tragen eine "
+     "Tageswerte in MWh je production_id. Nur 212 der 1.956 Bloecke tragen eine "
      "solche ID; sie decken 53 % der gefuehrten Leistung ab. Die Abdeckung "
      "schwankt stark nach Jahr -- 2018 nur 21 %, ab 2020 ueber 93 %.",
      "docs/beleg-kraftwerksdaten.md", "blockerzeugung-verzeichnis.json"),

@@ -6,7 +6,8 @@ Aufruf:  python scripts/fetch-blockerzeugung.py --pruefen 2026
 
 WAS DIE QUELLE LIEFERT -- am 05.09.2026 durch Abruf belegt
 ----------------------------------------------------------
-211 der 1.956 Bloecke in den SMARD-Stammdaten tragen eine `production_id`.
+212 der 1.956 Bloecke in den SMARD-Stammdaten tragen eine `production_id`.
+Seit dem Stammdatenabruf vom 03.10.2026; neu ist Block 6163 (Berlin, Erdgas).
 Diese ID wirkt als Filter im gewoehnlichen chart_data-Endpunkt -- aber NUR mit
 der Regelzone der Anlage als Region:
 
@@ -15,7 +16,7 @@ der Regelzone der Anlage als Region:
 
 Es gibt sie in allen Aufloesungen, auch als TAGESREIHE. Das ist der Grund, warum
 dieses Skript ueberhaupt tragbar ist: ueber `index_day` sind es zehn
-Jahresbloecke je Block statt 365 Viertelstundenbloecken -- 2.110 Abrufe statt
+Jahresbloecke je Block statt 365 Viertelstundenbloecken -- 2.120 Abrufe statt
 ueber hunderttausend.
 
 GEGENPROBE, die den Zuschnitt traegt
@@ -163,8 +164,8 @@ def jahr_bauen(jahr: int, liste: list[dict]) -> dict:
         "_namensnennung": "Bundesnetzagentur | SMARD.de",
         "_hinweis": (
             "Erzeugung je KRAFTWERKSBLOCK, Tageswerte in MWh. Der Schluessel ist "
-            "die production_id aus data/kraftwerke.json. Nur 211 der 1.956 "
-            "Bloecke tragen eine solche ID -- sie decken 53.443 von 100.348 MW "
+            "die production_id aus data/kraftwerke.json. Nur 212 der 1.956 "
+            "Bloecke tragen eine solche ID -- sie decken 53.633 von 100.348 MW "
             "ab, also 53 % der gefuehrten Leistung. Fuer alle uebrigen Bloecke "
             "gibt es KEINE Reihe; das ist eine Grenze der Quelle und wird auf "
             "der Seite benannt. Die Tagesreihe ist die Summe der Viertelstunden "

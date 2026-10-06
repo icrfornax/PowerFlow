@@ -1405,7 +1405,12 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
     bv = json.loads(lade("data/blockerzeugung-verzeichnis.json"))
     b.pruefe(len(bv["jahre"]) >= 8,
              f"Blockerzeugung: {len(bv['jahre'])} Jahresdateien")
-    b.pruefe(bv["bloecke_mit_id"] == 211,
+    # Stand seit dem Stammdatenabruf vom 03.10.2026: 212 Eintraege mit
+    # production_id. Neu gegenueber 211 ist Block 6163 (Berlin, Erdgas,
+    # 189,5 MW, BEW Berliner Energie und Waerme, in Betrieb seit 2020).
+    # Gezaehlt wird die Liste, nicht die verschiedenen IDs: 6160 steht
+    # weiter doppelt (Waerme und Erdgas) und war in der 211 schon enthalten.
+    b.pruefe(bv["bloecke_mit_id"] == 212,
              f"Blockerzeugung: {bv['bloecke_mit_id']} Bloecke mit production_id")
     schlecht = []
     for eintrag in bv["jahre"]:

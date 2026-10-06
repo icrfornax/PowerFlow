@@ -257,7 +257,7 @@
   },
   {
    "titel": "Erzeugung je Kraftwerksblock",
-   "inhalt": "Tageswerte in MWh je production_id. Nur 211 der 1.956 Bloecke tragen eine solche ID; sie decken 53 % der gefuehrten Leistung ab. Die Abdeckung schwankt stark nach Jahr -- 2018 nur 21 %, ab 2020 ueber 93 %.",
+   "inhalt": "Tageswerte in MWh je production_id. Nur 212 der 1.956 Bloecke tragen eine solche ID; sie decken 53 % der gefuehrten Leistung ab. Die Abdeckung schwankt stark nach Jahr -- 2018 nur 21 %, ab 2020 ueber 93 %.",
    "quelle": "smard",
    "beleg": "docs/beleg-kraftwerksdaten.md",
    "dateien": 10,

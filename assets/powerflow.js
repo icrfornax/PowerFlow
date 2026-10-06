@@ -1854,7 +1854,7 @@
     /* WAS DIE ANLAGE TATSAECHLICH ERZEUGT HAT.
 
        Die Stammdaten sagen, was ein Kraftwerk KANN. Was es im gewaehlten
-       Zeitraum GETAN hat, steht seit dem 05.09.2026 daneben -- fuer die 211
+       Zeitraum GETAN hat, steht seit dem 05.09.2026 daneben -- fuer die 212
        Bloecke, zu denen SMARD eine Reihe fuehrt. Fuer alle uebrigen steht da,
        dass es keine gibt; das ist eine Grenze der Quelle und keine Auswahl.
 
@@ -1989,7 +1989,7 @@
       ziel.appendChild(el("p", { "class": "pf-bezug",
         text: a.ohneReihe + (a.ohneReihe === 1 ? " Block dieser Anlage hat" : " Blöcke dieser Anlage haben")
           + " keine Erzeugungsreihe bei SMARD. Das ist eine Grenze der Quelle: "
-          + "nur 211 der 1.956 Blöcke tragen eine, sie decken 53 % der geführten "
+          + "nur 212 der 1.956 Blöcke tragen eine, sie decken 53 % der geführten "
           + "Leistung ab." }));
     }
   }
