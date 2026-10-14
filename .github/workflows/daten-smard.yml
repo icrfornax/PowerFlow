@@ -46,9 +46,15 @@ jobs:
         run: python scripts/fetch-verlauf.py --wochen 4
 
       - name: Viertelstundenwerte nachtragen (letzte zwei Wochen)
-        # Zwei Wochen reichen: die Seite zeigt Viertelstunden nur fuer
-        # hoechstens zwei Tage, und was aelter ist, aendert sich kaum noch.
-        # Ein Block sind 35 Abrufe -- zwei Wochen also 70.
+        # Zwei Wochen fuer den laufenden Rand: die Seite zeigt Viertelstunden
+        # nur fuer hoechstens zwei Tage. Ein Block sind 35 Abrufe -- zwei
+        # Wochen also 70.
+        #
+        # Aelteres aendert sich DOCH, wenn SMARD revidiert. Der Luecken-
+        # Nachtrag darunter holt fuer genau diese Tage auch die
+        # Viertelstunden neu. Zwei Wochen allein haben den Juli 2026
+        # stehen lassen, waehrend die Stunden schon neu waren, und der
+        # Tuersteher mass 0,685 % (Toleranz 0,5 %).
         #
         # Im SELBEN Lauf wie die Stundenwerte, aus demselben Grund: SMARD
         # meldet zurueckliegende Werte nach, und der Tuersteher rechnet die
@@ -89,8 +95,11 @@ jobs:
         # letzten vier Wochen. Aelteres fasst er nie wieder an -- eine Luecke
         # von 2019 bliebe ewig stehen, und niemand wuesste davon. Dieser Schritt
         # sucht alle Luecken, holt gezielt die betroffenen Jahre und
-        # Wochenbloecke und schreibt data/luecken.json. Der Tuersteher rechnet
-        # den Bericht danach gegen die Dateien nach.
+        # Wochenbloecke und schreibt data/luecken.json. Tage, deren
+        # Stundenreihe nicht mehr zum Tageswert passt, werden hier auch als
+        # Viertelstunden neu geholt -- sonst rechnet der Tuersteher eine neue
+        # Stundenreihe gegen alte Viertelstunden. Der Tuersteher rechnet den
+        # Bericht danach gegen die Dateien nach.
         run: python scripts/nachholen.py
 
       - name: Mengengewichteten Aussenhandelspreis neu rechnen

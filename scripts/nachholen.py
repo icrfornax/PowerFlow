@@ -26,6 +26,14 @@ schreibt das Ergebnis nach data/luecken.json. Was dort steht, prueft
 scripts/validate.py gegen die Dateien nach -- ein Bericht, den niemand prueft,
 ist kein Bericht.
 
+Veraltete Tage -- Stundenreihe passt nicht mehr zum Tageswert -- werden
+seit dem 14.10.2026 auch als Viertelstunden neu geholt. Der taegliche Lauf
+fasst die Viertelstunden sonst nur zwei Wochen an. SMARD hat den Juli 2026
+revidiert, der Nachtrag hat die Stunden erneuert, die Viertelstunden blieben
+alt, und der Tuersteher mass 0,685 % Abweichung (Toleranz 0,5 %, schlimmster
+Tag 2026-07-20). Die Toleranz bleibt. Was der Tuersteher prueft, muss der
+Nachtrag herstellen koennen.
+
 WAS IN DER DATEI STEHT UND WAS NICHT
 ------------------------------------
 Es steht KEIN Zeitstempel darin. Ein "zuletzt geprueft: heute" wuerde die
@@ -144,6 +152,11 @@ def veraltete_tage() -> list[str]:
     richtig, aber er kann es nicht beheben. Was der Tuersteher PRUEFT, muss der
     Nachtrag HERSTELLEN koennen; sonst hebt irgendwann jemand die Toleranz an.
 
+    Dasselbe gilt fuer die Viertelstunden. Der Tuersteher rechnet ihre
+    Tagessumme gegen DIESE Stundenreihe (0,5 %). Wer nur die Stunden erneuert,
+    laesst die Probe rot -- so vom 10.10.2026 an, 0,685 % am 20.07. Die
+    Viertelstunden derselben Tage holt viertel_nachtragen() mit.
+
     Geprueft wird dieselbe Bedingung wie in validate.py: Summe der Stunden
     gleich Tageswert. Nur VOLLSTAENDIGE Tage werden verglichen -- ein Tag mit
     20 von 24 Stunden ist eine Luecke und steht oben schon.
@@ -223,6 +236,8 @@ def bericht_schreiben(tage: list[str], stunden: list[str], geschlossen: dict,
             "NUR, was dieser Lauf selbst geschlossen hat -- der taegliche Abruf "
             "laeuft vorher und fuellt das laufende Jahr ohnehin neu; was er "
             "schon gefuellt hat, sieht dieses Skript gar nicht mehr als Luecke. "
+            "Veraltete Stundenreihen werden mitsamt ihren Viertelstunden neu "
+            "geholt, weil der Tuersteher beide gegeneinander rechnet. "
             "Eine leere Liste heisst also nicht, dass nichts nachkommt. Ein "
             "Zeitstempel des letzten "
             "Laufs steht bewusst NICHT hier: er wuerde die Datei jeden Tag "
@@ -240,6 +255,25 @@ def bericht_schreiben(tage: list[str], stunden: list[str], geschlossen: dict,
     }
     BERICHT.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n",
                        encoding="utf-8", newline="\n")
+
+
+def viertel_nachtragen(tage: list[str]) -> None:
+    """Viertelstunden genau dieser Tage neu holen.
+
+    Die Liste ist die von VOR dem Stunden-Nachtrag. Danach ist sie leer:
+    die Stunden passen wieder zum Tageswert, und ein zweites Suchen faende
+    nichts mehr, waehrend die Viertelstunden noch auf dem alten Stand
+    stuenden. Geholt wird der Wochenblock, nicht der einzelne Tag.
+    """
+    if not tage:
+        return
+    print(f"\nViertelstunden neu holen: {len(tage)} veraltete Tage")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "fq", WURZEL / "scripts" / "fetch-viertelstunden.py")
+    fq = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fq)
+    fq.nachtragen(tage)
 
 
 def zeigen(tage: list[str], stunden: list[str]) -> None:
@@ -293,6 +327,11 @@ def main(argv: list[str]) -> int:
             fv = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(fv)
             fv.nachtragen(bloecke=bloecke)
+
+        # NACH den Stunden, mit der Liste von DAVOR. veraltet_nachher waere
+        # hier schon leer, und die Viertelstunden blieben alt.
+        if veraltet:
+            viertel_nachtragen(veraltet)
 
     tage_nachher, stunden_nachher = tagesluecken(), stundenluecken()
     veraltet_nachher = veraltete_tage()

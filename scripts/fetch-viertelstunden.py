@@ -3,6 +3,7 @@
 Aufruf:  python scripts/fetch-viertelstunden.py --wochen 2   (taeglicher Lauf)
          python scripts/fetch-viertelstunden.py 2025 2026     (ganze Jahre)
          python scripts/fetch-viertelstunden.py --ab 2026-01-01
+         python scripts/fetch-viertelstunden.py --tage 2026-07-01,2026-07-20
          python scripts/fetch-viertelstunden.py --nur-verzeichnis
 
 Warum ueberhaupt Viertelstunden
@@ -307,6 +308,76 @@ def hole_bloecke(bloecke: list[int]) -> list[str]:
     return geschrieben
 
 
+def bloecke_fuer_tage(tage: list[str]) -> list[int]:
+    """Wochenbloecke der Viertelstundenaufloesung, die diese Tage enthalten.
+
+    Die Blockliste kommt von der Quelle, nicht aus einer eigenen Rechnung:
+    ein Block beginnt Montag 00:00 Ortszeit, und den Umgang mit der
+    Zeitumstellung ueberlaesst man besser der Quelle als sich selbst.
+    Geholt wird spaeter der ganze Block -- die Quelle liefert keine
+    Tagesausschnitte. Die Randtage am Monatsanfang und -ende werden
+    mitgeschrieben, weil der Stunden-Nachtrag dieselben Bloecke anfasst.
+    """
+    if not tage:
+        return []
+    alle = smard.wochenbloecke(smard.LAST_NETZLAST, smard.REGION_DE,
+                               smard.VIERTELSTUNDE)
+    gebraucht = set()
+    for tag in tage:
+        dt.date.fromisoformat(tag)
+        ziel = dt.datetime.fromisoformat(tag + "T12:00").replace(
+            tzinfo=smard.TZ).timestamp() * 1000
+        passend = [b for b in alle if b <= ziel]
+        if not passend:
+            raise SystemExit(
+                f"ABBRUCH: kein Viertelstunden-Block fuer {tag}. "
+                "Die Quelle fuehrt diesen Tag nicht.")
+        gebraucht.add(max(passend))
+    return sorted(gebraucht)
+
+
+def tage_aus_argv(argv: list[str]) -> list[str]:
+    i = argv.index("--tage")
+    tage = []
+    for arg in argv[i + 1:]:
+        if arg.startswith("-"):
+            break
+        for stueck in arg.split(","):
+            stueck = stueck.strip()
+            if stueck:
+                tage.append(stueck)
+    return tage
+
+
+def holen(bloecke: list[int]) -> list[str]:
+    print(f"{len(bloecke)} Wochenbloecke, {len(bloecke) * 35} Abrufe erwartet")
+    # In Haeppchen, damit ein Abbruch nicht alles wegwirft und der Fortschritt
+    # sichtbar bleibt.
+    geschrieben = []
+    for i in range(0, len(bloecke), 4):
+        teil = bloecke[i:i + 4]
+        print(f"Block {i + 1}-{i + len(teil)} von {len(bloecke)}")
+        geschrieben += hole_bloecke(teil)
+    d = verzeichnis_bauen()
+    print(f"\n{len(geschrieben)} Tage geschrieben. Verzeichnis: "
+          f"{len(d['tage'])} Tage, {d['von']} bis {d['bis']}")
+    return geschrieben
+
+
+def nachtragen(tage: list[str]) -> list[str]:
+    """Holt die Viertelstunden der genannten Tage neu.
+
+    Aufgerufen von scripts/nachholen.py fuer Tage, deren Stundenreihe
+    gegenueber dem Tageswert veraltet war. Die Liste muss diejenige von
+    VOR dem Stunden-Nachtrag sein: danach passen die Stunden wieder, und
+    ein zweites Suchen faende nichts, waehrend die Viertelstunden noch alt
+    waeren.
+    """
+    if not tage:
+        return []
+    return holen(bloecke_fuer_tage(tage))
+
+
 def verzeichnis_bauen() -> dict:
     """AUS DEM ORDNER, nie aus dem Lauf.
 
@@ -348,6 +419,13 @@ def main(argv: list[str]) -> None:
         print(f"Verzeichnis: {len(d['tage'])} Tage, {d['von']} bis {d['bis']}")
         return
 
+    if "--tage" in argv:
+        tage = tage_aus_argv(argv)
+        if not tage:
+            raise SystemExit("ABBRUCH: --tage ohne Datum. Erwartet JJJJ-MM-TT.")
+        nachtragen(tage)
+        return
+
     alle = smard.wochenbloecke(smard.LAST_NETZLAST, smard.REGION_DE,
                                smard.VIERTELSTUNDE)
     bloecke = alle
@@ -367,18 +445,7 @@ def main(argv: list[str]) -> None:
                        if int(tag_von(b)[:4]) in jahre
                        or int(tag_von(b + 6 * 86_400_000)[:4]) in jahre]
 
-    print(f"{len(bloecke)} Wochenbloecke, {len(bloecke) * 35} Abrufe erwartet")
-    # In Haeppchen, damit ein Abbruch nicht alles wegwirft und der Fortschritt
-    # sichtbar bleibt.
-    geschrieben = []
-    for i in range(0, len(bloecke), 4):
-        teil = bloecke[i:i + 4]
-        print(f"Block {i + 1}-{i + len(teil)} von {len(bloecke)}")
-        geschrieben += hole_bloecke(teil)
-
-    d = verzeichnis_bauen()
-    print(f"\n{len(geschrieben)} Tage geschrieben. Verzeichnis: "
-          f"{len(d['tage'])} Tage, {d['von']} bis {d['bis']}")
+    holen(bloecke)
 
 
 if __name__ == "__main__":
