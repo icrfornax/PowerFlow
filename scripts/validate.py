@@ -17,6 +17,7 @@ Seite kommt hier hinein.
 
 from __future__ import annotations
 
+import ast
 import datetime as dt
 import json
 import pathlib
@@ -212,6 +213,47 @@ def ohne_kommentare(js: str) -> str:
     return js
 
 
+def _funktionsname(f: ast.AST) -> str | None:
+    if isinstance(f, ast.Name):
+        return f.id
+    if isinstance(f, ast.Attribute):
+        return f.attr
+    return None
+
+
+def ruft_auf(quelltext: str, funktion: str, argument: str) -> bool:
+    """Ob `funktion(argument)` als Aufruf im Code steht.
+
+    Ueber den Syntaxbaum, nicht ueber eine Textsuche. Ein Kommentar, der den
+    Aufruf nur erwaehnt, zaehlt nicht -- genau so ist in diesem Projekt schon
+    eine Pruefung an der eigenen Erklaerung vorbeigegangen.
+    """
+    for knoten in ast.walk(ast.parse(quelltext)):
+        if not isinstance(knoten, ast.Call):
+            continue
+        if _funktionsname(knoten.func) != funktion:
+            continue
+        if any(isinstance(a, ast.Name) and a.id == argument for a in knoten.args):
+            return True
+    return False
+
+
+def definiert(quelltext: str, funktion: str) -> bool:
+    return any(isinstance(k, ast.FunctionDef) and k.name == funktion
+               for k in ast.walk(ast.parse(quelltext)))
+
+
+def ruft_in(quelltext: str, funktion: str, aufruf: str) -> bool:
+    """Ob der Rumpf von `funktion` irgendwo `aufruf` aufruft."""
+    for knoten in ast.walk(ast.parse(quelltext)):
+        if not isinstance(knoten, ast.FunctionDef) or knoten.name != funktion:
+            continue
+        for innen in ast.walk(knoten):
+            if isinstance(innen, ast.Call) and _funktionsname(innen.func) == aufruf:
+                return True
+    return False
+
+
 def ohne_yaml_kommentare(y: str) -> str:
     """Entfernt reine Kommentarzeilen aus YAML.
 
@@ -323,7 +365,7 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                  kraftwerke: dict, grundkarte: dict, netz: dict,
                  css: str, verlauf: dict, workflows: dict,
                  engpasskosten: dict, rdv: dict, viertel: dict,
-                 vergleich: dict) -> Befund:
+                 vergleich: dict, skripte: dict) -> Befund:
     b = Befund()
 
     for name in PFLICHTDATEIEN:
@@ -1703,6 +1745,20 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
                 if gemeldet != tatsaechlich else ""))
     b.pruefe(all(e["seit"] >= e["tag"] for e in lk["offene_tage"]),
              "keine Luecke ist frueher aufgefallen als der Tag, an dem sie klafft")
+    # Die Stunden allein reichen nicht. Am 10.10.2026 hat SMARD den Juli
+    # revidiert: nachholen.py hat 30 Stundenreihen erneuert, die
+    # Viertelstunden blieben auf den letzten zwei Wochen, und die
+    # Tagessumme wich um 0,685 % ab (Toleranz 0,5 %, schlimmster Tag
+    # 2026-07-20). Der Tuersteher hat das gemeldet und konnte es nicht
+    # beheben. Der Nachtrag muss die Viertelstunden DERSELBEN Liste
+    # mitziehen -- der Liste von vor dem Stunden-Nachtrag. Danach ist sie
+    # leer, und ein Aufruf mit dem Ergebnis der zweiten Suche holte nichts.
+    b.pruefe(ruft_auf(skripte["nachholen.py"], "viertel_nachtragen", "veraltet")
+             and ruft_in(skripte["nachholen.py"], "viertel_nachtragen", "nachtragen"),
+             "veraltete Tage werden auch als Viertelstunden nachgeholt")
+    b.pruefe(definiert(skripte["fetch-viertelstunden.py"], "nachtragen")
+             and "--tage" in skripte["fetch-viertelstunden.py"],
+             "fetch-viertelstunden.py kann einzelne Tage nachtragen")
     b.pruefe("veraltete_stundenreihen" in lk,
              "luecken.json fuehrt die veralteten Stundenreihen")
     b.pruefe(not lk.get("veraltete_stundenreihen"),
@@ -1864,7 +1920,7 @@ def pruefe_alles(jahre: dict[int, dict], index_html: str, js: str,
 # diese Namen statt ueber Stellungsargumente.
 FELDER = ("jahre", "index_html", "js", "kraftwerke", "grundkarte", "netz",
           "css", "verlauf", "workflows", "engpasskosten", "rdv", "viertel",
-          "vergleich")
+          "vergleich", "skripte")
 
 
 def _kosten_doppelt(doc: dict) -> dict:
@@ -1956,7 +2012,14 @@ def eingaben() -> tuple:
             netzdateien(), lade("assets/powerflow.css"), verlaufdateien(),
             workflowdateien(), json.loads(lade("data/engpasskosten.json")),
             json.loads(lade("data/redispatch-verzeichnis.json")),
-            viertelstundendateien(), vergleichsreihe())
+            viertelstundendateien(), vergleichsreihe(), skriptdateien())
+
+
+def skriptdateien() -> dict[str, str]:
+    return {
+        "nachholen.py": lade("scripts/nachholen.py"),
+        "fetch-viertelstunden.py": lade("scripts/fetch-viertelstunden.py"),
+    }
 
 
 def _vergleich_verstellt(vr: dict) -> dict:
@@ -2125,6 +2188,10 @@ def negativtests() -> int:
                   '{ "class": "pf-ablesung-grund" });'}),
         ("Uebersicht der Tageswerte entfernt",
          lambda: ersetze("js", "Tageswerte im Zeitraum", "Nichts")),
+        ("Viertelstunden-Nachtrag veralteter Tage entfernt",
+         lambda: {"skripte": dict(basis["skripte"], **{
+             "nachholen.py": basis["skripte"]["nachholen.py"].replace(
+                 "viertel_nachtragen(veraltet)", "viertel_weg(veraltet)", 1)})}),
         ("Ein Viertelstundentag fehlt im Ordner",
          lambda: {"viertel": _viertel_ohne_tag(basis["viertel"])}),
         ("Viertelstunden als Leistung statt Arbeit gelesen",

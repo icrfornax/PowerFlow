@@ -93,8 +93,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-smard.md",
    "dateien": 12,
-   "bytes": 3137251,
-   "zeitraum": "2015-01-01 bis 2026-10-08",
+   "bytes": 3138688,
+   "zeitraum": "2015-01-01 bis 2026-10-13",
    "muster": "data/tage/*.json",
    "abzug": "data/tage-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/tage"
@@ -117,8 +117,8 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 142,
-   "bytes": 14165178,
-   "zeitraum": "2015-01-01 bis 2026-10-09",
+   "bytes": 14182243,
+   "zeitraum": "2015-01-01 bis 2026-10-14",
    "muster": "data/verlauf/*.json",
    "abzug": "data/verlauf-verzeichnis.json",
    "alle": "https://github.com/icrfornax/PowerFlow/tree/main/data/verlauf"
@@ -129,7 +129,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-viertelstunden.md",
    "dateien": 1,
-   "bytes": 570584,
+   "bytes": 571244,
    "zeitraum": null,
    "muster": "data/viertelstunden-verzeichnis.json",
    "abzug": "data/viertelstunden-verzeichnis.json",
@@ -140,8 +140,8 @@
    "inhalt": "Netzlast, Erzeugung nach Energietraeger, Grosshandelspreis sowie Ein- und Ausfuhr, ein Wert je Viertelstunde, in MWh JE VIERTELSTUNDE bzw. Euro je MWh. TAGESdateien: die Seite zeigt hoechstens zwei Tage viertelstuendlich, und wer zwei Tage ansieht, soll zwei Dateien laden.",
    "quelle": "smard",
    "beleg": "docs/beleg-viertelstunden.md",
-   "dateien": 4300,
-   "bytes": 60356386,
+   "dateien": 4305,
+   "bytes": 60428138,
    "zeitraum": null,
    "muster": "data/viertelstunden/*.json",
    "abzug": "data/viertelstunden-verzeichnis.json",
@@ -153,7 +153,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-medianzeile.md",
    "dateien": 1,
-   "bytes": 66494,
+   "bytes": 66519,
    "zeitraum": null,
    "muster": "data/vergleichsreihe.json",
    "abzug": "data/vergleichsreihe.json",
@@ -333,7 +333,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-tagesreihen.md",
    "dateien": 1,
-   "bytes": 1265,
+   "bytes": 1898,
    "zeitraum": null,
    "muster": "data/luecken.json",
    "abzug": "data/luecken.json",
@@ -345,7 +345,7 @@
    "quelle": "smard",
    "beleg": "docs/beleg-verlauf.md",
    "dateien": 1,
-   "bytes": 160827,
+   "bytes": 161103,
    "zeitraum": null,
    "muster": "data/aussenhandel-preis.json",
    "abzug": "data/aussenhandel-preis.json",
@@ -388,6 +388,6 @@
    "alle": null
   }
  ],
- "dateien_gesamt": 4498,
- "bytes_gesamt": 94326698
+ "dateien_gesamt": 4503,
+ "bytes_gesamt": 94418546
 }

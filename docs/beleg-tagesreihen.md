@@ -220,6 +220,16 @@ Lücke von 2019 bliebe für immer stehen, und niemand wüsste davon.
 2. **Holen.** Gezielt die betroffenen Jahre (Tagesreihen) und die betroffenen
    SMARD-Wochenblöcke (Stundenreihen). Nicht „die letzten N Wochen": eine
    Lücke von 2019 hieße sonst dreihundert Blöcke für eine einzige Stunde.
+   Seit dem 14.10.2026 auch die Viertelstunden derselben veralteten Tage.
+   SMARD hat den Juli 2026 nachträglich revidiert. Der tägliche Lauf holt
+   die Tageswerte zweier Jahre neu, die Stunden nur für vier Wochen und die
+   Viertelstunden nur für zwei. `nachholen.py` hat die 30 veralteten
+   Julitage als Stunden nachgezogen; die Viertelstunden blieben alt, und der
+   Türsteher maß 0,685 % Abweichung der Tagessumme (schlimmster Tag
+   2026-07-20, Toleranz 0,5 %). Dieselbe Liste — die von vor dem
+   Stunden-Nachtrag, danach ist sie leer — geht an
+   `fetch-viertelstunden.py`. Geholt wird der Wochenblock. Die Toleranz
+   bleibt 0,5 %.
 3. **Buch führen.** `data/luecken.json` nennt jede offene Lücke und den Tag,
    an dem sie zuerst auffiel.
 
