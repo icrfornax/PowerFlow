@@ -1,0 +1,59 @@
+name: Nachweis Viertelstunden-Nachtrag
+
+# Der taegliche SMARD-Lauf liess sich von hier nicht per workflow_dispatch
+# anstossen (HTTP 403, Token ohne actions:write). Dieser Lauf ist der
+# Nachweis im Pull Request: dieselben Abrufe, dann der Tuersteher.
+# Kein Commit, kein Pages-Bau.
+#
+# Er laeuft nur, wenn der Nachtrag selbst angefasst wird. Ein gewoehnlicher
+# Daten-PR loest ihn nicht aus.
+
+on:
+  pull_request:
+    paths:
+      - "scripts/nachholen.py"
+      - "scripts/fetch-viertelstunden.py"
+      - ".github/workflows/nachweis-viertel-nachtrag.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-und-tuersteher:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Tageswerte holen (laufendes und voriges Jahr)
+        run: python scripts/fetch-tagesreihen.py "$(date -u +%Y)" "$(( $(date -u +%Y) - 1 ))"
+
+      - name: Stundenwerte nachtragen (letzte vier Wochen)
+        run: python scripts/fetch-verlauf.py --wochen 4
+
+      - name: Viertelstundenwerte nachtragen (letzte zwei Wochen)
+        run: python scripts/fetch-viertelstunden.py --wochen 2
+
+      - name: Luecken nachholen und Buch fuehren
+        run: python scripts/nachholen.py
+
+      - name: Mengengewichteten Aussenhandelspreis neu rechnen
+        run: python scripts/fetch-verlauf.py --preisgewicht
+
+      - name: Schlanke Vergleichsreihe neu rechnen
+        run: python scripts/vergleichsreihe.py
+
+      - name: Quellenverzeichnis neu bauen
+        run: python scripts/quellen.py
+
+      - name: Methodik-PDF neu rechnen
+        run: python scripts/methodik.py
+
+      - name: Tuersteher
+        run: |
+          python scripts/validate.py
+          python scripts/validate.py --negativtests
