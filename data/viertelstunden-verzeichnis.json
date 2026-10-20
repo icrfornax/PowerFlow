@@ -30169,12 +30169,19 @@
   },
   {
    "tag": "2026-10-19",
-   "marken": 47,
+   "marken": 96,
+   "erzeugungsreihen": 10,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-10-20",
+   "marken": 45,
    "erzeugungsreihen": 10,
    "preis_viertelstuendlich": true,
    "auffaellig": 0
   }
  ],
  "von": "2015-01-01",
- "bis": "2026-10-19"
+ "bis": "2026-10-20"
 }
