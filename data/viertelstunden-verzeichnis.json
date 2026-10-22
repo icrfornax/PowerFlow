@@ -30156,32 +30156,46 @@
   {
    "tag": "2026-10-17",
    "marken": 96,
-   "erzeugungsreihen": 10,
+   "erzeugungsreihen": 11,
    "preis_viertelstuendlich": true,
    "auffaellig": 0
   },
   {
    "tag": "2026-10-18",
    "marken": 96,
-   "erzeugungsreihen": 10,
+   "erzeugungsreihen": 11,
    "preis_viertelstuendlich": true,
    "auffaellig": 0
   },
   {
    "tag": "2026-10-19",
    "marken": 96,
-   "erzeugungsreihen": 10,
+   "erzeugungsreihen": 11,
    "preis_viertelstuendlich": true,
    "auffaellig": 0
   },
   {
    "tag": "2026-10-20",
-   "marken": 45,
-   "erzeugungsreihen": 10,
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-10-21",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-10-22",
+   "marken": 44,
+   "erzeugungsreihen": 11,
    "preis_viertelstuendlich": true,
    "auffaellig": 0
   }
  ],
  "von": "2015-01-01",
- "bis": "2026-10-20"
+ "bis": "2026-10-22"
 }
