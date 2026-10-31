@@ -1,5 +1,5 @@
 {
- "abgerufen": "2026-10-30T12:27:12+01:00",
+ "abgerufen": "2026-10-31T11:58:19+01:00",
  "hinweis": "Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null. schieflage_prozent ist (hoch - runter) / (hoch + runter): wie stark das Hochfahren das Herunterfahren ueberwiegt. Die Seite rechnet ihre Spanne daraus, damit die Zahl im Text nicht veraltet.",
  "jahre": [
   {
