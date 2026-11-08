@@ -30302,6 +30302,13 @@
   },
   {
    "tag": "2026-11-07",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-11-08",
    "marken": 48,
    "erzeugungsreihen": 11,
    "preis_viertelstuendlich": true,
@@ -30309,5 +30316,5 @@
   }
  ],
  "von": "2015-01-01",
- "bis": "2026-11-07"
+ "bis": "2026-11-08"
 }
