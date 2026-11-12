@@ -30316,6 +30316,27 @@
   },
   {
    "tag": "2026-11-09",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-11-10",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-11-11",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-11-12",
    "marken": 56,
    "erzeugungsreihen": 11,
    "preis_viertelstuendlich": true,
@@ -30323,5 +30344,5 @@
   }
  ],
  "von": "2015-01-01",
- "bis": "2026-11-09"
+ "bis": "2026-11-12"
 }
