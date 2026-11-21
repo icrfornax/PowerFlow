@@ -30386,12 +30386,26 @@
   },
   {
    "tag": "2026-11-19",
-   "marken": 57,
+   "marken": 96,
    "erzeugungsreihen": 11,
    "preis_viertelstuendlich": true,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-11-20",
+   "marken": 96,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": null,
+   "auffaellig": 0
+  },
+  {
+   "tag": "2026-11-21",
+   "marken": 55,
+   "erzeugungsreihen": 11,
+   "preis_viertelstuendlich": null,
    "auffaellig": 0
   }
  ],
  "von": "2015-01-01",
- "bis": "2026-11-19"
+ "bis": "2026-11-21"
 }
