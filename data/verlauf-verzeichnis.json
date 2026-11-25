@@ -1,5 +1,5 @@
 {
- "abgerufen": "2026-11-23T16:54:39+01:00",
+ "abgerufen": "2026-11-25T16:31:35+01:00",
  "hinweis": "Verzeichnis der Monatsdateien mit Stundenwerten. Die Seite laedt den Monat des gewaehlten Tages.",
  "monate": [
   {
@@ -715,7 +715,7 @@
   {
    "monat": "2026-11",
    "datei": "data/verlauf/2026-11.json",
-   "stunden": 539
+   "stunden": 591
   }
  ]
 }
