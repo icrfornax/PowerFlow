@@ -1,5 +1,5 @@
 {
- "abgerufen": "2026-11-25T16:36:10+01:00",
+ "abgerufen": "2026-11-26T16:11:21+01:00",
  "hinweis": "Verzeichnis der Jahresdateien mit Redispatch-Tagesaggregaten. Die Reihe beginnt 2021; davor liefert die API HTTP 400. Tage ohne Massnahme fehlen -- das ist kein Loch, sondern eine Null. schieflage_prozent ist (hoch - runter) / (hoch + runter): wie stark das Hochfahren das Herunterfahren ueberwiegt. Die Seite rechnet ihre Spanne daraus, damit die Zahl im Text nicht veraltet.",
  "jahre": [
   {
@@ -47,8 +47,8 @@
    "datei": "data/redispatch/2026.json",
    "erster_tag": "2026-01-01",
    "letzter_tag": "2026-12-10",
-   "tage_mit_massnahmen": 333,
-   "schieflage_prozent": -4.8
+   "tage_mit_massnahmen": 334,
+   "schieflage_prozent": -4.9
   }
  ]
 }
